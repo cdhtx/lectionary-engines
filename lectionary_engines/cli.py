@@ -277,12 +277,29 @@ def list():
 def show(filepath: str):
     """Display a saved study"""
     try:
-        content = read_study(filepath)
+        raw_content = read_study(filepath)
     except Exception as e:
         display_error(f"Failed to read study: {e}")
         sys.exit(1)
 
-    display_study(content)
+    # Extract metadata and content
+    import re
+    engine = ""
+    content = raw_content
+
+    # Parse frontmatter to extract engine
+    if raw_content.startswith("---"):
+        parts = raw_content.split("---", 2)
+        if len(parts) >= 3:
+            metadata = parts[1]
+            content = parts[2].strip()
+
+            # Extract engine from metadata
+            engine_match = re.search(r"^engine:\s*(.+)$", metadata, re.MULTILINE)
+            if engine_match:
+                engine = engine_match.group(1).strip()
+
+    display_study(content, engine=engine)
 
 
 @main.command()
