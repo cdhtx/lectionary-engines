@@ -287,24 +287,24 @@ def show(filepath: str):
 
 @main.command()
 @click.argument("engine", type=click.Choice(["threshold", "palimpsest", "collision"]))
-@click.option("--text", "-t",
-              type=click.Choice(["watchword", "daily"]),
-              default="daily",
-              help="Which text to use (default: daily)")
 @click.option("--translation",
               type=click.Choice(["NRSVue", "NIV", "CEB", "NLT", "MSG"]),
               default="NRSVue",
               help="Bible translation (default: NRSVue)")
-def moravian(engine: str, text: str, translation: str):
+def moravian(engine: str, translation: str):
     """
     Run an engine with today's Moravian Daily Text
 
-    Automatically fetches from moravian.org
+    Fetches ALL biblical passages from moravian.org including:
+    - Daily Psalm, OT Reading, and NT Reading
+    - Watchword (OT verse) and Daily Text (NT verse)
+
+    All passages are used together as a frame for interpretation.
 
     Examples:
         lectionary moravian threshold
-        lectionary moravian palimpsest --text watchword
-        lectionary moravian collision -t daily --translation NIV
+        lectionary moravian palimpsest --translation NIV
+        lectionary moravian collision
     """
     console.print(f"\n[bold cyan]═══ Moravian Daily Text: {engine.upper()} ═══[/bold cyan]\n")
 
@@ -324,10 +324,10 @@ def moravian(engine: str, text: str, translation: str):
     # Initialize text fetcher
     fetcher = TextFetcher(default_translation=translation)
 
-    # Fetch today's Moravian text
-    console.print(f"[yellow]Fetching today's Moravian Daily Text ({text})...[/yellow]\n")
+    # Fetch today's complete Moravian text (all passages)
+    console.print(f"[yellow]Fetching today's Moravian Daily Text (all passages)...[/yellow]\n")
     try:
-        reference, biblical_text = fetcher.fetch_moravian(text_type=text)
+        reference, biblical_text = fetcher.fetch_moravian()
     except Exception as e:
         display_error(f"Failed to fetch Moravian text: {e}")
         sys.exit(1)

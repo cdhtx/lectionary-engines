@@ -125,19 +125,29 @@ class TextFetcher:
         pattern = r"^[1-3]?\s?[A-Za-z]+\s+\d+(:\d+(-\d+)?)?$"
         return bool(re.match(pattern, reference))
 
-    def fetch_moravian(self, text_type: str = "daily") -> Tuple[str, str]:
+    def fetch_moravian(self) -> Tuple[str, str]:
         """
-        Fetch today's Moravian Daily Text
+        Fetch today's complete Moravian Daily Text
 
-        Args:
-            text_type: "watchword" (OT) or "daily" (NT) - default "daily"
+        The Moravian Daily Text includes multiple biblical passages:
+        - Daily Psalm
+        - Daily OT Reading
+        - Daily NT Reading
+        - Watchword (OT verse)
+        - Daily Text (NT verse)
+
+        All passages are fetched and combined for comprehensive study.
 
         Returns:
             tuple: (reference, text)
+                  reference: Summary of all passages
+                  text: Combined text with all passages clearly labeled
 
         Raises:
             Exception: If fetching fails
         """
+        from datetime import datetime
+
         url = "https://www.moravian.org/daily_texts/"
         headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
@@ -149,34 +159,102 @@ class TextFetcher:
 
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Find the sidebar or content with today's text
-            # Look for links to Bible Gateway in the sidebar
+            # Find today's date section
+            today = datetime.now()
+            day_name = today.strftime("%A")  # e.g., "Tuesday"
+
+            # Find all paragraphs that might contain today's readings
+            paragraphs = soup.find_all("p")
+
+            daily_readings = []
+            watchword_ref = None
+            watchword_text_content = None
+            daily_text_ref = None
+            daily_text_content = None
+
+            # Parse the page structure
+            for i, p in enumerate(paragraphs):
+                text = p.get_text()
+
+                # Look for today's daily readings (Psalm, Genesis/OT, Matthew/NT pattern)
+                if day_name in text and "—" in text:
+                    # Extract the references after the em dash
+                    parts = text.split("—")
+                    if len(parts) > 1:
+                        refs = parts[1].strip()
+                        # Parse individual references (e.g., "Psalm 5; Genesis 6:1-7:10; Matthew 3")
+                        for ref in refs.split(";"):
+                            ref = ref.strip()
+                            if ref and re.search(r'\d', ref):  # Has a number (chapter/verse)
+                                daily_readings.append(ref)
+
+                # Look for Watchword link
+                if "Watchword" not in text:
+                    watchword_links = p.find_all("a", href=re.compile(r"biblegateway\.com/passage"))
+                    if watchword_links and not watchword_ref:
+                        link = watchword_links[0]
+                        href = link.get("href")
+                        match = re.search(r"search=([^&]+)", href)
+                        if match:
+                            watchword_ref = match.group(1).replace("%20", " ").replace("+", " ").replace("%3A", ":")
+                            # Get the verse text from the paragraph
+                            watchword_text_content = p.get_text().split("Psalm")[0].strip() if "Psalm" in p.get_text() else None
+
+            # Find Bible Gateway links for Watchword and Daily Text
             links = soup.find_all("a", href=re.compile(r"biblegateway\.com/passage"))
 
-            if not links or len(links) < 2:
-                raise Exception("Could not find Moravian Daily Text readings")
+            if len(links) >= 2:
+                # First link is watchword, second is daily text
+                if not watchword_ref:
+                    watchword_href = links[0].get("href")
+                    match = re.search(r"search=([^&]+)", watchword_href)
+                    if match:
+                        watchword_ref = match.group(1).replace("%20", " ").replace("+", " ").replace("%3A", ":")
 
-            # First link is usually the watchword, second is daily text
-            if text_type == "watchword":
-                link = links[0]
-            else:  # daily
-                link = links[1] if len(links) > 1 else links[0]
+                daily_href = links[1].get("href")
+                match = re.search(r"search=([^&]+)", daily_href)
+                if match:
+                    daily_text_ref = match.group(1).replace("%20", " ").replace("+", " ").replace("%3A", ":")
 
-            # Extract reference from link text or href
-            reference_text = link.get_text().strip()
-            href = link.get("href")
+            # Fetch all biblical texts
+            passages = []
 
-            # Parse reference from Bible Gateway URL
-            match = re.search(r"search=([^&]+)", href)
-            if match:
-                reference = match.group(1).replace("%20", " ").replace("+", " ")
-            else:
-                reference = reference_text
+            # Add daily readings (Psalm, OT, NT)
+            for ref in daily_readings:
+                try:
+                    text = self.fetch(ref)
+                    passages.append(f"DAILY READING — {ref}:\n{text}")
+                except:
+                    # If fetch fails, skip this passage
+                    pass
 
-            # Fetch the actual text
-            text = self.fetch(reference)
+            # Add Watchword
+            if watchword_ref:
+                try:
+                    text = self.fetch(watchword_ref)
+                    passages.append(f"WATCHWORD — {watchword_ref}:\n{text}")
+                except:
+                    pass
 
-            return (reference, text)
+            # Add Daily Text
+            if daily_text_ref:
+                try:
+                    text = self.fetch(daily_text_ref)
+                    passages.append(f"DAILY TEXT — {daily_text_ref}:\n{text}")
+                except:
+                    pass
+
+            if not passages:
+                raise Exception("Could not find any Moravian Daily Text readings")
+
+            # Combine all passages
+            combined_text = "\n\n" + "="*80 + "\n\n".join(passages)
+
+            # Create reference summary
+            all_refs = daily_readings + ([f"Watchword: {watchword_ref}"] if watchword_ref else []) + ([f"Daily Text: {daily_text_ref}"] if daily_text_ref else [])
+            combined_reference = " | ".join(all_refs)
+
+            return (combined_reference, combined_text)
 
         except Exception as e:
             raise Exception(f"Failed to fetch Moravian Daily Text: {e}")
