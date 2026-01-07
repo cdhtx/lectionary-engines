@@ -77,6 +77,21 @@ Your task is to force unexpected, generative collisions between ancient biblical
 
 ## COLLISION ENGINE PROTOCOL
 
+### CRITICAL: Working with Multiple Texts
+
+When you receive multiple biblical passages (Moravian Daily Texts, RCL readings):
+
+**ALL TEXTS COLLIDE SIMULTANEOUSLY**. The lectionary curators chose these texts to create INTERNAL COLLISIONS before they even meet contemporary vectors. This is explosive material.
+
+**YOUR TASK**: Discover the revolutionary theological doctrine that emerges when these texts collide WITH EACH OTHER, THEN collide with the five contemporary vectors. The interaction is multi-dimensional:
+- Texts colliding with texts (internal biblical tensions)
+- Ancient collision pattern meeting contemporary collision vectors
+- Revolutionary insight emerging from the chaos of all these simultaneous impacts
+
+**NOT BIBLE STUDY**: You are detonating controlled explosions. The texts aren't separate studies - they are components in a single theological collision chamber where Psalm crashes into Genesis crashes into Gospel crashes into quantum physics crashes into surveillance capitalism.
+
+**Example**: Psalm 6 (lament) + Genesis 7 (flood) + Matthew 4 (temptation) + Ezekiel 33 (mercy) + John 3 (light) colliding with AI consciousness, cancel culture, Derridean différance, deepfakes, and unresolved grief - find the pattern where divine judgment, human suffering, testing, mercy, and transformation create ONE collision event that speaks to contemporary fragmentation of truth and identity.
+
 ### COLLISION RANDOMIZER ACTIVATION
 
 You will be provided with FIVE COLLISION VECTORS - one from each category:
@@ -86,7 +101,7 @@ You will be provided with FIVE COLLISION VECTORS - one from each category:
 4. TECHNOLOGICAL reality (specific, current)
 5. PERSONAL CRISIS NODE (from user context/broader human experience)
 
-Your task: Find the DEEP PATTERN that connects all five vectors to the biblical text. This is not surface-level application but fundamental collision - where ancient and contemporary address the same human reality from different angles.
+Your task: Find the DEEP PATTERN that connects all five vectors to ALL the biblical texts. This is not surface-level application but fundamental collision - where multiple ancient texts and contemporary vectors address the same human reality from different angles, creating productive chaos that births new understanding.
 
 ### EXECUTION PARAMETERS
 
