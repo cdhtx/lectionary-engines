@@ -159,10 +159,123 @@ def _display_collision_study(content: str):
 
 
 def _display_palimpsest_study(content: str):
-    """Display Palimpsest study (existing style for now)"""
-    # Keep existing palimpsest display logic
-    md = Markdown(content)
-    console.print(md)
+    """Display Palimpsest study with sacred manuscript aesthetic"""
+
+    # Extract title
+    title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
+    title = title_match.group(1) if title_match else "Palimpsest Study"
+
+    # Header with ornamental design
+    console.print("\n")
+    console.print("╭" + "═" * 78 + "╮", style="bold magenta")
+    console.print("│" + " " * 78 + "│", style="bold magenta")
+    console.print("│" + f"{'✦ PALIMPSEST ENGINE STUDY ✦':^78}" + "│", style="bold magenta")
+    console.print("│" + f"{title:^78}" + "│", style="bold magenta")
+    console.print("│" + " " * 78 + "│", style="bold magenta")
+    console.print("╰" + "═" * 78 + "╯", style="bold magenta")
+    console.print()
+
+    # PaRDeS layers with Hebrew letters
+    layers = [
+        ("Layer One", "פ", "PESHAT", "The Plain Sense", "Scholarly-Economical", "magenta"),
+        ("Layer Two", "ר", "REMEZ", "Hints & Allusions", "Connective-Exploratory", "magenta"),
+        ("Layer Three", "ד", "DERASH", "Interpretation & Inquiry", "Survey-Engaged", "magenta"),
+        ("Layer Four", "ס", "SOD", "The Secret / Mystery", "Mystical-Poetic-Spacious", "bold magenta"),
+        ("Layer Five", "י", "INCARNATION", "Embodied Practice", "Practical-Empowering", "magenta"),
+    ]
+
+    # Split content into intro and layers
+    parts = re.split(r'#+\s*Layer (One|Two|Three|Four|Five)', content, flags=re.IGNORECASE)
+
+    # Display intro (before first layer)
+    if len(parts) > 0 and parts[0].strip():
+        intro = parts[0].strip()
+        # Remove title from intro if present
+        intro = re.sub(r'^#\s+.+$', '', intro, flags=re.MULTILINE).strip()
+        if intro:
+            md = Markdown(intro)
+            console.print(md)
+            console.print()
+
+    # Display each layer
+    for i, (layer_name, hebrew_letter, english_name, subtitle, tone, color) in enumerate(layers):
+        # Find layer content
+        layer_num = layer_name.split()[1]  # "One", "Two", etc.
+
+        # Search for this layer in parts
+        layer_content = None
+        for j in range(1, len(parts), 2):  # Odd indices have layer names
+            if parts[j].lower() == layer_num.lower() and j + 1 < len(parts):
+                layer_content = parts[j + 1].strip()
+                break
+
+        if not layer_content:
+            continue
+
+        # Clean up the content
+        layer_content = re.sub(r'^:.*$', '', layer_content, flags=re.MULTILINE).strip()
+
+        # Special formatting for Layer 4 (Sod - mystical/contemplative)
+        if i == 3:  # Layer Four
+            console.print("╔" + "═" * 78 + "╗", style=color)
+            console.print("║" + " " * 78 + "║", style=color)
+            console.print("║" + f"  {hebrew_letter}   LAYER FOUR: {english_name}".ljust(78) + "║", style=color)
+            console.print("║" + f"      {subtitle}".ljust(78) + "║", style=color)
+            console.print("║" + f"      Tone: {tone}".ljust(78) + "║", style=color)
+            console.print("║" + " " * 78 + "║", style=color)
+            console.print("║" + f"{'[ The tone shifts here - more space, contemplative ]':^78}" + "║", style="dim magenta")
+            console.print("║" + " " * 78 + "║", style=color)
+            console.print("╚" + "═" * 78 + "╝", style=color)
+            console.print()
+
+            # Add extra spacing for Layer 4 content
+            lines = layer_content.split('\n')
+            spaced_content = '\n\n'.join(lines)  # Double spacing for contemplative feel
+            md = Markdown(spaced_content)
+            console.print("        ", end="")  # Indent
+            console.print(md, style="dim magenta")
+            console.print()
+
+        else:
+            # Regular layer formatting
+            console.print("┏" + "━" * 78 + "┓", style=color)
+            console.print("┃" + f"  {hebrew_letter}   LAYER {['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'][i]}: {english_name}".ljust(76) + "  ┃", style=color)
+            console.print("┃" + f"      {subtitle}".ljust(76) + "  ┃", style=color)
+            console.print("┃" + f"      Tone: {tone}".ljust(76) + "  ┃", style="dim " + color)
+            console.print("┗" + "━" * 78 + "┛", style=color)
+            console.print()
+
+            # Display content
+            md = Markdown(layer_content)
+            console.print(md)
+            console.print()
+
+    # Tech touchpoint if present
+    if "Tech Touchpoint" in content or "tech touchpoint" in content.lower():
+        tech_match = re.search(r'#+\s*Tech Touchpoint(.+?)(?=─{3,}|$)', content, re.DOTALL | re.IGNORECASE)
+        if tech_match:
+            console.print("─" * 80, style="dim magenta")
+            console.print("  ✦ DIGITAL PRACTICE ✦", style="bold magenta")
+            console.print("  Tech Touchpoint", style="magenta")
+            console.print("─" * 80, style="dim magenta")
+            console.print()
+
+            tech_content = tech_match.group(1).strip()
+            md = Markdown(tech_content)
+            console.print(md)
+            console.print()
+
+    # Footer if present
+    if "Through-Line" in content or "through-line" in content.lower():
+        through_line_match = re.search(r'(?:The )?Through-Line.*?:(.+?)(?=─{3,}|$)', content, re.DOTALL | re.IGNORECASE)
+        if through_line_match:
+            console.print("═" * 80, style="bold magenta")
+            console.print("  THE THROUGH-LINE", style="bold cyan")
+            console.print("═" * 80, style="bold magenta")
+            through_text = through_line_match.group(1).strip()
+            console.print(through_text, style="dim")
+            console.print("═" * 80, style="bold magenta")
+            console.print()
 
 
 def display_error(message: str):
