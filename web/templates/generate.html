@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Study | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Generate Study</h1>
+        <p>Create a new biblical interpretation study using one of the three engines</p>
+    </div>
+
+    <form method="POST" action="/generate" class="generate-form" id="generateForm">
+        <div class="form-section">
+            <h2>1. Choose an Engine</h2>
+            <div class="radio-group">
+                <label class="radio-card">
+                    <input type="radio" name="engine" value="threshold" {% if default_engine == 'threshold' %}checked{% endif %} required>
+                    <div class="radio-content">
+                        <strong>Threshold</strong>
+                        <p>Four progressive thresholds + tech touchpoint (2,500-3,500 words)</p>
+                    </div>
+                </label>
+
+                <label class="radio-card">
+                    <input type="radio" name="engine" value="palimpsest" {% if default_engine == 'palimpsest' %}checked{% endif %}>
+                    <div class="radio-content">
+                        <strong>Palimpsest</strong>
+                        <p>Five hermeneutical layers using PaRDeS (3,000-4,000 words)</p>
+                    </div>
+                </label>
+
+                <label class="radio-card">
+                    <input type="radio" name="engine" value="collision" {% if default_engine == 'collision' %}checked{% endif %}>
+                    <div class="radio-content">
+                        <strong>Collision</strong>
+                        <p>Five-step collision with randomizer (3,000-5,000 words)</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>2. Choose Text Source</h2>
+
+            <div class="source-tabs">
+                <label class="source-tab">
+                    <input type="radio" name="source" value="paste" checked>
+                    <span>Paste Text</span>
+                </label>
+                <label class="source-tab">
+                    <input type="radio" name="source" value="run">
+                    <span>Bible Gateway</span>
+                </label>
+                <label class="source-tab">
+                    <input type="radio" name="source" value="moravian">
+                    <span>Moravian Daily Text</span>
+                </label>
+                <label class="source-tab">
+                    <input type="radio" name="source" value="rcl">
+                    <span>RCL</span>
+                </label>
+            </div>
+
+            <!-- Paste Source Fields -->
+            <div id="source-paste" class="source-fields">
+                <div class="form-group">
+                    <label for="reference-paste">Biblical Reference</label>
+                    <input
+                        type="text"
+                        id="reference-paste"
+                        name="reference"
+                        placeholder="e.g., John 3:16-21"
+                        class="form-input">
+                    <p class="help-text">Enter the biblical reference (e.g., "Mark 5:1-5", "Romans 8:18-30")</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="text">Biblical Text</label>
+                    <textarea
+                        id="text"
+                        name="text"
+                        rows="10"
+                        class="form-textarea"
+                        placeholder="Paste your biblical text here"></textarea>
+                    <p class="help-text">Paste the biblical text you want to interpret</p>
+                </div>
+            </div>
+
+            <!-- Bible Gateway Source Fields -->
+            <div id="source-run" class="source-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="reference-run">Biblical Reference</label>
+                    <input
+                        type="text"
+                        id="reference-run"
+                        name="reference"
+                        placeholder="e.g., John 3:16-21"
+                        class="form-input">
+                    <p class="help-text">The text will be automatically fetched from Bible Gateway</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="translation">Translation</label>
+                    <select id="translation" name="translation" class="form-select">
+                        {% for trans in translations %}
+                        <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Moravian Source Fields -->
+            <div id="source-moravian" class="source-fields" style="display: none;">
+                <div class="info-box">
+                    <h3>Today's Moravian Daily Text</h3>
+                    <p>Automatically fetches all readings from today's Moravian Daily Text (Daily Psalm, OT/NT readings, Watchword, and Daily Text)</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="translation-moravian">Translation</label>
+                    <select id="translation-moravian" name="translation" class="form-select">
+                        {% for trans in translations %}
+                        <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- RCL Source Fields -->
+            <div id="source-rcl" class="source-fields" style="display: none;">
+                <div class="info-box">
+                    <h3>Revised Common Lectionary</h3>
+                    <p>Fetches today's reading from the Revised Common Lectionary (daily readings from Vanderbilt Divinity Library)</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="rcl-reading">Reading Type</label>
+                    <select id="rcl-reading" name="rcl_reading" class="form-select">
+                        <option value="gospel" selected>Gospel</option>
+                        <option value="ot">Old Testament</option>
+                        <option value="psalm">Psalm</option>
+                        <option value="epistle">Epistle</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="translation-rcl">Translation</label>
+                    <select id="translation-rcl" name="translation" class="form-select">
+                        {% for trans in translations %}
+                        <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
+                Generate Study
+            </button>
+            <p class="help-text">
+                <strong>Estimated time:</strong>
+                <span id="timeEstimate">30-60 seconds</span>
+            </p>
+        </div>
+    </form>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Generating Study...</h2>
+            <p id="loadingMessage">This may take 30-60 seconds. Please wait...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Show loading overlay when form is submitted
+document.getElementById('generateForm').addEventListener('submit', function(e) {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+});
+
+// Update time estimate based on engine selection
+document.querySelectorAll('input[name="engine"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        const engine = this.value;
+        const timeEstimate = document.getElementById('timeEstimate');
+        const loadingMessage = document.getElementById('loadingMessage');
+
+        if (engine === 'threshold') {
+            timeEstimate.textContent = '30-60 seconds';
+            loadingMessage.textContent = 'This may take 30-60 seconds. Please wait...';
+        } else if (engine === 'palimpsest') {
+            timeEstimate.textContent = '60-90 seconds';
+            loadingMessage.textContent = 'This may take 60-90 seconds. Please wait...';
+        } else if (engine === 'collision') {
+            timeEstimate.textContent = '90-120 seconds';
+            loadingMessage.textContent = 'This may take 90-120 seconds. Please wait...';
+        }
+    });
+});
+
+// Source tab switching
+document.querySelectorAll('input[name="source"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        const source = this.value;
+
+        // Hide all source fields
+        document.querySelectorAll('.source-fields').forEach(function(field) {
+            field.style.display = 'none';
+        });
+
+        // Show selected source fields
+        document.getElementById('source-' + source).style.display = 'block';
+
+        // Clear reference fields to avoid confusion
+        document.querySelectorAll('input[name="reference"]').forEach(function(input) {
+            input.required = false;
+        });
+
+        // Set required for active source
+        if (source === 'paste' || source === 'run') {
+            const activeRef = document.querySelector('#source-' + source + ' input[name="reference"]');
+            if (activeRef) activeRef.required = true;
+        }
+
+        // Handle text field requirement
+        if (source === 'paste') {
+            document.getElementById('text').required = true;
+        } else {
+            document.getElementById('text').required = false;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ study.reference }} | {{ study.engine | title }} | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container study-container">
+    <div class="study-header">
+        <div class="study-meta">
+            <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
+            <span class="divider">|</span>
+            <span>{{ study.created_at.strftime('%B %d, %Y') }}</span>
+            <span class="divider">|</span>
+            <span>{{ study.word_count }} words</span>
+            {% if study.translation %}
+            <span class="divider">|</span>
+            <span>{{ study.translation }}</span>
+            {% endif %}
+        </div>
+        <h1>{{ study.reference }}</h1>
+    </div>
+
+    <div class="study-content">
+        {{ study_html | safe }}
+    </div>
+
+    <div class="study-footer">
+        <a href="/browse" class="btn btn-secondary">← Back to Browse</a>
+        <a href="/generate" class="btn btn-primary">Generate Another Study</a>
+    </div>
+</div>
+{% endblock %}

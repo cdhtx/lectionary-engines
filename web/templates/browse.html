@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Studies | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Browse Studies</h1>
+        <p>{{ total }} studies total</p>
+    </div>
+
+    <div class="browse-layout">
+        <aside class="browse-sidebar">
+            <h3>Filter</h3>
+
+            <div class="filter-group">
+                <h4>Engine</h4>
+                <div class="filter-options">
+                    <a href="/browse" class="filter-link {% if not engine_filter %}active{% endif %}">
+                        All
+                    </a>
+                    <a href="/browse?engine=threshold" class="filter-link {% if engine_filter == 'threshold' %}active{% endif %}">
+                        Threshold
+                    </a>
+                    <a href="/browse?engine=palimpsest" class="filter-link {% if engine_filter == 'palimpsest' %}active{% endif %}">
+                        Palimpsest
+                    </a>
+                    <a href="/browse?engine=collision" class="filter-link {% if engine_filter == 'collision' %}active{% endif %}">
+                        Collision
+                    </a>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <h4>Source</h4>
+                <div class="filter-options">
+                    <a href="/browse{% if engine_filter %}?engine={{ engine_filter }}{% endif %}"
+                       class="filter-link {% if not source_filter %}active{% endif %}">
+                        All
+                    </a>
+                    <a href="/browse?source=paste{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                       class="filter-link {% if source_filter == 'paste' %}active{% endif %}">
+                        Paste
+                    </a>
+                    <a href="/browse?source=run{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                       class="filter-link {% if source_filter == 'run' %}active{% endif %}">
+                        Bible Gateway
+                    </a>
+                    <a href="/browse?source=moravian{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                       class="filter-link {% if source_filter == 'moravian' %}active{% endif %}">
+                        Moravian
+                    </a>
+                    <a href="/browse?source=rcl{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                       class="filter-link {% if source_filter == 'rcl' %}active{% endif %}">
+                        RCL
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="browse-main">
+            {% if studies %}
+            <div class="studies-grid">
+                {% for study in studies %}
+                <div class="study-card">
+                    <a href="/study/{{ study.id }}" class="study-card-link">
+                        <div class="study-card-header">
+                            <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
+                            <span class="study-card-date">{{ study.created_at.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <h3 class="study-card-reference">{{ study.reference }}</h3>
+                        <div class="study-card-meta">
+                            <span>{{ study.word_count }} words</span>
+                            {% if study.translation %}
+                            <span>{{ study.translation }}</span>
+                            {% endif %}
+                            {% if study.source %}
+                            <span>{{ study.source }}</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if total_pages > 1 %}
+            <div class="pagination">
+                {% if has_prev %}
+                <a href="/browse?page={{ page - 1 }}{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+                   class="btn btn-secondary">← Previous</a>
+                {% endif %}
+
+                <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
+
+                {% if has_next %}
+                <a href="/browse?page={{ page + 1 }}{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+                   class="btn btn-secondary">Next →</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="empty-state">
+                <h2>No studies found</h2>
+                <p>Try adjusting your filters or <a href="/generate">generate a new study</a>.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

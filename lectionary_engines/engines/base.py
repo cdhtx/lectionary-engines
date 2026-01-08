@@ -6,9 +6,11 @@ Each engine is a thin wrapper that loads its protocol and calls Claude API.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, Optional
 
 from ..claude_client import ClaudeClient
+from ..preferences import StudyPreferences, DEFAULT_PREFERENCES
+from ..protocol_builder import build_system_prompt, build_output_constraints
 
 
 class BaseEngine(ABC):
@@ -53,3 +55,36 @@ class BaseEngine(ABC):
             dict with keys: engine, reference, content, metadata
         """
         raise NotImplementedError
+
+    def generate_with_preferences(
+        self,
+        text: str,
+        reference: str,
+        preferences: Optional[StudyPreferences] = None
+    ) -> Dict:
+        """
+        Generate study with user preferences applied
+
+        This is a concrete method that engines can override if they need
+        custom preference handling. Default implementation uses protocol_builder
+        to inject preferences into the protocol.
+
+        Args:
+            text: Biblical text to analyze
+            reference: Biblical reference (e.g., "John 3:16-21")
+            preferences: User preferences (uses DEFAULT_PREFERENCES if None)
+
+        Returns:
+            dict with keys: engine, reference, content, metadata
+        """
+        # Use default preferences if none provided
+        if preferences is None:
+            preferences = DEFAULT_PREFERENCES
+
+        # Validate preferences
+        preferences.validate()
+
+        # This method should be overridden by subclasses
+        # Default implementation just calls generate() without preferences
+        # (maintains backward compatibility)
+        return self.generate(text, reference)

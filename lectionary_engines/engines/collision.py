@@ -11,6 +11,8 @@ from typing import Dict, Optional
 
 from .base import BaseEngine
 from ..protocols import collision_protocol
+from ..preferences import StudyPreferences
+from ..protocol_builder import build_system_prompt, build_output_constraints
 
 
 class CollisionEngine(BaseEngine):
@@ -132,3 +134,84 @@ class CollisionEngine(BaseEngine):
         if category:
             return {category: collision_protocol.COLLISION_VECTORS.get(category, [])}
         return collision_protocol.COLLISION_VECTORS
+
+    def generate_with_preferences(
+        self,
+        text: str,
+        reference: str,
+        preferences: Optional[StudyPreferences] = None,
+        collision_vector: Optional[str] = None,
+        custom_vectors: Optional[Dict[str, str]] = None,
+    ) -> Dict:
+        """
+        Generate a Collision study with user preferences applied
+
+        Args:
+            text: Biblical text to analyze
+            reference: Biblical reference (e.g., "John 3:16-21")
+            preferences: User preferences for customization
+            collision_vector: Optional specific vector to use
+            custom_vectors: Optional dict of custom vectors for each category
+
+        Returns:
+            dict with keys: engine, reference, content, metadata
+        """
+        from ..preferences import DEFAULT_PREFERENCES
+
+        # Use default preferences if none provided
+        if preferences is None:
+            preferences = DEFAULT_PREFERENCES
+
+        # Validate preferences
+        preferences.validate()
+
+        # Build customized system prompt
+        custom_system_prompt = build_system_prompt(
+            collision_protocol.SYSTEM_PROMPT,
+            preferences
+        )
+
+        # Build customized output constraints
+        custom_constraints = build_output_constraints(
+            collision_protocol.OUTPUT_CONSTRAINTS,
+            preferences
+        )
+
+        # Generate or use provided collision vectors
+        if custom_vectors:
+            vectors = custom_vectors
+        else:
+            vectors = self.generate_collision_vectors(collision_vector)
+
+        # Wrap input according to protocol
+        user_message = collision_protocol.INPUT_WRAPPER(text, reference, vectors)
+
+        # Call Claude API with customized prompt and token limit
+        output = self.claude.generate_study(
+            text=user_message,
+            reference=reference,
+            system_prompt=custom_system_prompt,
+            max_tokens=custom_constraints['max_tokens'],
+        )
+
+        # Package result with preference metadata
+        return {
+            "engine": self.name,
+            "reference": reference,
+            "content": output,
+            "metadata": {
+                "word_count": len(output.split()),
+                "timestamp": datetime.now().isoformat(),
+                "constraints": custom_constraints,
+                "collision_vectors": vectors,
+                "steps": [
+                    "anchor_in_antiquity",
+                    "collide_with_now",
+                    "navigate_rupture",
+                    "crystallize_insight",
+                    "release_into_future",
+                    "generative_outputs",
+                ],
+                "preferences": preferences.to_dict(),
+            },
+        }

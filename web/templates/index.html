@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Home | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="hero">
+        <h1>Lectionary Engines</h1>
+        <p class="lead">Biblical interpretation through three hermeneutical frameworks</p>
+        <div class="hero-actions">
+            <a href="/generate" class="btn btn-primary">Generate Study</a>
+            <a href="/browse" class="btn btn-secondary">Browse Studies</a>
+        </div>
+    </section>
+
+    <section class="engines-info">
+        <h2>Three Interpretation Engines</h2>
+        <div class="engines-grid">
+            <div class="engine-card">
+                <h3>Threshold</h3>
+                <p>Four progressive thresholds of engagement, culminating in a tech touchpoint. One core insight develops across all movements.</p>
+                <ul>
+                    <li>Archaeological Dive</li>
+                    <li>Theological Combustion</li>
+                    <li>Present Friction</li>
+                    <li>Embodied Practice + Tech</li>
+                </ul>
+                <p class="meta">2,500-3,500 words | 20-30 min read</p>
+            </div>
+
+            <div class="engine-card">
+                <h3>Palimpsest</h3>
+                <p>Five hermeneutical layers using the PaRDeS framework. Each layer visible through the others like a manuscript palimpsest.</p>
+                <ul>
+                    <li>Peshat (Literal)</li>
+                    <li>Remez (Allegory)</li>
+                    <li>Derash (Tradition)</li>
+                    <li>Sod (Mystery)</li>
+                    <li>Incarnation (Contemporary)</li>
+                </ul>
+                <p class="meta">3,000-4,000 words | 25-35 min read</p>
+            </div>
+
+            <div class="engine-card">
+                <h3>Collision</h3>
+                <p>Five-step collision process forcing unprecedented connections through randomized vectors from science, culture, philosophy, technology, and personal life.</p>
+                <ul>
+                    <li>Anchor in Antiquity</li>
+                    <li>Collide with Now</li>
+                    <li>Navigate Rupture</li>
+                    <li>Crystallize Insight</li>
+                    <li>Release into Future</li>
+                </ul>
+                <p class="meta">3,000-5,000 words | Maximum intensity</p>
+            </div>
+        </div>
+    </section>
+
+    {% if recent_studies %}
+    <section class="recent-studies">
+        <h2>Recent Studies</h2>
+        <div class="studies-list">
+            {% for study in recent_studies %}
+            <div class="study-item">
+                <a href="/study/{{ study.id }}" class="study-link">
+                    <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
+                    <span class="study-reference">{{ study.reference }}</span>
+                    <span class="study-meta">
+                        {{ study.word_count }} words | {{ study.created_at.strftime('%B %d, %Y') }}
+                    </span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="section-footer">
+            <a href="/browse" class="btn btn-link">View all studies →</a>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

@@ -45,6 +45,10 @@ htmlcov/
 outputs/*.md
 outputs/.metadata/
 
+# Database
+*.db
+*.db-journal
+
 # Keep directory structure
 !outputs/.gitkeep
 !.env.example
