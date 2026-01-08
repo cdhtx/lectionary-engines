@@ -15,6 +15,7 @@ from lectionary_engines.engines.threshold import ThresholdEngine
 from lectionary_engines.engines.palimpsest import PalimpsestEngine
 from lectionary_engines.engines.collision import CollisionEngine
 from lectionary_engines.text_fetcher import TextFetcher
+from lectionary_engines.preferences import StudyPreferences
 
 
 class StudyGeneratorService:
@@ -50,7 +51,8 @@ class StudyGeneratorService:
         reference: str,
         text: Optional[str] = None,
         translation: Optional[str] = None,
-        source: str = 'paste'
+        source: str = 'paste',
+        preferences: Optional[StudyPreferences] = None
     ) -> Dict[str, Any]:
         """
         Generate a study using the specified engine
@@ -61,6 +63,7 @@ class StudyGeneratorService:
             text: Biblical text (if None, will fetch from Bible Gateway)
             translation: Bible translation (if None, uses default)
             source: Source of text ('paste', 'run', 'moravian', 'rcl')
+            preferences: Optional user preferences to customize the study
 
         Returns:
             dict with keys:
@@ -94,7 +97,11 @@ class StudyGeneratorService:
         engine = self.engines[engine_name]
 
         # Generate the study (this is the core work - calls Claude API)
-        study = engine.generate(text, reference)
+        # Use generate_with_preferences if preferences provided
+        if preferences:
+            study = engine.generate_with_preferences(text, reference, preferences)
+        else:
+            study = engine.generate(text, reference)
 
         # Add web-specific metadata
         study['biblical_text'] = text

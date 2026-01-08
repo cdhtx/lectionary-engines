@@ -22,7 +22,7 @@ class WebConfig(BaseConfig):
 
     # Database
     database_url: str = Field(
-        default="sqlite:///./lectionary.db",
+        default=os.getenv("DATABASE_URL", "sqlite:///./lectionary.db"),
         description="Database connection URL"
     )
 

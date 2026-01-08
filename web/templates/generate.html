@@ -40,7 +40,104 @@
         </div>
 
         <div class="form-section">
-            <h2>2. Choose Text Source</h2>
+            <h2>2. Select Your Profile</h2>
+
+            <div class="form-group">
+                <label for="profile-select">User Profile</label>
+                <select id="profile-select" name="profile_id" class="form-select">
+                    <option value="">Loading profiles...</option>
+                </select>
+                <p class="help-text">Choose a profile to customize study length, tone, and language complexity</p>
+            </div>
+
+            <div id="profile-info" class="profile-info" style="display: none;">
+                <div class="profile-details">
+                    <h3 id="profile-name">Default</h3>
+                    <p id="profile-description"></p>
+                    <ul class="profile-specs">
+                        <li><strong>Length:</strong> <span id="profile-length"></span></li>
+                        <li><strong>Tone:</strong> <span id="profile-tone"></span></li>
+                        <li><strong>Language:</strong> <span id="profile-language"></span></li>
+                        <li id="profile-focus-item" style="display: none;"><strong>Focus:</strong> <span id="profile-focus"></span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <details class="custom-preferences">
+                <summary>Customize for This Study</summary>
+                <div class="preferences-content">
+                    <p class="help-text">Override profile settings for this study only. Leave blank to use profile defaults.</p>
+
+                    <div class="form-group">
+                        <label>Study Length</label>
+                        <div class="radio-group-inline">
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="short">
+                                <span>Short (1000-1500 words)</span>
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="medium">
+                                <span>Medium (2500-3500 words)</span>
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="long">
+                                <span>Long (5000-7000 words)</span>
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="" checked>
+                                <span>Use Profile Default</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tone-slider">
+                            Tone: <span id="tone-label">Balanced (5)</span>
+                        </label>
+                        <div class="tone-slider-container">
+                            <span class="tone-label-left">Academic</span>
+                            <input
+                                type="range"
+                                id="tone-slider"
+                                name="custom_tone_level"
+                                min="-1"
+                                max="8"
+                                value="-1"
+                                class="tone-slider">
+                            <span class="tone-label-right">Devotional</span>
+                        </div>
+                        <div class="tone-scale">
+                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
+                        </div>
+                        <p class="help-text">Set to -1 to use profile default</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="language-select">Language Complexity</label>
+                        <select id="language-select" name="custom_language_complexity" class="form-select">
+                            <option value="">Use Profile Default</option>
+                            <option value="accessible">Accessible (High school level)</option>
+                            <option value="standard">Standard (College level)</option>
+                            <option value="advanced">Advanced (Graduate level)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="focus-areas">Focus Areas</label>
+                        <textarea
+                            id="focus-areas"
+                            name="custom_focus_areas"
+                            rows="3"
+                            class="form-textarea"
+                            placeholder="e.g., social justice, personal growth, historical context"></textarea>
+                        <p class="help-text">Specify themes or interests to emphasize (leave blank to use profile default)</p>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <div class="form-section">
+            <h2>3. Choose Text Source</h2>
 
             <div class="source-tabs">
                 <label class="source-tab">
@@ -177,6 +274,129 @@
 
 {% block extra_scripts %}
 <script>
+// ============================================================================
+// Profile Management
+// ============================================================================
+
+let profiles = [];
+let selectedProfile = null;
+
+// Load profiles on page load
+async function loadProfiles() {
+    try {
+        const response = await fetch('/api/profiles');
+        const data = await response.json();
+        profiles = data.profiles;
+
+        const select = document.getElementById('profile-select');
+        select.innerHTML = '';
+
+        profiles.forEach(function(profile) {
+            const option = document.createElement('option');
+            option.value = profile.id;
+            option.textContent = profile.name;
+            if (profile.is_default) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+
+        // Load default profile
+        if (profiles.length > 0) {
+            const defaultProfile = profiles.find(p => p.is_default) || profiles[0];
+            loadProfile(defaultProfile.id);
+        }
+    } catch (error) {
+        console.error('Failed to load profiles:', error);
+        document.getElementById('profile-select').innerHTML = '<option value="">Error loading profiles</option>';
+    }
+}
+
+// Load and display a specific profile
+function loadProfile(profileId) {
+    const profile = profiles.find(p => p.id == profileId);
+    if (!profile) return;
+
+    selectedProfile = profile;
+
+    // Update profile info display
+    document.getElementById('profile-name').textContent = profile.name;
+    document.getElementById('profile-description').textContent = profile.description || '';
+
+    // Format length display
+    const lengthMap = {
+        'short': 'Short (1000-1500 words)',
+        'medium': 'Medium (2500-3500 words)',
+        'long': 'Long (5000-7000 words)'
+    };
+    document.getElementById('profile-length').textContent = lengthMap[profile.study_length];
+
+    // Format tone display
+    const toneCategory = profile.tone_level <= 2 ? 'Academic' :
+                         profile.tone_level <= 5 ? 'Balanced' : 'Devotional';
+    document.getElementById('profile-tone').textContent = `${toneCategory} (${profile.tone_level}/8)`;
+
+    // Format language display
+    const languageMap = {
+        'accessible': 'Accessible (High school)',
+        'standard': 'Standard (College)',
+        'advanced': 'Advanced (Graduate)'
+    };
+    document.getElementById('profile-language').textContent = languageMap[profile.language_complexity];
+
+    // Show/hide focus areas
+    if (profile.focus_areas) {
+        document.getElementById('profile-focus').textContent = profile.focus_areas;
+        document.getElementById('profile-focus-item').style.display = 'list-item';
+    } else {
+        document.getElementById('profile-focus-item').style.display = 'none';
+    }
+
+    // Show profile info
+    document.getElementById('profile-info').style.display = 'block';
+}
+
+// Profile selector change handler
+document.getElementById('profile-select').addEventListener('change', function() {
+    loadProfile(this.value);
+});
+
+// Initialize profiles on page load
+loadProfiles();
+
+// ============================================================================
+// Tone Slider
+// ============================================================================
+
+const toneSlider = document.getElementById('tone-slider');
+const toneLabel = document.getElementById('tone-label');
+
+function updateToneLabel(value) {
+    if (value == -1) {
+        toneLabel.textContent = 'Use Profile Default';
+        return;
+    }
+
+    const val = parseInt(value);
+    let category = '';
+    if (val <= 2) category = 'Academic';
+    else if (val <= 5) category = 'Balanced';
+    else category = 'Devotional';
+
+    toneLabel.textContent = `${category} (${val})`;
+}
+
+toneSlider.addEventListener('input', function() {
+    updateToneLabel(this.value);
+});
+
+// Initialize tone label
+updateToneLabel(toneSlider.value);
+
+// ============================================================================
+// Form Submission & Loading
+// ============================================================================
+
 // Show loading overlay when form is submitted
 document.getElementById('generateForm').addEventListener('submit', function(e) {
     document.getElementById('loadingOverlay').style.display = 'flex';
@@ -202,6 +422,10 @@ document.querySelectorAll('input[name="engine"]').forEach(function(radio) {
         }
     });
 });
+
+// ============================================================================
+// Source Tab Switching
+// ============================================================================
 
 // Source tab switching
 document.querySelectorAll('input[name="source"]').forEach(function(radio) {

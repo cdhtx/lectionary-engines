@@ -9,9 +9,11 @@ from typing import Optional
 import markdown
 
 from ..database import get_db
-from ..models import Study
+from ..models import Study, UserProfile
 from ..services.study_generator import StudyGeneratorService
 from ..config import WebConfig
+from lectionary_engines.preferences import StudyPreferences
+import json
 
 router = APIRouter()
 
@@ -41,6 +43,11 @@ async def generate_study(
     translation: Optional[str] = Form("NRSVue"),
     source: str = Form("paste"),
     rcl_reading: Optional[str] = Form("gospel"),
+    profile_id: Optional[int] = Form(None),
+    custom_study_length: Optional[str] = Form(None),
+    custom_tone_level: Optional[int] = Form(None),
+    custom_language_complexity: Optional[str] = Form(None),
+    custom_focus_areas: Optional[str] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -61,6 +68,38 @@ async def generate_study(
         # Get generator service
         generator = get_generator_service()
 
+        # Build preferences from profile and custom overrides
+        preferences = None
+        profile_name = None
+        custom_prefs_json = None
+
+        if profile_id:
+            # Load profile from database
+            profile = db.query(UserProfile).filter(UserProfile.id == profile_id).first()
+            if profile:
+                profile_name = profile.name
+                # Convert profile to StudyPreferences
+                preferences = profile.to_study_preferences()
+
+                # Apply custom overrides
+                custom_overrides = {}
+                if custom_study_length:
+                    preferences.study_length = custom_study_length
+                    custom_overrides['study_length'] = custom_study_length
+                if custom_tone_level is not None and custom_tone_level >= 0:
+                    preferences.tone_level = custom_tone_level
+                    custom_overrides['tone_level'] = custom_tone_level
+                if custom_language_complexity:
+                    preferences.language_complexity = custom_language_complexity
+                    custom_overrides['language_complexity'] = custom_language_complexity
+                if custom_focus_areas:
+                    preferences.focus_areas = custom_focus_areas
+                    custom_overrides['focus_areas'] = custom_focus_areas
+
+                # Save custom overrides as JSON if any
+                if custom_overrides:
+                    custom_prefs_json = json.dumps(custom_overrides)
+
         # Handle different text sources
         if source == "moravian":
             # Fetch Moravian Daily Text
@@ -79,12 +118,14 @@ async def generate_study(
             raise ValueError("Reference is required")
 
         # Generate study (this calls Claude API - may take 30-60 seconds)
+        # Pass preferences if available
         study_data = generator.generate_study(
             engine_name=engine,
             reference=reference,
             text=text,
             translation=translation,
-            source=source
+            source=source,
+            preferences=preferences
         )
 
         # Create database record
@@ -96,7 +137,9 @@ async def generate_study(
             source=source,
             translation=translation,
             biblical_text=study_data.get('biblical_text'),
-            reference_normalized=reference.lower().strip()
+            reference_normalized=reference.lower().strip(),
+            profile_name=profile_name,
+            custom_preferences=custom_prefs_json
         )
 
         # Save to database
