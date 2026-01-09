@@ -59,11 +59,17 @@ class StudyPreferences:
 
         Returns:
             dict with min_words, max_words, max_tokens
+
+        Note:
+            Token limits are set generously (roughly 2x word count) to account for:
+            - Markdown formatting (headers, bullets, bold, etc.)
+            - Section structure overhead
+            - Buffer to prevent mid-sentence cutoffs
         """
         length_map = {
-            'short': {'min_words': 1000, 'max_words': 1500, 'max_tokens': 2000},
-            'medium': {'min_words': 2500, 'max_words': 3500, 'max_tokens': 4000},
-            'long': {'min_words': 5000, 'max_words': 7000, 'max_tokens': 8000},
+            'short': {'min_words': 1000, 'max_words': 1500, 'max_tokens': 4000},
+            'medium': {'min_words': 2500, 'max_words': 3500, 'max_tokens': 8000},
+            'long': {'min_words': 5000, 'max_words': 7000, 'max_tokens': 16000},
         }
         return length_map.get(self.study_length, length_map['medium'])
 
