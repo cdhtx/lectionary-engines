@@ -18,12 +18,14 @@ class StudyPreferences:
         tone_level: 0-8 scale (0=academic, 8=devotional)
         language_complexity: 'accessible', 'standard', or 'advanced'
         focus_areas: Free-text description of user interests (optional)
+        cultural_artifacts_level: 0-10 scale (0=none, 10=maximum cultural references)
     """
 
     study_length: str = 'medium'  # 'short', 'medium', 'long'
     tone_level: int = 5  # 0-8 scale
     language_complexity: str = 'standard'  # 'accessible', 'standard', 'advanced'
     focus_areas: Optional[str] = None
+    cultural_artifacts_level: int = 0  # 0-10 scale (0=off, 10=maximum)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert preferences to dictionary"""
@@ -36,7 +38,8 @@ class StudyPreferences:
             study_length=data.get('study_length', 'medium'),
             tone_level=data.get('tone_level', 5),
             language_complexity=data.get('language_complexity', 'standard'),
-            focus_areas=data.get('focus_areas')
+            focus_areas=data.get('focus_areas'),
+            cultural_artifacts_level=data.get('cultural_artifacts_level', 0)
         )
 
     def get_tone_category(self) -> str:
@@ -106,18 +109,27 @@ class StudyPreferences:
                 f"Must be one of: {', '.join(valid_complexities)}"
             )
 
+        # Validate cultural_artifacts_level
+        if not (0 <= self.cultural_artifacts_level <= 10):
+            raise ValueError(
+                f"Invalid cultural_artifacts_level: {self.cultural_artifacts_level}. "
+                "Must be between 0 and 10"
+            )
+
         return True
 
     def __repr__(self) -> str:
         """String representation for debugging"""
         tone_cat = self.get_tone_category()
         focus_display = self.focus_areas[:30] + '...' if self.focus_areas and len(self.focus_areas) > 30 else self.focus_areas or 'none'
+        artifacts = f"artifacts={self.cultural_artifacts_level}" if self.cultural_artifacts_level > 0 else "artifacts=off"
         return (
             f"StudyPreferences("
             f"length={self.study_length}, "
             f"tone={tone_cat}({self.tone_level}), "
             f"language={self.language_complexity}, "
-            f"focus='{focus_display}')"
+            f"focus='{focus_display}', "
+            f"{artifacts})"
         )
 
 

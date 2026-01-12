@@ -48,6 +48,7 @@ async def generate_study(
     custom_tone_level: Optional[int] = Form(None),
     custom_language_complexity: Optional[str] = Form(None),
     custom_focus_areas: Optional[str] = Form(None),
+    custom_cultural_artifacts_level: Optional[int] = Form(None),
     db: Session = Depends(get_db)
 ):
     """
@@ -95,6 +96,9 @@ async def generate_study(
                 if custom_focus_areas:
                     preferences.focus_areas = custom_focus_areas
                     custom_overrides['focus_areas'] = custom_focus_areas
+                if custom_cultural_artifacts_level is not None and custom_cultural_artifacts_level > 0:
+                    preferences.cultural_artifacts_level = custom_cultural_artifacts_level
+                    custom_overrides['cultural_artifacts_level'] = custom_cultural_artifacts_level
 
                 # Save custom overrides as JSON if any
                 if custom_overrides:

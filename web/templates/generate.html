@@ -132,6 +132,28 @@
                             placeholder="e.g., social justice, personal growth, historical context"></textarea>
                         <p class="help-text">Specify themes or interests to emphasize (leave blank to use profile default)</p>
                     </div>
+
+                    <div class="form-group">
+                        <label for="artifacts-slider">
+                            Cultural Artifacts: <span id="artifacts-label">Off</span>
+                        </label>
+                        <div class="artifacts-slider-container">
+                            <span class="artifacts-label-left">Off</span>
+                            <input
+                                type="range"
+                                id="artifacts-slider"
+                                name="custom_cultural_artifacts_level"
+                                min="0"
+                                max="10"
+                                value="0"
+                                class="artifacts-slider">
+                            <span class="artifacts-label-right">Rich</span>
+                        </div>
+                        <div class="artifacts-scale">
+                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                        </div>
+                        <p class="help-text">Weave cultural references (news, music, film, books, podcasts, etc.) throughout the study to illuminate scripture</p>
+                    </div>
                 </div>
             </details>
         </div>
@@ -392,6 +414,33 @@ toneSlider.addEventListener('input', function() {
 
 // Initialize tone label
 updateToneLabel(toneSlider.value);
+
+// ============================================================================
+// Cultural Artifacts Slider
+// ============================================================================
+
+const artifactsSlider = document.getElementById('artifacts-slider');
+const artifactsLabel = document.getElementById('artifacts-label');
+
+function updateArtifactsLabel(value) {
+    const val = parseInt(value);
+    if (val === 0) {
+        artifactsLabel.textContent = 'Off';
+    } else if (val <= 3) {
+        artifactsLabel.textContent = `Occasional (${val})`;
+    } else if (val <= 6) {
+        artifactsLabel.textContent = `Moderate (${val})`;
+    } else {
+        artifactsLabel.textContent = `Rich (${val})`;
+    }
+}
+
+artifactsSlider.addEventListener('input', function() {
+    updateArtifactsLabel(this.value);
+});
+
+// Initialize artifacts label
+updateArtifactsLabel(artifactsSlider.value);
 
 // ============================================================================
 // Form Submission & Loading

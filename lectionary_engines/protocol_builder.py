@@ -78,6 +78,41 @@ def build_system_prompt(base_prompt: str, preferences: StudyPreferences) -> str:
 
 Pay special attention to how this text speaks to these interests. Let these themes shape your exploration and application. Look for connections even when not immediately obvious.""")
 
+    # 5. Cultural Artifacts (if enabled)
+    if preferences.cultural_artifacts_level > 0:
+        level = preferences.cultural_artifacts_level
+        # Determine density description based on level
+        if level <= 3:
+            density = "occasional"
+            frequency = "Include 2-4 well-chosen cultural references throughout the study"
+        elif level <= 6:
+            density = "moderate"
+            frequency = "Include 5-8 cultural references woven throughout the study"
+        else:
+            density = "rich"
+            frequency = "Include 10+ cultural references woven densely throughout the study"
+
+        customization_parts.append(f"""**CULTURAL ARTIFACTS**: Level {level}/10 ({density} density)
+{frequency}, drawing from diverse sources that illuminate the scripture and make it immediately relevant to contemporary life.
+
+**Source Categories** (mix recent and classic, weight for impact and relevance):
+- **News & Current Events**: Headlines, recent stories, or ongoing cultural conversations that echo the text's themes
+- **Music**: Lyrics, album themes, artist stories, music history that resonates with the passage
+- **Film & Television**: Movie scenes, dialogue, character arcs, TV moments that illustrate the text's truths
+- **Books**: Fiction and non-fiction themes, passages, author insights - both popular and literary
+- **Podcasts & YouTube**: Notable episodes, creators, conversations that connect to the scripture
+- **Social Media & Online Culture**: Reddit threads, viral posts, LinkedIn insights, online community wisdom
+- **Interviews & Transcripts**: Quotes from interviews, speeches, or conversations that illuminate the text
+- **Art & Visual Culture**: Paintings, photography, design, visual references that enhance understanding
+
+**Integration Guidelines**:
+- Weave references naturally into the study's flow - don't create a separate "cultural references" section
+- Let artifacts illuminate scripture, not distract from it
+- Mix high and popular culture - a Dylan lyric alongside a TikTok trend
+- Include both timeless classics and current phenomena
+- Reference specific works (titles, quotes, scenes) - not vague gestures
+- Weight references by their power to illuminate, not just their relevance""")
+
     # Build the complete injection block
     injection = f"""
 ## USER CUSTOMIZATION

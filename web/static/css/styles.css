@@ -990,3 +990,77 @@ footer p {
     color: var(--color-text-light);
     font-weight: 500;
 }
+
+/* Cultural Artifacts Slider */
+.artifacts-slider-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin: var(--space-sm) 0;
+}
+
+.artifacts-label-left,
+.artifacts-label-right {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+    min-width: 50px;
+}
+
+.artifacts-label-left {
+    text-align: right;
+}
+
+.artifacts-slider {
+    flex: 1;
+    height: 8px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(to right, #94a3b8, #f97316, #eab308, #22c55e);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.artifacts-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #f97316;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.artifacts-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid #f97316;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.artifacts-slider:hover::-webkit-slider-thumb {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.artifacts-slider:hover::-moz-range-thumb {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.artifacts-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-left: calc(50px + var(--space-md));
+    margin-right: calc(50px + var(--space-md));
+    margin-top: var(--space-xs);
+}
+
+.artifacts-scale span {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+}
