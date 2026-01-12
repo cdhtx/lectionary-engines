@@ -214,6 +214,7 @@ Return a complete study formatted in markdown:
 - End with forward momentum
 - Make applications specific and challenging
 - Honor both scholarly rigor AND prophetic imagination
+- When referencing any Bible passage, include the actual text (quote it) so readers can engage immediately without looking it up
 
 Begin immediately with the title and introduction. Do not include any preamble about what you're going to do.
 """

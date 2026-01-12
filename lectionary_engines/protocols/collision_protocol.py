@@ -122,6 +122,7 @@ Your task: Find the DEEP PATTERN that connects all five vectors to ALL the bibli
 - Trust the refrain to crystallize what the ruptures discovered
 - Honor both scholarly rigor AND prophetic imagination
 - End with forward momentum, not resolution
+- When referencing any Bible passage, include the actual text (quote it) so readers can engage immediately without looking it up
 
 ### STEP 1: ANCHOR IN ANTIQUITY (10-15 min read)
 

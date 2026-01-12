@@ -252,6 +252,7 @@ Each layer remains visible in what follows, creating a rich, multi-dimensional i
 - Create contemplative space (Layer Four)
 - Provide concrete, actionable practices (Layer Five)
 - Show progression: literal → allegorical → traditional → mystical → contemporary
+- When referencing any Bible passage, include the actual text (quote it) so readers can engage immediately without looking it up
 
 **Quality Check**:
 - Does Layer Four feel different from 1-3?
