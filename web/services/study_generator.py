@@ -1,6 +1,8 @@
 """
 Study Generator Service
 Wraps existing engine classes for web application use
+
+Includes validation pass for accuracy, helpfulness, and faithfulness checking.
 """
 
 import sys
@@ -16,6 +18,8 @@ from lectionary_engines.engines.palimpsest import PalimpsestEngine
 from lectionary_engines.engines.collision import CollisionEngine
 from lectionary_engines.text_fetcher import TextFetcher
 from lectionary_engines.preferences import StudyPreferences
+from lectionary_engines.protocols import validation_protocol
+from lectionary_engines.validation import ValidationResult
 
 
 class StudyGeneratorService:
@@ -178,3 +182,41 @@ class StudyGeneratorService:
             Dictionary of translation codes and names
         """
         return TextFetcher.list_translations()
+
+    def validate_study(
+        self,
+        biblical_text: str,
+        reference: str,
+        study_content: str
+    ) -> ValidationResult:
+        """
+        Validate a generated study for accuracy, helpfulness, and faithfulness.
+
+        Uses a lightweight Haiku model to review the study and flag potential issues.
+        This is an optional second pass to catch problems before publishing.
+
+        Args:
+            biblical_text: The original biblical text that was studied
+            reference: Biblical reference
+            study_content: The generated study content (markdown)
+
+        Returns:
+            ValidationResult with scores, flags, and recommendations
+        """
+        try:
+            # Call validation API
+            json_response = self.claude.validate_study(
+                biblical_text=biblical_text,
+                reference=reference,
+                study_content=study_content,
+                system_prompt=validation_protocol.SYSTEM_PROMPT,
+                validation_model=validation_protocol.VALIDATION_CONFIG['model'],
+                max_tokens=validation_protocol.VALIDATION_CONFIG['max_tokens']
+            )
+
+            # Parse response into structured result
+            return ValidationResult.from_json(json_response)
+
+        except Exception as e:
+            # Return a failed validation result if something goes wrong
+            return ValidationResult.failed(f"Validation failed: {str(e)}")

@@ -49,6 +49,7 @@ async def generate_study(
     custom_language_complexity: Optional[str] = Form(None),
     custom_focus_areas: Optional[str] = Form(None),
     custom_cultural_artifacts_level: Optional[int] = Form(None),
+    run_validation: Optional[str] = Form("true"),  # "true" or "false"
     db: Session = Depends(get_db)
 ):
     """
@@ -132,6 +133,27 @@ async def generate_study(
             preferences=preferences
         )
 
+        # Run validation pass (if enabled)
+        validation_score = None
+        validation_recommendation = None
+        validation_data_json = None
+
+        should_validate = run_validation and run_validation.lower() == "true"
+        if should_validate:
+            try:
+                validation_result = generator.validate_study(
+                    biblical_text=study_data.get('biblical_text', text),
+                    reference=reference,
+                    study_content=study_data['content']
+                )
+                validation_score = validation_result.overall_score
+                validation_recommendation = validation_result.recommendation
+                validation_data_json = json.dumps(validation_result.to_dict())
+            except Exception as validation_error:
+                # Log but don't fail - validation is non-critical
+                print(f"Validation failed (non-critical): {validation_error}")
+                validation_recommendation = "skipped"
+
         # Create database record
         study = Study(
             engine=study_data['engine'],
@@ -143,7 +165,10 @@ async def generate_study(
             biblical_text=study_data.get('biblical_text'),
             reference_normalized=reference.lower().strip(),
             profile_name=profile_name,
-            custom_preferences=custom_prefs_json
+            custom_preferences=custom_prefs_json,
+            validation_score=validation_score,
+            validation_recommendation=validation_recommendation,
+            validation_data=validation_data_json
         )
 
         # Save to database

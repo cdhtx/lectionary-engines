@@ -31,6 +31,11 @@ class Study(Base):
     profile_name = Column(String(100))  # Which profile was used (if any)
     custom_preferences = Column(Text)  # JSON blob of per-study overrides (if any)
 
+    # Validation results
+    validation_score = Column(Integer)  # Overall score 0-100 (null if not validated)
+    validation_recommendation = Column(String(20))  # 'approve', 'review', 'revise'
+    validation_data = Column(Text)  # Full validation JSON (for detailed display)
+
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -66,6 +71,9 @@ class Study(Base):
             'biblical_text': self.biblical_text,
             'profile_name': self.profile_name,
             'custom_preferences': self.custom_preferences,
+            'validation_score': self.validation_score,
+            'validation_recommendation': self.validation_recommendation,
+            'validation_data': self.validation_data,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'file_path': self.file_path,

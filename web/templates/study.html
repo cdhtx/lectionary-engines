@@ -15,9 +15,119 @@
             <span class="divider">|</span>
             <span>{{ study.translation }}</span>
             {% endif %}
+            {% if study.validation_recommendation %}
+            <span class="divider">|</span>
+            <span class="validation-badge {{ study.validation_recommendation }}">
+                {% if study.validation_recommendation == 'approve' %}
+                    Validated
+                {% elif study.validation_recommendation == 'review' %}
+                    Needs Review
+                {% elif study.validation_recommendation == 'revise' %}
+                    Needs Revision
+                {% else %}
+                    Not Validated
+                {% endif %}
+                {% if study.validation_score %}({{ study.validation_score }}/100){% endif %}
+            </span>
+            {% endif %}
         </div>
         <h1>{{ study.reference }}</h1>
     </div>
+
+    {% if validation %}
+    <details class="validation-panel">
+        <summary>
+            <h3>Validation Report
+                <span class="validation-badge {{ validation.recommendation }}">
+                    {{ validation.recommendation | title }}
+                </span>
+                {% if validation.vibe %}
+                <span class="validation-vibe">"{{ validation.vibe }}"</span>
+                {% endif %}
+            </h3>
+        </summary>
+
+        <div class="validation-scores">
+            <div class="score-item">
+                <div class="score-value {% if validation.accuracy.score >= 80 %}high{% elif validation.accuracy.score >= 60 %}medium{% else %}low{% endif %}">
+                    {{ validation.accuracy.score }}
+                </div>
+                <div class="score-label">Accuracy</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value {% if validation.helpfulness.score >= 80 %}high{% elif validation.helpfulness.score >= 60 %}medium{% else %}low{% endif %}">
+                    {{ validation.helpfulness.score }}
+                </div>
+                <div class="score-label">Helpfulness</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value {% if validation.faithfulness.score >= 80 %}high{% elif validation.faithfulness.score >= 60 %}medium{% else %}low{% endif %}">
+                    {{ validation.faithfulness.score }}
+                </div>
+                <div class="score-label">Faithfulness</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value {% if validation.overall_score >= 80 %}high{% elif validation.overall_score >= 60 %}medium{% else %}low{% endif %}">
+                    {{ validation.overall_score }}
+                </div>
+                <div class="score-label">Overall</div>
+            </div>
+        </div>
+
+        <div class="validation-meta">
+            <span><strong>Textual Honesty:</strong> {{ validation.faithfulness.textual_honesty | title }}</span>
+            <span><strong>Prophetic Courage:</strong> {{ validation.faithfulness.prophetic_courage | title }}</span>
+        </div>
+
+        {% if validation.flags %}
+        <div class="validation-flags">
+            <strong>Flags:</strong>
+            {% for flag in validation.flags %}
+            <div class="validation-flag {{ flag.level }}">
+                {{ flag.message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if validation.helpfulness.strengths %}
+        <div style="margin-top: var(--space-md);">
+            <strong>What Works:</strong>
+            <ul>
+                {% for strength in validation.helpfulness.strengths %}
+                <li>{{ strength }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if validation.helpfulness.weaknesses %}
+        <div style="margin-top: var(--space-sm);">
+            <strong>Where It Pulls Punches:</strong>
+            <ul>
+                {% for weakness in validation.helpfulness.weaknesses %}
+                <li>{{ weakness }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if validation.faithfulness.notes %}
+        <div style="margin-top: var(--space-sm);">
+            <strong>Observations:</strong>
+            <ul>
+                {% for note in validation.faithfulness.notes %}
+                <li><em>({{ note.type }})</em> {{ note.observation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="validation-summary">
+            {{ validation.summary }}
+        </div>
+    </details>
+    {% endif %}
 
     <div class="study-content">
         {{ study_html | safe }}

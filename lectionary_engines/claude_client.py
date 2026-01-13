@@ -135,3 +135,59 @@ class ClaudeClient:
             raise Exception(f"Claude API error for {reference}: {e}")
         except Exception as e:
             raise Exception(f"Unexpected error generating study for {reference}: {e}")
+
+    def validate_study(
+        self,
+        biblical_text: str,
+        reference: str,
+        study_content: str,
+        system_prompt: str,
+        validation_model: str = "claude-3-5-haiku-20241022",
+        max_tokens: int = 2000,
+    ) -> str:
+        """
+        Validate a generated study for accuracy, helpfulness, and faithfulness.
+
+        Uses a faster/cheaper model (Haiku) to review the study and return
+        structured feedback. This is a second-pass review to catch issues.
+
+        Args:
+            biblical_text: The original biblical text that was studied
+            reference: Biblical reference for logging
+            study_content: The generated study to validate
+            system_prompt: Validation protocol prompt
+            validation_model: Model to use for validation (default: Haiku)
+            max_tokens: Maximum response length
+
+        Returns:
+            str: JSON response with validation results
+
+        Raises:
+            Exception: If Claude API returns an error
+        """
+        try:
+            response = self.client.messages.create(
+                model=validation_model,
+                max_tokens=max_tokens,
+                system=self._build_system_param(system_prompt),
+                messages=[{"role": "user", "content": f"""Biblical Reference: {reference}
+
+Biblical Text:
+{biblical_text}
+
+---
+
+Generated Study:
+{study_content}
+
+---
+
+Evaluate this study and return your assessment as JSON."""}],
+            )
+
+            return response.content[0].text
+
+        except anthropic.APIError as e:
+            raise Exception(f"Validation API error for {reference}: {e}")
+        except Exception as e:
+            raise Exception(f"Unexpected error validating study for {reference}: {e}")

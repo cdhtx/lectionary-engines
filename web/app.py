@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 import markdown
+import json
 from pathlib import Path
 
 from .database import init_db, close_db, get_db
@@ -117,10 +118,30 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
     ])
     study_html = md.convert(study.content)
 
+    # Parse validation data if present
+    validation = None
+    if study.validation_data:
+        try:
+            validation_dict = json.loads(study.validation_data)
+            # Convert nested dicts to objects for easier template access
+            validation = type('Validation', (), {
+                'overall_score': validation_dict.get('overall_score', 0),
+                'recommendation': validation_dict.get('recommendation', 'review'),
+                'vibe': validation_dict.get('vibe', ''),
+                'accuracy': type('Accuracy', (), validation_dict.get('accuracy', {}))(),
+                'helpfulness': type('Helpfulness', (), validation_dict.get('helpfulness', {}))(),
+                'faithfulness': type('Faithfulness', (), validation_dict.get('faithfulness', {}))(),
+                'flags': validation_dict.get('flags', []),
+                'summary': validation_dict.get('summary', '')
+            })()
+        except (json.JSONDecodeError, TypeError):
+            validation = None
+
     return templates.TemplateResponse("study.html", {
         "request": request,
         "study": study,
-        "study_html": study_html
+        "study_html": study_html,
+        "validation": validation
     })
 
 

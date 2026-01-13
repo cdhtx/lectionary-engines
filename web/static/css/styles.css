@@ -1064,3 +1064,193 @@ footer p {
     color: var(--color-text-light);
     font-weight: 500;
 }
+
+/* Validation Toggle */
+.validation-toggle {
+    margin-bottom: var(--space-md);
+    padding: var(--space-md);
+    background-color: var(--color-bg-gray);
+    border-radius: var(--radius-md);
+    text-align: left;
+}
+
+.checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.checkbox-inline input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.validation-toggle .help-text {
+    margin-top: var(--space-xs);
+    margin-left: calc(18px + var(--space-sm));
+}
+
+/* Validation Badge */
+.validation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+}
+
+.validation-badge.approve {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.validation-badge.review {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.validation-badge.revise {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.validation-badge.skipped {
+    background-color: var(--color-bg-gray);
+    color: var(--color-text-light);
+}
+
+/* Validation Panel */
+.validation-panel {
+    margin-top: var(--space-lg);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-bg-gray);
+}
+
+.validation-panel h3 {
+    font-size: 1.125rem;
+    margin-bottom: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.validation-scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.score-item {
+    text-align: center;
+    padding: var(--space-sm);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-sm);
+}
+
+.score-item .score-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.score-item .score-label {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    text-transform: uppercase;
+}
+
+.score-value.high { color: #166534; }
+.score-value.medium { color: #92400e; }
+.score-value.low { color: #991b1b; }
+
+.validation-flags {
+    margin-top: var(--space-md);
+}
+
+.validation-flag {
+    display: flex;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    margin-bottom: var(--space-xs);
+    border-radius: var(--radius-sm);
+}
+
+.validation-flag.critical {
+    background-color: #fee2e2;
+    border-left: 3px solid #dc2626;
+}
+
+.validation-flag.important {
+    background-color: #fef3c7;
+    border-left: 3px solid #f59e0b;
+}
+
+.validation-flag.minor {
+    background-color: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.validation-summary {
+    margin-top: var(--space-md);
+    padding: var(--space-sm);
+    font-style: italic;
+    color: var(--color-text-light);
+    border-top: 1px solid var(--color-border);
+}
+
+.validation-vibe {
+    font-style: italic;
+    color: var(--color-text-light);
+    font-weight: 400;
+    margin-left: var(--space-sm);
+}
+
+.validation-meta {
+    display: flex;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm);
+    background-color: var(--color-bg);
+    border-radius: var(--radius-sm);
+}
+
+.validation-meta span {
+    font-size: 0.875rem;
+}
+
+.validation-panel summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.validation-panel summary::-webkit-details-marker {
+    display: none;
+}
+
+.validation-panel summary h3 {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.validation-panel summary h3::before {
+    content: '▶';
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    margin-right: var(--space-xs);
+}
+
+.validation-panel[open] summary h3::before {
+    transform: rotate(90deg);
+}
