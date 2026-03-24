@@ -9,6 +9,7 @@ beautifulsoup4>=4.12.0
 
 # Web
 fastapi>=0.104.0
+starlette>=0.27.0,<0.46.0
 uvicorn[standard]>=0.24.0
 jinja2>=3.1.2
 python-multipart>=0.0.6
