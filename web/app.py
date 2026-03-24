@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 from .database import init_db, close_db, get_db
-from .routes import studies, profiles
+from .routes import studies, profiles, workshop, resonance, currents
 from .models import Study
 from .config import WebConfig
 
@@ -62,6 +62,9 @@ templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 # Include API routers
 app.include_router(studies.router, tags=["studies"])
 app.include_router(profiles.router, tags=["profiles"])
+app.include_router(workshop.router, tags=["workshop"])
+app.include_router(resonance.router, tags=["resonance"])
+app.include_router(currents.router, tags=["currents"])
 
 
 # ============================================================================

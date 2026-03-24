@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Currents | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header currents-header">
+        <h1>Browse Currents</h1>
+        <p>{{ total }} analyses total</p>
+    </div>
+
+    {% if analyses %}
+    <div class="currents-grid">
+        {% for analysis in analyses %}
+        <div class="currents-card">
+            <a href="/currents/{{ analysis.id }}" class="currents-card-link">
+                <div class="currents-card-header">
+                    <span class="currents-badge">Currents</span>
+                    <span class="currents-card-date">{{ analysis.created_at.strftime('%b %d, %Y') }}</span>
+                </div>
+                <h3>{{ analysis.headline_summary or "Theological Analysis" }}</h3>
+                <div class="currents-card-meta">
+                    <span>{{ analysis.analysis_date }}</span>
+                    <span>{{ analysis.word_count }} words</span>
+                    {% if analysis.news_source %}
+                    <span>{{ analysis.news_source }}</span>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if has_prev %}
+        <a href="/currents/browse?page={{ page - 1 }}" class="btn btn-secondary">&larr; Previous</a>
+        {% endif %}
+
+        <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
+
+        {% if has_next %}
+        <a href="/currents/browse?page={{ page + 1 }}" class="btn btn-secondary">Next &rarr;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <h2>No analyses yet</h2>
+        <p>Start by <a href="/currents">analyzing a news story</a>.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

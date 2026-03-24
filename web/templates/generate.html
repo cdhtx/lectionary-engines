@@ -203,6 +203,21 @@
                         placeholder="Paste your biblical text here"></textarea>
                     <p class="help-text">Paste the biblical text you want to interpret</p>
                 </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="paste-context">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="paste-context"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to this text? e.g., 'Our congregation is grieving the loss of a beloved elder' or 'How does this text speak to anxiety about the future?'"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape how the engine engages with this text</p>
+                        <span class="word-counter" id="paste-context-counter">0 / 1000</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Bible Gateway Source Fields -->
@@ -226,6 +241,21 @@
                         {% endfor %}
                     </select>
                 </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="run-context">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="run-context"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to this text? e.g., 'Our congregation is grieving the loss of a beloved elder' or 'How does this text speak to anxiety about the future?'"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape how the engine engages with this text</p>
+                        <span class="word-counter" id="run-context-counter">0 / 1000</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Moravian Source Fields -->
@@ -233,6 +263,21 @@
                 <div class="info-box">
                     <h3>Today's Moravian Daily Text</h3>
                     <p>Automatically fetches all readings from today's Moravian Daily Text (Daily Psalm, OT/NT readings, Watchword, and Daily Text)</p>
+                </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="moravian-context">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="moravian-context"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to today's readings? e.g., 'Our congregation is grieving the loss of a beloved elder' or 'How do these texts speak to anxiety about the future?'"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape how the engine engages with today's texts</p>
+                        <span class="word-counter" id="moravian-context-counter">0 / 1000</span>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -269,6 +314,64 @@
                         <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
                         {% endfor %}
                     </select>
+                </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="rcl-context">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="rcl-context"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to today's readings? e.g., 'Our congregation is grieving the loss of a beloved elder' or 'How does this text speak to anxiety about the future?'"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape how the engine engages with this text</p>
+                        <span class="word-counter" id="rcl-context-counter">0 / 1000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>4. News Integration <span style="font-weight: 400; font-size: 0.85rem; color: var(--color-ink-muted); font-style: italic;">(optional)</span></h2>
+
+            <div class="news-toggle">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="integrate_news" value="true" id="news-toggle-checkbox">
+                    <span>Integrate Current Events</span>
+                </label>
+                <p class="help-text">Weave a news story into the study — adds a news-responsive layer to the engine's output</p>
+            </div>
+
+            <div id="news-integration-fields" class="news-integration-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="news-currents-select">Use Past Currents Analysis</label>
+                    <select id="news-currents-select" name="currents_id" class="form-select">
+                        <option value="">— Or enter manually below —</option>
+                    </select>
+                    <p class="help-text">Select a past Currents analysis to auto-populate, or enter your own story below</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="news-date">News Date</label>
+                    <input
+                        type="date"
+                        id="news-date"
+                        name="news_date"
+                        class="form-input"
+                        style="max-width: 250px;">
+                </div>
+
+                <div class="form-group">
+                    <label for="news-context">News Story / Event</label>
+                    <textarea
+                        id="news-context"
+                        name="news_context"
+                        rows="6"
+                        class="form-textarea"
+                        placeholder="Describe the news event or paste article text. Include key facts and context."></textarea>
+                    <p class="help-text">The engine will weave this event into its analysis of the biblical text</p>
                 </div>
             </div>
         </div>
@@ -482,6 +585,94 @@ document.querySelectorAll('input[name="engine"]').forEach(function(radio) {
 // ============================================================================
 // Source Tab Switching
 // ============================================================================
+
+// ============================================================================
+// News Integration Toggle
+// ============================================================================
+
+const newsToggle = document.getElementById('news-toggle-checkbox');
+const newsFields = document.getElementById('news-integration-fields');
+const newsDateInput = document.getElementById('news-date');
+const newsContextInput = document.getElementById('news-context');
+const newsCurrentsSelect = document.getElementById('news-currents-select');
+
+// Set default news date to today
+if (newsDateInput) {
+    newsDateInput.valueAsDate = new Date();
+}
+
+// Toggle news integration fields
+if (newsToggle) {
+    newsToggle.addEventListener('change', function() {
+        newsFields.style.display = this.checked ? 'block' : 'none';
+        if (this.checked) {
+            loadPastCurrents();
+        }
+    });
+}
+
+// Load past Currents analyses for dropdown
+let currentsLoaded = false;
+async function loadPastCurrents() {
+    if (currentsLoaded) return;
+    try {
+        const response = await fetch('/api/currents?limit=10');
+        const data = await response.json();
+        if (data.analyses && data.analyses.length > 0) {
+            data.analyses.forEach(function(a) {
+                const option = document.createElement('option');
+                option.value = a.id;
+                option.textContent = a.analysis_date + ' — ' + (a.headline_summary || 'Analysis');
+                newsCurrentsSelect.appendChild(option);
+            });
+        }
+        currentsLoaded = true;
+    } catch (error) {
+        console.error('Failed to load past Currents:', error);
+    }
+}
+
+// When a past Currents is selected, populate fields
+if (newsCurrentsSelect) {
+    newsCurrentsSelect.addEventListener('change', async function() {
+        if (!this.value) return;
+        try {
+            const response = await fetch('/api/currents?limit=50');
+            const data = await response.json();
+            const selected = data.analyses.find(a => a.id == this.value);
+            if (selected) {
+                newsContextInput.value = selected.story_context || selected.headline_summary || '';
+                // Try to parse date, fall back to text
+                if (selected.analysis_date) {
+                    // The date might be "February 10, 2026" format - set the text field
+                    newsDateInput.value = '';
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load Currents details:', error);
+        }
+    });
+}
+
+// Moravian context character counter
+const moravianContext = document.getElementById('moravian-context');
+// Character counters for all context textareas
+const contextFields = [
+    { textarea: 'paste-context', counter: 'paste-context-counter' },
+    { textarea: 'run-context', counter: 'run-context-counter' },
+    { textarea: 'moravian-context', counter: 'moravian-context-counter' },
+    { textarea: 'rcl-context', counter: 'rcl-context-counter' }
+];
+
+contextFields.forEach(field => {
+    const textarea = document.getElementById(field.textarea);
+    const counter = document.getElementById(field.counter);
+    if (textarea && counter) {
+        textarea.addEventListener('input', function() {
+            counter.textContent = this.value.length + ' / 1000';
+        });
+    }
+});
 
 // Source tab switching
 document.querySelectorAll('input[name="source"]').forEach(function(radio) {

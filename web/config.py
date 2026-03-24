@@ -49,6 +49,12 @@ class WebConfig(BaseConfig):
         description="Number of studies to show per page in browse view"
     )
 
+    # External APIs for Cultural Resonance
+    tmdb_api_key: Optional[str] = Field(
+        default=os.getenv("TMDB_API_KEY"),
+        description="The Movie Database API key (free at themoviedb.org)"
+    )
+
     @classmethod
     def load(cls, env_file: Optional[Path] = None) -> "WebConfig":
         """
@@ -81,4 +87,5 @@ class WebConfig(BaseConfig):
             web_host=os.getenv("WEB_HOST", "0.0.0.0"),
             web_port=int(os.getenv("WEB_PORT", "8000")),
             studies_per_page=int(os.getenv("STUDIES_PER_PAGE", "20")),
+            tmdb_api_key=os.getenv("TMDB_API_KEY"),
         )

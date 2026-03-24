@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Cultural Resonance | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header resonance-header">
+        <h1>Cultural Mining Partner</h1>
+        <p>Find sermon-ready illustrations from the songs, films, and moments of 1977-1999</p>
+    </div>
+
+    <form method="POST" action="/resonance/find" class="generate-form" id="resonanceForm">
+        <div class="form-section">
+            <h2>1. Enter Themes</h2>
+            <p class="section-description">What themes from your text or sermon do you want to find cultural connections for?</p>
+
+            <div class="form-group">
+                <label for="themes">Themes (comma-separated)</label>
+                <input
+                    type="text"
+                    id="themes"
+                    name="themes"
+                    placeholder="e.g., redemption, exile, homecoming, sacrifice, hope"
+                    class="form-input"
+                    required>
+                <p class="help-text">Enter 3-7 themes that capture the essence of your text</p>
+            </div>
+
+            <div class="form-group">
+                <label for="reference">Biblical Reference (optional)</label>
+                <input
+                    type="text"
+                    id="reference"
+                    name="reference"
+                    placeholder="e.g., Luke 15:11-32"
+                    class="form-input">
+                <p class="help-text">Helps find more targeted connections</p>
+            </div>
+
+            <div class="form-group">
+                <label for="context">Additional Context (optional)</label>
+                <textarea
+                    id="context"
+                    name="context"
+                    rows="3"
+                    class="form-textarea"
+                    placeholder="e.g., Preaching to a congregation dealing with loss, or focusing on the father's perspective..."></textarea>
+                <p class="help-text">Any sermon context that helps find the right illustrations</p>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>2. Mining Options</h2>
+
+            <input type="hidden" name="mining_mode" value="claude">
+            <input type="hidden" name="era_start" value="{{ default_era_start }}">
+            <input type="hidden" name="era_end" value="{{ default_era_end }}">
+
+            <div class="mining-info">
+                <p><strong>How it works:</strong> Claude mines its deep knowledge of 1977-1999 culture to find specific, sermon-ready illustrations. Not generic summaries - actual scenes, lyrics, moments, and quotes your congregation will recognize.</p>
+                <p><strong>Categories searched:</strong> Songs, Films, TV moments, News events, Cultural phenomena, Technology, Sports moments, Iconic advertising</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
+                Find Cultural Resonances
+            </button>
+            <p class="help-text">
+                <strong>Sources:</strong> Wikipedia, TMDB (more coming soon)
+            </p>
+        </div>
+    </form>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Searching Cultural Archives...</h2>
+            <p id="loadingMessage">Querying Wikipedia, TMDB, and more. This may take 15-30 seconds...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('resonanceForm').addEventListener('submit', function(e) {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+});
+</script>
+{% endblock %}

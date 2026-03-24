@@ -34,6 +34,9 @@ When you receive multiple biblical passages (Moravian Daily Texts, RCL readings)
 
 **Example**: Psalm 6 (lament), Genesis 7 (flood), Matthew 4 (temptation), Ezekiel 33 (divine mercy), John 3 (light) - read as ONE manuscript where human cry (Psalm), divine judgment (Genesis), testing (Matthew), mercy (Ezekiel), and transformation (John) form a single theological statement about the nature of God and suffering.
 
+### ESSENTIAL: Quote All Scripture References
+**ALWAYS include the actual biblical text when referencing any passage.** Do not assume readers have a Bible open. When you cite a verse or passage, quote it in full so readers can engage immediately. This is non-negotiable.
+
 ### Overview
 The Palimpsest methodology uses the ancient Jewish PaRDeS framework, expanded to five layers:
 1. Peshat (פְּשָׁט) - Simple/Literal meaning

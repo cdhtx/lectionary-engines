@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Currents Analysis | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container currents-result-container">
+    <div class="currents-result-header">
+        <div class="currents-meta">
+            <span class="currents-badge">The Currents</span>
+            <span class="divider">|</span>
+            <span>{{ analysis.analysis_date }}</span>
+            <span class="divider">|</span>
+            <span>{{ analysis.word_count }} words</span>
+        </div>
+        <h1>{{ analysis.headline_summary or "Theological News Analysis" }}</h1>
+        {% if analysis.news_source %}
+        <p class="currents-source">Source: {{ analysis.news_source }}</p>
+        {% endif %}
+    </div>
+
+    <div class="currents-actions-bar">
+        <button type="button" class="btn btn-secondary" onclick="expandAll()">Expand All</button>
+        <button type="button" class="btn btn-secondary" onclick="collapseAll()">Collapse All</button>
+        <button type="button" class="btn btn-secondary" onclick="window.print()">Print</button>
+    </div>
+
+    <div class="currents-content study-content">
+        {{ content_html | safe }}
+    </div>
+
+    <div class="currents-footer">
+        <a href="/currents" class="btn btn-secondary">New Analysis</a>
+        <a href="/currents/browse" class="btn btn-secondary">Browse Past</a>
+        <a href="/generate" class="btn btn-primary">Generate Study</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function expandAll() {
+    document.querySelectorAll('.currents-content details').forEach(function(d) {
+        d.open = true;
+    });
+}
+
+function collapseAll() {
+    document.querySelectorAll('.currents-content details').forEach(function(d) {
+        d.open = false;
+    });
+}
+</script>
+{% endblock %}

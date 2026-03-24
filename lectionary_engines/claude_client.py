@@ -142,7 +142,7 @@ class ClaudeClient:
         reference: str,
         study_content: str,
         system_prompt: str,
-        validation_model: str = "claude-3-5-haiku-20241022",
+        validation_model: str = "claude-haiku-4-5-20251001",
         max_tokens: int = 2000,
     ) -> str:
         """

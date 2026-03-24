@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}The Currents | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header currents-header">
+        <h1>The Currents</h1>
+        <p>Reading the signs of the times through prophetic imagination</p>
+    </div>
+
+    <form method="POST" action="/currents/analyze" class="generate-form" id="currentsForm">
+        <div class="form-section">
+            <h2>1. Find a Story</h2>
+            <p class="section-description">Fetch headlines from major news sources, or paste your own story directly.</p>
+
+            <div class="headlines-fetch-bar">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <select id="headline-source" class="form-select" style="max-width: 200px; display: inline-block;">
+                        <option value="npr">NPR</option>
+                        <option value="bbc">BBC</option>
+                        <option value="ap">Associated Press</option>
+                        <option value="reuters">Reuters</option>
+                    </select>
+                    <button type="button" id="fetchHeadlinesBtn" class="btn btn-secondary" onclick="fetchHeadlines()">
+                        Fetch Headlines
+                    </button>
+                </div>
+            </div>
+
+            <div id="headlinesGrid" class="headlines-grid" style="display: none;">
+                <div id="headlinesLoading" class="headlines-loading" style="display: none;">
+                    <div class="spinner" style="width: 30px; height: 30px;"></div>
+                    <span>Fetching headlines...</span>
+                </div>
+                <div id="headlinesContent"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>2. Provide Context</h2>
+
+            <div class="form-group">
+                <label for="analysis-date">Date</label>
+                <input
+                    type="date"
+                    id="analysis-date"
+                    name="analysis_date"
+                    class="form-input"
+                    style="max-width: 250px;">
+            </div>
+
+            <div class="form-group">
+                <label for="news-source">Source <span style="font-weight: 400; font-size: 0.85rem; color: var(--color-ink-muted); font-style: italic;">(optional)</span></label>
+                <input
+                    type="text"
+                    id="news-source"
+                    name="news_source"
+                    class="form-input"
+                    placeholder="e.g., AP News, New York Times, local report">
+            </div>
+
+            <div class="form-group">
+                <label for="story-context">Story / Event</label>
+                <textarea
+                    id="story-context"
+                    name="story_context"
+                    rows="12"
+                    class="form-textarea"
+                    required
+                    placeholder="Paste the news story, describe the event, or click a headline above to populate this field. The more context you provide, the richer the analysis."></textarea>
+                <p class="help-text">Describe the news event or paste article text. Include key facts, quotes, and context for a thorough analysis.</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
+                Analyze Through the Currents
+            </button>
+            <p class="help-text">
+                <strong>Estimated time:</strong> 60-90 seconds
+            </p>
+        </div>
+    </form>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Reading the Signs of the Times...</h2>
+            <p>Generating theological analysis. This may take 60-90 seconds.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Set default date to today
+document.getElementById('analysis-date').valueAsDate = new Date();
+
+// Show loading overlay on submit
+document.getElementById('currentsForm').addEventListener('submit', function(e) {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+});
+
+// Fetch headlines from RSS
+async function fetchHeadlines() {
+    const source = document.getElementById('headline-source').value;
+    const grid = document.getElementById('headlinesGrid');
+    const loading = document.getElementById('headlinesLoading');
+    const content = document.getElementById('headlinesContent');
+    const btn = document.getElementById('fetchHeadlinesBtn');
+
+    grid.style.display = 'block';
+    loading.style.display = 'flex';
+    content.innerHTML = '';
+    btn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('source', source);
+        formData.append('limit', '8');
+
+        const response = await fetch('/currents/fetch-headlines', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch headlines');
+
+        const data = await response.json();
+
+        if (data.headlines && data.headlines.length > 0) {
+            content.innerHTML = data.headlines.map(function(h) {
+                return '<div class="headline-card" onclick="selectHeadline(this)" data-title="' +
+                    h.title.replace(/"/g, '&quot;') + '" data-summary="' +
+                    (h.summary || '').replace(/"/g, '&quot;') + '" data-source="' +
+                    (h.source || '').replace(/"/g, '&quot;') + '" data-link="' +
+                    (h.link || '').replace(/"/g, '&quot;') + '">' +
+                    '<h4>' + h.title + '</h4>' +
+                    (h.summary ? '<p>' + h.summary + '</p>' : '') +
+                    '<span class="headline-meta">' + h.source + (h.date ? ' · ' + h.date : '') + '</span>' +
+                    '</div>';
+            }).join('');
+        } else {
+            content.innerHTML = '<p class="help-text">No headlines found. Try a different source or paste your story directly.</p>';
+        }
+    } catch (error) {
+        content.innerHTML = '<p class="help-text">Could not fetch headlines. You can paste your story directly below.</p>';
+    } finally {
+        loading.style.display = 'none';
+        btn.disabled = false;
+    }
+}
+
+// Select a headline card
+function selectHeadline(card) {
+    // Remove selected from all cards
+    document.querySelectorAll('.headline-card').forEach(function(c) {
+        c.classList.remove('selected');
+    });
+
+    // Mark this card as selected
+    card.classList.add('selected');
+
+    // Populate the form fields
+    var title = card.dataset.title;
+    var summary = card.dataset.summary;
+    var source = card.dataset.source;
+
+    var context = title;
+    if (summary) context += '\n\n' + summary;
+
+    document.getElementById('story-context').value = context;
+    document.getElementById('news-source').value = source;
+
+    // Scroll to the context section
+    document.getElementById('story-context').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+</script>
+{% endblock %}

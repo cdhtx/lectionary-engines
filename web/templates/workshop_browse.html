@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Workshop Preps | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Workshop Preps</h1>
+        <p>Browse your sermon preparation scaffolding</p>
+    </div>
+
+    <div class="browse-controls">
+        <div class="filter-group">
+            <label for="lens-filter">Filter by Lens:</label>
+            <select id="lens-filter" onchange="filterByLens(this.value)">
+                <option value="">All Lenses</option>
+                {% for key, lens in lenses.items() %}
+                <option value="{{ key }}" {% if lens_filter == key %}selected{% endif %}>{{ lens.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <a href="/workshop" class="btn btn-primary">New Prep</a>
+    </div>
+
+    {% if preps %}
+    <div class="workshop-grid">
+        {% for prep in preps %}
+        <a href="/workshop/{{ prep.id }}" class="workshop-card">
+            <div class="workshop-card-header">
+                <span class="lens-badge lens-{{ prep.lens }}">{{ prep.lens_name }}</span>
+                <span class="date">{{ prep.created_at.strftime('%b %d') }}</span>
+            </div>
+            <h3>{{ prep.reference }}</h3>
+            <div class="workshop-card-meta">
+                <span>{{ prep.word_count }} words</span>
+                {% if prep.translation %}
+                <span>{{ prep.translation }}</span>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if has_prev %}
+        <a href="/workshop/browse?page={{ page - 1 }}{% if lens_filter %}&lens={{ lens_filter }}{% endif %}" class="btn btn-secondary">Previous</a>
+        {% endif %}
+        <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+        {% if has_next %}
+        <a href="/workshop/browse?page={{ page + 1 }}{% if lens_filter %}&lens={{ lens_filter }}{% endif %}" class="btn btn-secondary">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <h2>No preps yet</h2>
+        <p>Start preparing sermons with the Pastor's Workshop</p>
+        <a href="/workshop" class="btn btn-primary">Start Your First Prep</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function filterByLens(lens) {
+    const url = new URL(window.location);
+    if (lens) {
+        url.searchParams.set('lens', lens);
+    } else {
+        url.searchParams.delete('lens');
+    }
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

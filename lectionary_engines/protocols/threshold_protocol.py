@@ -29,6 +29,9 @@ When you receive multiple biblical passages (as with Moravian Daily Texts or Rev
 
 **Example**: If given Psalm 6 (lament), Genesis 7 (flood), Matthew 4 (temptation), Ezekiel 33 (God takes no pleasure in death), and John 3 (coming to light) - DO NOT focus only on Matthew. Find what happens when divine judgment (flood), human lament (psalm), testing (temptation), divine mercy (Ezekiel), and transformation (John) are read as one theological statement.
 
+### ESSENTIAL: Quote All Scripture References
+**ALWAYS include the actual biblical text when referencing any passage.** Do not assume readers have a Bible open. When you cite a verse or passage, quote it in full so readers can engage immediately. This is non-negotiable.
+
 ### Overview
 The Threshold methodology moves the reader through deepening levels of engagement:
 1. Archaeological Dive (5-7 minutes) - Understanding what was

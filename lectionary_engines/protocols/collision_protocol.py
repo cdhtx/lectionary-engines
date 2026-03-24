@@ -8,32 +8,92 @@ Maximum intensity. No retreat from complexity. Build to crescendo.
 """
 
 # Collision Randomizer - Five categories of collision vectors
+# Expanded to 30+ per category to ensure variety across daily use
 COLLISION_VECTORS = {
     "scientific": [
+        # Physics & Cosmology
         "Quantum entanglement and non-locality",
-        "CRISPR gene editing and human enhancement",
-        "Artificial intelligence emergence and consciousness",
-        "Climate tipping points and planetary boundaries",
-        "Neuroscience of trauma and memory",
         "Dark matter and the invisible universe",
+        "Particle physics and the observer effect",
+        "Black hole information paradox and what survives",
+        "Multiverse theory and the road not taken",
+        "Entropy and the arrow of time",
+        "Wave-particle duality and the nature of reality",
+        "Cosmic microwave background and echoes of origin",
+        "Gravitational waves and ripples through spacetime",
+        "The fine-tuning problem and cosmic coincidence",
+        # Biology & Medicine
+        "CRISPR gene editing and human enhancement",
+        "Neuroscience of trauma and memory",
         "Mycorrhizal networks and underground communication",
         "Epigenetics and inherited trauma",
-        "Particle physics and the observer effect",
         "Microbiome research and symbiotic identity",
+        "Placebo effect and the power of belief",
+        "Neuroplasticity and the remaking of self",
+        "Circadian rhythms and the body's hidden clock",
+        "Mitochondrial inheritance and the maternal line",
+        "Phantom limb syndrome and the brain's body map",
+        "Gut-brain axis and embodied cognition",
+        "Telomeres and the cellular clock of aging",
+        # Ecology & Earth Science
+        "Climate tipping points and planetary boundaries",
+        "Mass extinction events and resilience",
+        "Deep time and geological patience",
+        "Invasive species and disrupted ecosystems",
+        "Coral bleaching and symbiosis under stress",
+        "Seed banks and the preservation of possibility",
+        "Ocean acidification and invisible catastrophe",
+        "Permafrost melt and ancient things awakening",
+        # AI & Computation
+        "Artificial intelligence emergence and consciousness",
+        "Emergence and complexity from simple rules",
+        "Algorithmic bias and encoded prejudice",
+        "The halting problem and undecidability",
     ],
     "cultural": [
-        "Late-stage capitalism and spiritual exhaustion",
+        # Digital Life
         "Social media algorithms and identity formation",
         "Surveillance capitalism and privacy collapse",
-        "Cancel culture and public shame",
-        "Streaming platforms and narrative fragmentation",
-        "Gig economy precarity and meaning",
-        "True crime obsession and collective trauma",
         "Influencer culture and parasocial relationships",
+        "Doomscrolling and attention hijacking",
+        "Digital detox movements and techno-sabbath",
+        "Online radicalization pipelines",
+        "Meme culture and meaning compression",
+        "Dating apps and commodified intimacy",
+        "Reply guys and unsolicited connection",
+        # Economic & Labor
+        "Late-stage capitalism and spiritual exhaustion",
+        "Gig economy precarity and meaning",
+        "Quiet quitting and the refusal of hustle",
+        "Remote work and the dissolution of workplace community",
+        "Side hustles and the monetization of hobbies",
+        "Student debt and mortgaged futures",
+        "Housing crisis and rootlessness",
+        # Media & Entertainment
+        "Streaming platforms and narrative fragmentation",
+        "True crime obsession and collective trauma",
+        "Nostalgia industry and weaponized memory",
+        "Reboot culture and the exhaustion of originality",
+        "Binge watching and compressed time",
+        "Podcast intimacy and voices in our ears",
+        "K-pop fandoms and global parasocial devotion",
+        # Social Movements
+        "Cancel culture and public shame",
         "Climate anxiety and apocalyptic imagination",
         "Wellness industry and commercialized spirituality",
+        "Conspiracy theories and alternative epistemologies",
+        "Book banning and contested narratives",
+        "Gender fluidity and binary dissolution",
+        "Deconstruction movements and ex-vangelicals",
+        "Mutual aid networks and grassroots care",
+        # Generational
+        "OK Boomer and intergenerational warfare",
+        "Millennial burnout and failed promises",
+        "Gen Z nihilism and ironic detachment",
+        "Boomerang kids and delayed adulthood",
     ],
     "philosophical": [
+        # Continental Philosophy
         "Derrida's différance and meaning's perpetual deferral",
         "Levinas's ethics of the face and infinite responsibility",
         "Foucault's biopower and disciplinary societies",
@@ -44,30 +104,120 @@ COLLISION_VECTORS = {
         "Nancy's being singular plural and community",
         "Badiou's event and truth procedures",
         "Haraway's cyborg manifesto and boundary transgression",
+        "Deleuze's rhizome and non-hierarchical thought",
+        "Kristeva's abjection and the horror of boundaries",
+        "Sartre's bad faith and self-deception",
+        "Camus's absurd and the myth of Sisyphus",
+        "Merleau-Ponty's flesh and embodied perception",
+        # Analytic & Ethics
+        "Rawls's veil of ignorance and justice",
+        "Nozick's experience machine and authentic life",
+        "The trolley problem and impossible choices",
+        "Frankfurt's bullshit and post-truth discourse",
+        "Nagel's 'What is it like to be a bat?' and consciousness",
+        "Parfit's personal identity and what makes you you",
+        "Singer's expanding circle and moral progress",
+        # Ancient & Global
+        "Kierkegaard's leap of faith and anxiety",
+        "Wittgenstein's language games and meaning in use",
+        "Simone Weil's attention and decreation",
+        "Hannah Arendt's banality of evil",
+        "Frantz Fanon's colonized consciousness",
+        "Buddhist emptiness and interdependence",
+        "Ubuntu philosophy and relational personhood",
+        "Confucian rectification of names",
+        "Daoist wu wei and non-action",
+        # Contemporary
+        "Byung-Chul Han's burnout society and self-exploitation",
+        "Mark Fisher's capitalist realism and hauntology",
+        "Judith Butler's grievable lives and whose death matters",
+        "Achille Mbembe's necropolitics and the politics of death",
     ],
     "technological": [
+        # AI & Automation
         "Deepfakes and the collapse of visual truth",
-        "VR/AR and the virtualization of experience",
-        "Cryptocurrency and decentralized trust",
-        "Brain-computer interfaces and cognitive enhancement",
-        "Automated decision systems and algorithmic justice",
-        "Digital resurrection and grief tech",
-        "Biometric surveillance and bodily data",
-        "Gene therapy and designer biology",
-        "Quantum computing and computational limits",
         "Neural networks and machine learning opacity",
+        "Automated decision systems and algorithmic justice",
+        "ChatGPT and the democratization of text",
+        "AI art generators and creative displacement",
+        "Predictive policing and pre-crime",
+        "Recommendation engines and filter bubbles",
+        "Voice cloning and stolen identity",
+        # Virtual & Augmented
+        "VR/AR and the virtualization of experience",
+        "Digital twins and simulated selves",
+        "Haptic technology and touch at a distance",
+        "Spatial computing and layered reality",
+        "Avatar embodiment and virtual presence",
+        # Biological & Medical
+        "Brain-computer interfaces and cognitive enhancement",
+        "Gene therapy and designer biology",
+        "Organ printing and manufactured bodies",
+        "Life extension technology and engineered longevity",
+        "Cryonics and suspended hope",
+        "Wearable health monitors and quantified self",
+        # Finance & Trust
+        "Cryptocurrency and decentralized trust",
+        "NFTs and artificial scarcity",
+        "Central bank digital currencies and programmable money",
+        "Smart contracts and trustless agreements",
+        # Death & Memory
+        "Digital resurrection and grief tech",
+        "Social media afterlife and digital estates",
+        "AI companions and synthetic relationships",
+        "Memory implants and curated recall",
+        # Surveillance & Security
+        "Biometric surveillance and bodily data",
+        "Quantum computing and cryptographic collapse",
+        "Zero-knowledge proofs and privacy preservation",
+        "Mesh networks and decentralized communication",
+        # Infrastructure
+        "Undersea cables and the physical internet",
+        "Data centers and the heat of information",
+        "E-waste mountains and digital materiality",
+        "Satellite internet and connectivity as colonization",
     ],
     "personal": [
+        # Health & Body
         "Chronic illness and the loss of future",
-        "Career transition and identity dissolution",
         "Infertility and unfulfilled longing",
         "Addiction recovery and radical dependence",
+        "Long COVID and invisible disability",
+        "Chronic pain and the unreliable body",
+        "Mental health diagnosis and the named demon",
+        "Eating disorder recovery and bodily reconciliation",
+        "Sobriety in a drinking culture",
+        "Cancer survivorship and the second life",
+        "Disability and society's unaccommodating design",
+        # Relationships
         "Divorce and the death of shared narrative",
+        "Estrangement from family and chosen exile",
+        "Infidelity discovery and shattered trust",
+        "Friendship dissolution and unmourned losses",
+        "Caregiving exhaustion and invisible labor",
+        "Singleness in a coupled world",
+        "Blended family complexity and competing loyalties",
+        "Long-distance love and presence without proximity",
+        # Life Transitions
+        "Career transition and identity dissolution",
         "Aging parents and role reversal",
         "Empty nest and purposelessness",
+        "Retirement and the end of utility",
+        "Job loss and economic freefall",
+        "Relocation and uprooted belonging",
+        "Coming out and identity revelation",
+        "Midlife crisis and the unlived life",
+        # Spiritual & Existential
         "Religious deconstruction and spiritual homelessness",
         "Burnout and the exhaustion of meaning",
         "Grief that refuses resolution",
+        "Betrayal by trusted institutions",
+        "Moral injury and impossible choices made",
+        "Impostor syndrome and the fear of exposure",
+        "Shame spirals and the inner prosecutor",
+        "Nostalgia for a self you used to be",
+        "Anticipatory grief and mourning the living",
+        "Vocational confusion and calling without clarity",
     ],
 }
 
@@ -91,6 +241,9 @@ When you receive multiple biblical passages (Moravian Daily Texts, RCL readings)
 **NOT BIBLE STUDY**: You are detonating controlled explosions. The texts aren't separate studies - they are components in a single theological collision chamber where Psalm crashes into Genesis crashes into Gospel crashes into quantum physics crashes into surveillance capitalism.
 
 **Example**: Psalm 6 (lament) + Genesis 7 (flood) + Matthew 4 (temptation) + Ezekiel 33 (mercy) + John 3 (light) colliding with AI consciousness, cancel culture, Derridean différance, deepfakes, and unresolved grief - find the pattern where divine judgment, human suffering, testing, mercy, and transformation create ONE collision event that speaks to contemporary fragmentation of truth and identity.
+
+### ESSENTIAL: Quote All Scripture References
+**ALWAYS include the actual biblical text when referencing any passage.** Do not assume readers have a Bible open. When you cite a verse or passage, quote it in full so readers can engage immediately. This is non-negotiable.
 
 ### COLLISION RANDOMIZER ACTIVATION
 

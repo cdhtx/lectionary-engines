@@ -19,6 +19,7 @@ from lectionary_engines.engines.collision import CollisionEngine
 from lectionary_engines.text_fetcher import TextFetcher
 from lectionary_engines.preferences import StudyPreferences
 from lectionary_engines.protocols import validation_protocol
+from lectionary_engines.protocols import news_integration
 from lectionary_engines.validation import ValidationResult
 
 
@@ -56,7 +57,9 @@ class StudyGeneratorService:
         text: Optional[str] = None,
         translation: Optional[str] = None,
         source: str = 'paste',
-        preferences: Optional[StudyPreferences] = None
+        preferences: Optional[StudyPreferences] = None,
+        news_context: Optional[str] = None,
+        news_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate a study using the specified engine
@@ -68,6 +71,8 @@ class StudyGeneratorService:
             translation: Bible translation (if None, uses default)
             source: Source of text ('paste', 'run', 'moravian', 'rcl')
             preferences: Optional user preferences to customize the study
+            news_context: Optional news story text for news integration
+            news_date: Optional date of news event
 
         Returns:
             dict with keys:
@@ -100,12 +105,23 @@ class StudyGeneratorService:
         # Get the engine
         engine = self.engines[engine_name]
 
-        # Generate the study (this is the core work - calls Claude API)
-        # Use generate_with_preferences if preferences provided
-        if preferences:
-            study = engine.generate_with_preferences(text, reference, preferences)
+        # News integration: modify system prompt with injection fragment
+        if news_context and news_context.strip():
+            study = self._generate_with_news(
+                engine=engine,
+                engine_name=engine_name,
+                text=text,
+                reference=reference,
+                preferences=preferences,
+                news_context=news_context,
+                news_date=news_date or "",
+            )
         else:
-            study = engine.generate(text, reference)
+            # Standard generation
+            if preferences:
+                study = engine.generate_with_preferences(text, reference, preferences)
+            else:
+                study = engine.generate(text, reference)
 
         # Add web-specific metadata
         study['biblical_text'] = text
@@ -119,7 +135,82 @@ class StudyGeneratorService:
         study['metadata']['source'] = source
         study['metadata']['translation'] = actual_translation
 
+        if news_context and news_context.strip():
+            study['metadata']['news_integrated'] = True
+            study['metadata']['news_date'] = news_date
+
         return study
+
+    def _generate_with_news(
+        self,
+        engine,
+        engine_name: str,
+        text: str,
+        reference: str,
+        preferences: Optional[StudyPreferences],
+        news_context: str,
+        news_date: str,
+    ) -> Dict[str, Any]:
+        """
+        Generate a study with news integration by appending injection to system prompt.
+
+        Uses the engine's protocol system prompt + news injection fragment,
+        then calls Claude directly.
+        """
+        from lectionary_engines.protocol_builder import build_system_prompt, build_output_constraints
+        from lectionary_engines.protocols import collision_protocol
+
+        # Get base system prompt from engine protocol
+        base_system_prompt = engine.protocol['system_prompt']
+
+        # If preferences, build customized prompt first
+        if preferences:
+            from lectionary_engines.preferences import DEFAULT_PREFERENCES
+            preferences.validate()
+            base_system_prompt = build_system_prompt(base_system_prompt, preferences)
+
+        # Append news injection fragment
+        injection = news_integration.get_news_injection(engine_name, news_context, news_date)
+        modified_system_prompt = base_system_prompt + injection
+
+        # Build the user message using the engine's normal input wrapping
+        if engine_name == "collision":
+            vectors = engine.generate_collision_vectors()
+            user_message = collision_protocol.INPUT_WRAPPER(text, reference, vectors)
+            max_tokens = 8000  # Extra tokens for news integration
+        else:
+            # Threshold and Palimpsest use simpler input
+            from lectionary_engines.protocols import threshold_protocol, palimpsest_protocol
+            protocol_module = threshold_protocol if engine_name == "threshold" else palimpsest_protocol
+            if hasattr(protocol_module, 'INPUT_WRAPPER'):
+                user_message = protocol_module.INPUT_WRAPPER(text, reference)
+            else:
+                user_message = f"Biblical Reference: {reference}\n\nBiblical Text:\n{text}"
+            max_tokens = 7000  # Extra tokens for news integration
+
+        # Call Claude directly with modified prompt
+        content = self.claude.generate_study(
+            text=user_message,
+            reference=reference,
+            system_prompt=modified_system_prompt,
+            max_tokens=max_tokens,
+        )
+
+        result = {
+            "engine": engine_name,
+            "reference": reference,
+            "content": content,
+            "metadata": {
+                "word_count": len(content.split()),
+                "news_integrated": True,
+                "news_date": news_date,
+            },
+        }
+
+        if engine_name == "collision":
+            result["metadata"]["collision_vectors"] = vectors
+
+        return result
 
     def fetch_text(
         self,

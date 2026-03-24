@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Cultural Resonances | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container resonance-result-container">
+    <div class="resonance-result-header">
+        <div class="resonance-meta">
+            <span class="resonance-badge">Cultural Resonance</span>
+            <span class="divider">|</span>
+            <span>{{ resonance.created_at.strftime('%B %d, %Y') }}</span>
+            <span class="divider">|</span>
+            <span>{{ resonance.artifacts_found }} artifacts found</span>
+        </div>
+        {% if resonance.reference %}
+        <h1>{{ resonance.reference }}</h1>
+        {% else %}
+        <h1>Cultural Connections</h1>
+        {% endif %}
+        <div class="theme-tags">
+            {% for theme in themes %}
+            <span class="theme-tag">{{ theme }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="sources-used">
+        <strong>Sources queried:</strong>
+        {% for source in sources %}
+        <span class="source-badge">{{ source }}</span>
+        {% endfor %}
+    </div>
+
+    <div class="resonance-content">
+        {{ content_html | safe }}
+    </div>
+
+    <div class="resonance-footer">
+        <a href="/resonance" class="btn btn-secondary">New Search</a>
+        <a href="/generate" class="btn btn-secondary">Generate Study</a>
+        <a href="/workshop" class="btn btn-primary">Pastor's Workshop</a>
+    </div>
+</div>
+{% endblock %}

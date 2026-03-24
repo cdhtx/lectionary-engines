@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}{{ prep.reference }} | {{ prep.lens_name }} | Pastor's Workshop{% endblock %}
+
+{% block content %}
+<div class="container workshop-result-container">
+    <div class="workshop-result-header">
+        <div class="workshop-meta">
+            <span class="lens-badge lens-{{ prep.lens }}">{{ prep.lens_name }}</span>
+            <span class="divider">|</span>
+            <span>{{ prep.created_at.strftime('%B %d, %Y') }}</span>
+            <span class="divider">|</span>
+            <span>{{ prep.word_count }} words</span>
+            {% if prep.translation %}
+            <span class="divider">|</span>
+            <span>{{ prep.translation }}</span>
+            {% endif %}
+        </div>
+        <h1>{{ prep.reference }}</h1>
+        {% if lens_info %}
+        <p class="lens-tagline-header">"{{ lens_info.tagline }}"</p>
+        {% endif %}
+    </div>
+
+    <div class="workshop-content">
+        {{ content_html | safe }}
+    </div>
+
+    <div class="workshop-footer">
+        <a href="/workshop" class="btn btn-secondary">New Prep</a>
+        <a href="/workshop/browse" class="btn btn-secondary">Browse Preps</a>
+        <a href="/generate" class="btn btn-primary">Generate Full Study</a>
+    </div>
+</div>
+{% endblock %}

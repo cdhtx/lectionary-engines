@@ -31,6 +31,11 @@ class Study(Base):
     profile_name = Column(String(100))  # Which profile was used (if any)
     custom_preferences = Column(Text)  # JSON blob of per-study overrides (if any)
 
+    # News integration
+    news_integrated = Column(Boolean, default=False)
+    news_context = Column(Text)  # News story text if news was integrated
+    news_date = Column(String(100))  # Date of news event
+
     # Validation results
     validation_score = Column(Integer)  # Overall score 0-100 (null if not validated)
     validation_recommendation = Column(String(20))  # 'approve', 'review', 'revise'
@@ -71,6 +76,9 @@ class Study(Base):
             'biblical_text': self.biblical_text,
             'profile_name': self.profile_name,
             'custom_preferences': self.custom_preferences,
+            'news_integrated': self.news_integrated,
+            'news_context': self.news_context,
+            'news_date': self.news_date,
             'validation_score': self.validation_score,
             'validation_recommendation': self.validation_recommendation,
             'validation_data': self.validation_data,
@@ -138,3 +146,205 @@ class UserProfile(Base):
             language_complexity=self.language_complexity,
             focus_areas=self.focus_areas,
         )
+
+
+class WorkshopPrep(Base):
+    """Workshop Prep model - stores sermon preparation scaffolding"""
+
+    __tablename__ = "workshop_preps"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Core prep data
+    lens = Column(String(50), nullable=False)  # 'apostolic_journalist', etc.
+    lens_name = Column(String(100), nullable=False)  # 'The Apostolic Journalist'
+    reference = Column(String(255), nullable=False)  # 'John 3:16-21'
+    content = Column(Text, nullable=False)  # Full markdown content
+    word_count = Column(Integer)
+
+    # Metadata
+    source = Column(String(50))  # 'paste', 'run', 'moravian', 'rcl'
+    translation = Column(String(20))  # 'NRSVue', 'NIV', etc.
+    biblical_text = Column(Text)  # Original biblical text used
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_workshop_lens', 'lens'),
+        Index('idx_workshop_reference', 'reference'),
+        Index('idx_workshop_created', 'created_at'),
+    )
+
+    def __repr__(self):
+        return f"<WorkshopPrep(id={self.id}, lens='{self.lens}', reference='{self.reference}')>"
+
+    def to_dict(self):
+        """Convert prep to dictionary"""
+        return {
+            'id': self.id,
+            'lens': self.lens,
+            'lens_name': self.lens_name,
+            'reference': self.reference,
+            'content': self.content,
+            'word_count': self.word_count,
+            'source': self.source,
+            'translation': self.translation,
+            'biblical_text': self.biblical_text,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class CulturalSource(Base):
+    """Cultural Source model - registry of sources for cultural artifacts"""
+
+    __tablename__ = "cultural_sources"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Source identity
+    name = Column(String(100), nullable=False, unique=True)  # "Genius Lyrics API"
+    description = Column(Text)  # What this source provides
+    category = Column(String(50), nullable=False)  # music, film, tv, news, icon, tech, toy, fad
+    source_type = Column(String(50), nullable=False)  # api, archive, feed, database, curated_list
+
+    # Access configuration
+    url = Column(String(500), nullable=False)  # Base URL or API endpoint
+    query_method = Column(String(50), nullable=False)  # api_call, web_fetch, scrape, manual
+    adapter_class = Column(String(100))  # Python class name for adapter
+    output_format = Column(String(50))  # json, html, text
+
+    # Era and theme coverage
+    era_start = Column(Integer, default=1977)  # Start year
+    era_end = Column(Integer, default=1999)  # End year
+    themes_strength = Column(Text)  # JSON: what themes this source is good for
+
+    # Authentication
+    requires_auth = Column(Boolean, default=False)
+    api_key_env_var = Column(String(100))  # Environment variable name for API key
+
+    # Quality and status
+    quality_rating = Column(Integer, default=3)  # 1-5
+    usage_notes = Column(Text)  # How to best use this source
+    active = Column(Boolean, default=True)
+    last_verified = Column(DateTime)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_source_category', 'category'),
+        Index('idx_source_active', 'active'),
+    )
+
+    def __repr__(self):
+        return f"<CulturalSource(id={self.id}, name='{self.name}', category='{self.category}')>"
+
+    def to_dict(self):
+        import json
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'category': self.category,
+            'source_type': self.source_type,
+            'url': self.url,
+            'query_method': self.query_method,
+            'adapter_class': self.adapter_class,
+            'era_start': self.era_start,
+            'era_end': self.era_end,
+            'themes_strength': json.loads(self.themes_strength) if self.themes_strength else [],
+            'quality_rating': self.quality_rating,
+            'active': self.active,
+        }
+
+
+class CulturalResonance(Base):
+    """Cultural Resonance model - stores generated cultural connections"""
+
+    __tablename__ = "cultural_resonances"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Link to source study (optional)
+    study_id = Column(Integer, nullable=True)  # FK to studies table
+    workshop_id = Column(Integer, nullable=True)  # FK to workshop_preps table
+
+    # Input
+    themes = Column(Text, nullable=False)  # JSON array of themes searched
+    reference = Column(String(255))  # Biblical reference if applicable
+
+    # Output
+    content = Column(Text, nullable=False)  # Generated resonance content (markdown)
+    artifacts_found = Column(Integer)  # Number of artifacts surfaced
+    sources_used = Column(Text)  # JSON array of source names used
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_resonance_created', 'created_at'),
+    )
+
+    def __repr__(self):
+        return f"<CulturalResonance(id={self.id}, themes='{self.themes[:50]}...')>"
+
+    def to_dict(self):
+        import json
+        return {
+            'id': self.id,
+            'study_id': self.study_id,
+            'workshop_id': self.workshop_id,
+            'themes': json.loads(self.themes) if self.themes else [],
+            'reference': self.reference,
+            'content': self.content,
+            'artifacts_found': self.artifacts_found,
+            'sources_used': json.loads(self.sources_used) if self.sources_used else [],
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class CurrentsAnalysis(Base):
+    """Currents Analysis model - stores theological news analyses"""
+
+    __tablename__ = "currents_analyses"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Core data
+    analysis_date = Column(String(100), nullable=False)
+    news_source = Column(String(200))
+    headline_summary = Column(String(300))
+    story_context = Column(Text)
+    content = Column(Text, nullable=False)
+    word_count = Column(Integer)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_currents_date', 'analysis_date'),
+        Index('idx_currents_created', 'created_at'),
+    )
+
+    def __repr__(self):
+        return f"<CurrentsAnalysis(id={self.id}, date='{self.analysis_date}')>"
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'analysis_date': self.analysis_date,
+            'news_source': self.news_source,
+            'headline_summary': self.headline_summary,
+            'story_context': self.story_context,
+            'content': self.content,
+            'word_count': self.word_count,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }

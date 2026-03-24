@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+
+{% block title %}Pastor's Workshop | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header workshop-header">
+        <h1>Pastor's Workshop</h1>
+        <p>Sermon scaffolding through seven hermeneutical lenses</p>
+    </div>
+
+    <form method="POST" action="/workshop/generate" class="generate-form" id="workshopForm">
+        <div class="form-section">
+            <h2>1. Choose Your Lens</h2>
+            <p class="section-description">Each lens represents a distinct way of seeing the text. Choose the approach that fits your sermon context.</p>
+
+            <div class="lens-grid">
+                {% for key, lens in lenses.items() %}
+                <label class="lens-card">
+                    <input type="radio" name="lens" value="{{ key }}" {% if loop.first %}checked{% endif %} required>
+                    <div class="lens-content">
+                        <div class="lens-icon lens-icon-{{ lens.icon }}"></div>
+                        <strong>{{ lens.name }}</strong>
+                        <p class="lens-tagline">"{{ lens.tagline }}"</p>
+                        <p class="lens-description">{{ lens.description }}</p>
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>2. Choose Text Source</h2>
+
+            <div class="source-tabs">
+                <label class="source-tab">
+                    <input type="radio" name="source" value="paste" checked>
+                    <span>Paste Text</span>
+                </label>
+                <label class="source-tab">
+                    <input type="radio" name="source" value="run">
+                    <span>Bible Gateway</span>
+                </label>
+                <label class="source-tab">
+                    <input type="radio" name="source" value="moravian">
+                    <span>Moravian Daily Text</span>
+                </label>
+                <label class="source-tab">
+                    <input type="radio" name="source" value="rcl">
+                    <span>RCL</span>
+                </label>
+            </div>
+
+            <!-- Paste Source Fields -->
+            <div id="source-paste" class="source-fields">
+                <div class="form-group">
+                    <label for="reference-paste">Biblical Reference</label>
+                    <input
+                        type="text"
+                        id="reference-paste"
+                        name="reference"
+                        placeholder="e.g., John 3:16-21"
+                        class="form-input">
+                    <p class="help-text">Enter the biblical reference (e.g., "Mark 5:1-5", "Romans 8:18-30")</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="text">Biblical Text</label>
+                    <textarea
+                        id="text"
+                        name="text"
+                        rows="10"
+                        class="form-textarea"
+                        placeholder="Paste your biblical text here"></textarea>
+                    <p class="help-text">Paste the biblical text you want to explore</p>
+                </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="paste-context-workshop">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="paste-context-workshop"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to this text?"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape the sermon prep</p>
+                        <span class="word-counter" id="paste-context-workshop-counter">0 / 1000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bible Gateway Source Fields -->
+            <div id="source-run" class="source-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="reference-run">Biblical Reference</label>
+                    <input
+                        type="text"
+                        id="reference-run"
+                        name="reference"
+                        placeholder="e.g., John 3:16-21"
+                        class="form-input">
+                    <p class="help-text">The text will be automatically fetched from Bible Gateway</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="translation">Translation</label>
+                    <select id="translation" name="translation" class="form-select">
+                        {% for trans in translations %}
+                        <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="run-context-workshop">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="run-context-workshop"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to this text?"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape the sermon prep</p>
+                        <span class="word-counter" id="run-context-workshop-counter">0 / 1000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moravian Source Fields -->
+            <div id="source-moravian" class="source-fields" style="display: none;">
+                <div class="info-box">
+                    <h3>Today's Moravian Daily Text</h3>
+                    <p>Automatically fetches all readings from today's Moravian Daily Text</p>
+                </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="moravian-context">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="moravian-context"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to today's readings? e.g., 'Our congregation is grieving the loss of a beloved elder' or 'How do these texts speak to anxiety about the future?'"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape how the engine engages with today's texts</p>
+                        <span class="word-counter" id="moravian-context-counter">0 / 1000</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="translation-moravian">Translation</label>
+                    <select id="translation-moravian" name="translation" class="form-select">
+                        {% for trans in translations %}
+                        <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- RCL Source Fields -->
+            <div id="source-rcl" class="source-fields" style="display: none;">
+                <div class="info-box">
+                    <h3>Revised Common Lectionary</h3>
+                    <p>Fetches today's reading from the Revised Common Lectionary</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="rcl-reading">Reading Type</label>
+                    <select id="rcl-reading" name="rcl_reading" class="form-select">
+                        <option value="gospel" selected>Gospel</option>
+                        <option value="ot">Old Testament</option>
+                        <option value="psalm">Psalm</option>
+                        <option value="epistle">Epistle</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="translation-rcl">Translation</label>
+                    <select id="translation-rcl" name="translation" class="form-select">
+                        {% for trans in translations %}
+                        <option value="{{ trans }}" {% if trans == default_translation %}selected{% endif %}>{{ trans }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group moravian-context-group">
+                    <label for="rcl-context-workshop">Your Question or Context <span class="optional-label">(optional)</span></label>
+                    <textarea
+                        id="rcl-context-workshop"
+                        name="moravian_context"
+                        rows="4"
+                        class="form-textarea"
+                        maxlength="1000"
+                        placeholder="What question or context would you like to bring to today's readings?"></textarea>
+                    <div class="textarea-footer">
+                        <p class="help-text">Frame a question or provide context to shape the sermon prep</p>
+                        <span class="word-counter" id="rcl-context-workshop-counter">0 / 1000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large" id="submitBtn">
+                Generate Sermon Scaffolding
+            </button>
+            <p class="help-text">
+                <strong>Estimated time:</strong> 15-30 seconds
+            </p>
+        </div>
+    </form>
+
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Preparing Sermon Scaffolding...</h2>
+            <p id="loadingMessage">This may take 15-30 seconds. Please wait...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Moravian context character counter
+const moravianContext = document.getElementById('moravian-context');
+// Character counters for all context textareas
+const workshopContextFields = [
+    { textarea: 'paste-context-workshop', counter: 'paste-context-workshop-counter' },
+    { textarea: 'run-context-workshop', counter: 'run-context-workshop-counter' },
+    { textarea: 'moravian-context', counter: 'moravian-context-counter' },
+    { textarea: 'rcl-context-workshop', counter: 'rcl-context-workshop-counter' }
+];
+
+workshopContextFields.forEach(field => {
+    const textarea = document.getElementById(field.textarea);
+    const counter = document.getElementById(field.counter);
+    if (textarea && counter) {
+        textarea.addEventListener('input', function() {
+            counter.textContent = this.value.length + ' / 1000';
+        });
+    }
+});
+
+// Show loading overlay when form is submitted
+document.getElementById('workshopForm').addEventListener('submit', function(e) {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+});
+
+// Source tab switching
+document.querySelectorAll('input[name="source"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        const source = this.value;
+
+        // Hide all source fields
+        document.querySelectorAll('.source-fields').forEach(function(field) {
+            field.style.display = 'none';
+        });
+
+        // Show selected source fields
+        document.getElementById('source-' + source).style.display = 'block';
+
+        // Disable ALL reference inputs first (so hidden ones don't submit)
+        document.querySelectorAll('input[name="reference"]').forEach(function(input) {
+            input.disabled = true;
+            input.required = false;
+        });
+
+        // Enable and set required for active source's reference field
+        if (source === 'paste' || source === 'run') {
+            const activeRef = document.querySelector('#source-' + source + ' input[name="reference"]');
+            if (activeRef) {
+                activeRef.disabled = false;
+                activeRef.required = true;
+            }
+        }
+
+        // Handle text field requirement
+        if (source === 'paste') {
+            document.getElementById('text').required = true;
+            document.getElementById('text').disabled = false;
+        } else {
+            document.getElementById('text').required = false;
+            document.getElementById('text').disabled = true;
+        }
+    });
+});
+
+// Initialize: enable only the paste source fields on page load
+document.getElementById('reference-paste').disabled = false;
+document.getElementById('reference-paste').required = true;
+document.getElementById('reference-run').disabled = true;
+document.getElementById('text').disabled = false;
+document.getElementById('text').required = true;
+
+// Lens card visual selection
+document.querySelectorAll('.lens-card input[type="radio"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        // Remove selected from all cards
+        document.querySelectorAll('.lens-card').forEach(function(card) {
+            card.classList.remove('selected');
+        });
+        // Add selected to current card
+        if (this.checked) {
+            this.closest('.lens-card').classList.add('selected');
+        }
+    });
+});
+
+// Initialize first lens as selected
+document.querySelector('.lens-card input[type="radio"]:checked')?.closest('.lens-card')?.classList.add('selected');
+</script>
+{% endblock %}

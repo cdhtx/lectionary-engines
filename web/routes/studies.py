@@ -49,6 +49,11 @@ async def generate_study(
     custom_language_complexity: Optional[str] = Form(None),
     custom_focus_areas: Optional[str] = Form(None),
     custom_cultural_artifacts_level: Optional[int] = Form(None),
+    moravian_context: Optional[str] = Form(None),
+    integrate_news: Optional[str] = Form(None),
+    news_date: Optional[str] = Form(None),
+    news_context: Optional[str] = Form(None),
+    currents_id: Optional[int] = Form(None),
     run_validation: Optional[str] = Form("true"),  # "true" or "false"
     db: Session = Depends(get_db)
 ):
@@ -119,8 +124,33 @@ async def generate_study(
             text = generator.fetch_text(reference, translation)
         # For 'paste' source, reference and text come from form
 
+        # Prepend user context/question if provided (applies to all sources)
+        if moravian_context and moravian_context.strip():
+            source_label = {
+                "moravian": "MORAVIAN DAILY TEXT",
+                "rcl": "LECTIONARY READING",
+                "run": "BIBLICAL TEXT",
+                "paste": "BIBLICAL TEXT"
+            }.get(source, "BIBLICAL TEXT")
+            text = f"USER CONTEXT/QUESTION:\n{moravian_context.strip()}\n\n{'='*60}\n\n{source_label}:\n{text}"
+
         if not reference:
             raise ValueError("Reference is required")
+
+        # Resolve news context if news integration is enabled
+        resolved_news_context = None
+        resolved_news_date = None
+        if integrate_news:
+            if currents_id:
+                # Load context from a past Currents analysis
+                from ..models import CurrentsAnalysis
+                currents = db.query(CurrentsAnalysis).filter(CurrentsAnalysis.id == currents_id).first()
+                if currents:
+                    resolved_news_context = currents.story_context or currents.headline_summary
+                    resolved_news_date = currents.analysis_date
+            if not resolved_news_context and news_context and news_context.strip():
+                resolved_news_context = news_context.strip()
+                resolved_news_date = news_date or ""
 
         # Generate study (this calls Claude API - may take 30-60 seconds)
         # Pass preferences if available
@@ -130,7 +160,9 @@ async def generate_study(
             text=text,
             translation=translation,
             source=source,
-            preferences=preferences
+            preferences=preferences,
+            news_context=resolved_news_context,
+            news_date=resolved_news_date,
         )
 
         # Run validation pass (if enabled)
@@ -166,6 +198,9 @@ async def generate_study(
             reference_normalized=reference.lower().strip(),
             profile_name=profile_name,
             custom_preferences=custom_prefs_json,
+            news_integrated=bool(resolved_news_context),
+            news_context=resolved_news_context,
+            news_date=resolved_news_date,
             validation_score=validation_score,
             validation_recommendation=validation_recommendation,
             validation_data=validation_data_json
