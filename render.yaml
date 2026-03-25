@@ -2,8 +2,24 @@ services:
   - type: web
     name: lectionary-engines
     runtime: python
-    buildCommand: "pip install -r requirements.txt && pip install -r requirements-web.txt"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn web.app:app --host 0.0.0.0 --port $PORT"
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "3.11.0"
+      - key: DATABASE_URL
+        value: "sqlite:////data/lectionary.db"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
+      - key: DEFAULT_TRANSLATION
+        value: "NRSVue"
+      - key: DEFAULT_ENGINE
+        value: "threshold"
