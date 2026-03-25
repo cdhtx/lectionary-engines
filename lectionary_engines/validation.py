@@ -111,7 +111,12 @@ class ValidationResult:
             ValueError: If JSON is invalid or missing required fields
         """
         try:
-            data = json.loads(json_str)
+            # Strip markdown code fences if present (Claude sometimes wraps JSON)
+            clean = json_str.strip()
+            if clean.startswith("```"):
+                clean = clean.split("\n", 1)[-1]  # drop opening fence line
+                clean = clean.rsplit("```", 1)[0]  # drop closing fence
+            data = json.loads(clean)
         except json.JSONDecodeError as e:
             # Return a failed validation result
             return cls.failed(f"Invalid JSON response: {e}")
