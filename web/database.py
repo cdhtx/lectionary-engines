@@ -30,10 +30,42 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     """
-    Initialize database - create all tables
-    Call this when the application starts
+    Initialize database - create all tables and add any missing columns.
+    Call this when the application starts.
     """
     Base.metadata.create_all(bind=engine)
+
+    # Add any missing columns that may not exist in older DB schemas
+    if DATABASE_URL.startswith("sqlite"):
+        import sqlite3
+        db_path = DATABASE_URL.replace("sqlite:///", "")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        def add_column_if_missing(table, column, col_type):
+            cursor.execute(f"PRAGMA table_info({table})")
+            cols = {row[1] for row in cursor.fetchall()}
+            if column not in cols:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+                print(f"  Migrated: added {table}.{column}")
+
+        # Studies table migrations
+        for col, typ in [
+            ("news_integrated", "BOOLEAN DEFAULT 0"),
+            ("news_context", "TEXT"),
+            ("news_date", "VARCHAR(100)"),
+            ("validation_score", "INTEGER"),
+            ("validation_recommendation", "VARCHAR(50)"),
+            ("validation_data", "TEXT"),
+            ("profile_name", "VARCHAR(200)"),
+            ("custom_preferences", "TEXT"),
+            ("biblical_text", "TEXT"),
+        ]:
+            add_column_if_missing("studies", col, typ)
+
+        conn.commit()
+        conn.close()
+
     print(f"Database initialized at {DATABASE_URL}")
 
 
