@@ -558,6 +558,14 @@ updateArtifactsLabel(artifactsSlider.value);
 
 // Show loading overlay when form is submitted
 document.getElementById('generateForm').addEventListener('submit', function(e) {
+    // Disable inputs inside hidden source panels so they don't submit empty values
+    document.querySelectorAll('.source-fields').forEach(function(panel) {
+        if (panel.style.display === 'none') {
+            panel.querySelectorAll('input, textarea, select').forEach(function(el) {
+                el.disabled = true;
+            });
+        }
+    });
     document.getElementById('loadingOverlay').style.display = 'flex';
     document.getElementById('submitBtn').disabled = true;
 });
