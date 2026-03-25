@@ -309,5 +309,7 @@ class StudyGeneratorService:
             return ValidationResult.from_json(json_response)
 
         except Exception as e:
-            # Return a failed validation result if something goes wrong
+            import traceback
+            import logging
+            logging.getLogger(__name__).error(f"Validation error: {e}\n{traceback.format_exc()}")
             return ValidationResult.failed(f"Validation failed: {str(e)}")
