@@ -7,6 +7,10 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 import markdown
+import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ..database import get_db
 from ..models import Study, UserProfile
@@ -217,6 +221,7 @@ async def generate_study(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.error(f"Study generation failed: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Study generation failed: {str(e)}")
 
 
