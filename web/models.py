@@ -9,6 +9,26 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
+class User(Base):
+    """User model — controls who can access the app"""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index('idx_user_email', 'email'),
+    )
+
+    def __repr__(self):
+        return f"<User(id={self.id}, email='{self.email}', active={self.is_active})>"
+
+
 class Study(Base):
     """Study model - stores generated biblical interpretation studies"""
 

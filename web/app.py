@@ -6,7 +6,8 @@ FastAPI-based web interface for biblical interpretation engines
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 import markdown
@@ -15,8 +16,10 @@ from pathlib import Path
 
 from .database import init_db, close_db, get_db
 from .routes import studies, profiles, workshop, resonance, currents
+from .routes import auth as auth_routes
 from .models import Study
 from .config import WebConfig
+from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 
 # Load configuration
 config = WebConfig.load()
@@ -42,6 +45,25 @@ async def lifespan(app: FastAPI):
     close_db()
 
 
+# ── Auth middleware ───────────────────────────────────────────
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        # Always allow: login/logout/static/health/admin (admin has its own Basic Auth)
+        if (
+            path in PUBLIC_PATHS
+            or path.startswith("/static/")
+            or path.startswith("/admin/")
+        ):
+            return await call_next(request)
+
+        token = request.cookies.get(COOKIE_NAME)
+        if not token or not decode_session_cookie(token):
+            return RedirectResponse(url=f"/login?next={path}", status_code=303)
+
+        return await call_next(request)
+
+
 # Create FastAPI application
 app = FastAPI(
     title="Lectionary Engines",
@@ -53,6 +75,9 @@ app = FastAPI(
 # Get the web directory path
 WEB_DIR = Path(__file__).parent
 
+# Attach auth middleware
+app.add_middleware(AuthMiddleware)
+
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="static")
 
@@ -60,6 +85,7 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="stati
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
 
 # Include API routers
+app.include_router(auth_routes.router, tags=["auth"])
 app.include_router(studies.router, tags=["studies"])
 app.include_router(profiles.router, tags=["profiles"])
 app.include_router(workshop.router, tags=["workshop"])

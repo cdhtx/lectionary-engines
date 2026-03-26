@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management — Lectionary Engines</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8f9fa; color: #212529; margin: 0; padding: 32px; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    .subtitle { color: #6c757d; font-size: 13px; margin-bottom: 32px; }
+    .card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 28px 32px; margin-bottom: 24px; }
+    .card h2 { font-size: 16px; margin: 0 0 20px; color: #495057; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #dee2e6; color: #6c757d; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f1f3f5; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge--active { background: #d4edda; color: #155724; }
+    .badge--inactive { background: #f8d7da; color: #721c24; }
+    .btn { padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .btn-danger { background: #dc3545; color: #fff; }
+    .btn-warn { background: #ffc107; color: #212529; }
+    .btn-primary { background: #2c5f8a; color: #fff; padding: 9px 20px; font-size: 14px; border-radius: 5px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+    .form-row label { display: block; font-size: 12px; font-weight: 600; color: #6c757d; margin-bottom: 4px; }
+    .form-row input { width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
+    .message { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px 16px; border-radius: 5px; margin-bottom: 20px; font-size: 13px; }
+    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px 16px; border-radius: 5px; margin-bottom: 20px; font-size: 13px; }
+    .reset-row { display: flex; gap: 8px; align-items: center; }
+    .reset-row input { padding: 5px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px; width: 140px; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; }
+    .btn-sm-blue { background: #4a90e2; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>User Management</h1>
+  <p class="subtitle">Lectionary Engines · Admin Panel · <a href="/">← Back to site</a></p>
+
+  {% if message %}
+  <div class="message">{{ message }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <!-- Create user -->
+  <div class="card">
+    <h2>Add New User</h2>
+    <form action="/admin/users/create" method="POST">
+      <div class="form-row">
+        <div>
+          <label>Name</label>
+          <input type="text" name="name" placeholder="Full name" required>
+        </div>
+        <div>
+          <label>Email</label>
+          <input type="email" name="email" placeholder="user@example.com" required>
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Temporary password" required>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">Create User</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- User list -->
+  <div class="card">
+    <h2>Users ({{ users|length }})</h2>
+    {% if users %}
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Reset Password</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td><strong>{{ user.name }}</strong></td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="badge badge--{{ 'active' if user.is_active else 'inactive' }}">
+              {{ 'Active' if user.is_active else 'Inactive' }}
+            </span>
+          </td>
+          <td>{{ user.created_at.strftime('%b %d, %Y') if user.created_at else '—' }}</td>
+          <td>
+            <form action="/admin/users/{{ user.id }}/reset-password" method="POST" class="reset-row">
+              <input type="password" name="new_password" placeholder="New password" required>
+              <button type="submit" class="btn btn-sm btn-sm-blue">Reset</button>
+            </form>
+          </td>
+          <td>
+            <form action="/admin/users/{{ user.id }}/toggle" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-warn">
+                {{ 'Deactivate' if user.is_active else 'Activate' }}
+              </button>
+            </form>
+            &nbsp;
+            <form action="/admin/users/{{ user.id }}/delete" method="POST" style="display:inline;"
+                  onsubmit="return confirm('Delete {{ user.name }}? This cannot be undone.')">
+              <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#6c757d;font-size:14px;">No users yet. Create one above.</p>
+    {% endif %}
+  </div>
+</body>
+</html>

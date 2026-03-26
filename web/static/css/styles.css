@@ -178,6 +178,18 @@ header {
     transform: scaleX(1);
 }
 
+.nav-link--logout {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--color-ink-muted);
+    padding: var(--space-xs) 0;
+    opacity: 0.7;
+}
+
 /* ============================================================================
    Main Content
    ============================================================================ */

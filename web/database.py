@@ -66,6 +66,17 @@ def init_db():
         conn.commit()
         conn.close()
 
+        # Users table migrations (new columns only — table created by create_all above)
+        cursor.execute("PRAGMA table_info(users)")
+        if cursor.fetchall():  # table exists
+            for col, typ in [
+                ("is_active", "BOOLEAN DEFAULT 1"),
+            ]:
+                add_column_if_missing("users", col, typ)
+
+        conn.commit()
+        conn.close()
+
     print(f"Database initialized at {DATABASE_URL}")
 
 
