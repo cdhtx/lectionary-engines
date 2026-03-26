@@ -4,12 +4,15 @@ Session = signed cookie (itsdangerous). No JWT, no Redis.
 """
 
 import os
+import hashlib
+import hmac
+import base64
+import secrets as _secrets
 from typing import Optional
 
 from fastapi import Request, Depends
 from fastapi.responses import RedirectResponse
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from .database import get_db
@@ -20,8 +23,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production-please")
 COOKIE_NAME = "le_session"
 COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
-# ── Crypto ───────────────────────────────────────────────────
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# ── Crypto (stdlib only — no bcrypt dependency) ──────────────
 serializer = URLSafeTimedSerializer(SECRET_KEY, salt="le-session")
 
 # ── Public routes (no login required) ───────────────────────
@@ -29,11 +31,18 @@ PUBLIC_PATHS = {"/login", "/logout", "/health", "/favicon.ico"}
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    salt = _secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260000)
+    return salt + ":" + base64.b64encode(key).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    try:
+        salt, stored = hashed.split(":", 1)
+        key = hashlib.pbkdf2_hmac("sha256", plain.encode(), salt.encode(), 260000)
+        return hmac.compare_digest(base64.b64encode(key).decode(), stored)
+    except Exception:
+        return False
 
 
 def create_session_cookie(user_id: int) -> str:
