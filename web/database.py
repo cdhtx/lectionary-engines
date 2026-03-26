@@ -63,16 +63,8 @@ def init_db():
         ]:
             add_column_if_missing("studies", col, typ)
 
-        conn.commit()
-        conn.close()
-
-        # Users table migrations (new columns only — table created by create_all above)
-        cursor.execute("PRAGMA table_info(users)")
-        if cursor.fetchall():  # table exists
-            for col, typ in [
-                ("is_active", "BOOLEAN DEFAULT 1"),
-            ]:
-                add_column_if_missing("users", col, typ)
+        # Users table migrations
+        add_column_if_missing("users", "is_active", "BOOLEAN DEFAULT 1")
 
         conn.commit()
         conn.close()
