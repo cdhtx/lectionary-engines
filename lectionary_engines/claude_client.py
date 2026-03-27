@@ -15,13 +15,13 @@ import anthropic
 class ClaudeClient:
     """Client for interacting with Claude API"""
 
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-20250514", use_caching: bool = True):
+    def __init__(self, api_key: str, model: str = "claude-sonnet-4-6", use_caching: bool = True):
         """
         Initialize Claude client
 
         Args:
             api_key: Anthropic API key
-            model: Claude model to use (default: claude-sonnet-4-20250514)
+            model: Claude model to use (default: claude-sonnet-4-6)
             use_caching: Enable prompt caching for cost optimization (default: True)
         """
         self.client = anthropic.Anthropic(api_key=api_key)
@@ -142,7 +142,7 @@ class ClaudeClient:
         reference: str,
         study_content: str,
         system_prompt: str,
-        validation_model: str = "claude-haiku-4-5-20251001",
+        validation_model: str = "claude-haiku-4-5",
         max_tokens: int = 2000,
     ) -> str:
         """
