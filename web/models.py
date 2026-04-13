@@ -125,6 +125,7 @@ class UserProfile(Base):
     tone_level = Column(Integer, default=5, nullable=False)  # 0-8 scale (0=academic, 8=devotional)
     language_complexity = Column(String(20), default='standard', nullable=False)  # 'accessible', 'standard', 'advanced'
     focus_areas = Column(Text)  # Free text, user-specified (nullable)
+    cultural_artifacts_level = Column(Integer, default=0, nullable=False)  # 0-10 scale (0=off, 10=maximum)
 
     # Metadata
     is_default = Column(Boolean, default=False, nullable=False)  # Only one profile can be default
@@ -152,6 +153,7 @@ class UserProfile(Base):
             'tone_level': self.tone_level,
             'language_complexity': self.language_complexity,
             'focus_areas': self.focus_areas,
+            'cultural_artifacts_level': self.cultural_artifacts_level,
             'is_default': self.is_default,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
@@ -165,6 +167,7 @@ class UserProfile(Base):
             tone_level=self.tone_level,
             language_complexity=self.language_complexity,
             focus_areas=self.focus_areas,
+            cultural_artifacts_level=self.cultural_artifacts_level,
         )
 
 

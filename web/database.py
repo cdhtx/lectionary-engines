@@ -63,6 +63,9 @@ def init_db():
         ]:
             add_column_if_missing("studies", col, typ)
 
+        # User profiles table migrations
+        add_column_if_missing("user_profiles", "cultural_artifacts_level", "INTEGER DEFAULT 0")
+
         # Users table migrations
         add_column_if_missing("users", "is_active", "BOOLEAN DEFAULT 1")
 

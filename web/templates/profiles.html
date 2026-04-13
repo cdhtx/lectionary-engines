@@ -49,6 +49,10 @@
                             <span class="profile-setting__label">Language</span>
                             <span class="profile-setting__value">{{ profile.language_complexity | title }}</span>
                         </div>
+                        <div class="profile-setting">
+                            <span class="profile-setting__label">Artifacts</span>
+                            <span class="profile-setting__value">{% if profile.cultural_artifacts_level == 0 %}Off{% else %}{{ profile.cultural_artifacts_level }}/10{% endif %}</span>
+                        </div>
                         {% if profile.focus_areas %}
                         <div class="profile-setting profile-setting--full">
                             <span class="profile-setting__label">Focus</span>
@@ -109,6 +113,15 @@
                 <div class="form-group">
                     <label for="focus_areas">Focus Areas <span class="optional">(optional)</span></label>
                     <textarea id="focus_areas" name="focus_areas" rows="3" placeholder="e.g. justice themes, pastoral application, historical context..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="cultural_artifacts_level">Cultural Artifacts <span class="tone-desc" id="artifacts-desc">Off</span></label>
+                    <div class="tone-slider-wrap">
+                        <span class="tone-end">Off</span>
+                        <input type="range" id="cultural_artifacts_level" name="cultural_artifacts_level" min="0" max="10" value="0" oninput="updateArtifactsLabel(this.value, 'artifacts-desc')">
+                        <span class="tone-end">Maximum</span>
+                    </div>
                 </div>
 
                 <div class="form-group form-group--checkbox">
@@ -179,6 +192,15 @@
                 <textarea id="edit-focus" name="focus_areas" rows="3"></textarea>
             </div>
 
+            <div class="form-group">
+                <label for="edit-artifacts">Cultural Artifacts <span class="tone-desc" id="edit-artifacts-desc">Off</span></label>
+                <div class="tone-slider-wrap">
+                    <span class="tone-end">Off</span>
+                    <input type="range" id="edit-artifacts" name="cultural_artifacts_level" min="0" max="10" value="0" oninput="updateArtifactsLabel(this.value, 'edit-artifacts-desc')">
+                    <span class="tone-end">Maximum</span>
+                </div>
+            </div>
+
             <div class="form-group form-group--checkbox">
                 <label class="checkbox-label">
                     <input type="checkbox" id="edit-is-default" name="is_default">
@@ -209,6 +231,11 @@ function updateEditToneLabel(val) {
     document.getElementById('edit-tone-desc').textContent = TONE_LABELS[val];
 }
 
+function updateArtifactsLabel(val, descId) {
+    const labels = ['Off', '1', '2', '3', '4', '5 — Moderate', '6', '7', '8', '9', 'Maximum'];
+    document.getElementById(descId).textContent = labels[val];
+}
+
 // Create profile
 document.getElementById('create-form').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -223,6 +250,7 @@ document.getElementById('create-form').addEventListener('submit', async function
         tone_level: parseInt(form.tone_level.value),
         language_complexity: form.language_complexity.value,
         focus_areas: form.focus_areas.value.trim() || null,
+        cultural_artifacts_level: parseInt(form.cultural_artifacts_level.value),
         is_default: form.is_default.checked,
     };
 
@@ -251,8 +279,10 @@ async function openEditModal(id) {
     document.getElementById('edit-description').value = p.description || '';
     document.getElementById('edit-focus').value = p.focus_areas || '';
     document.getElementById('edit-tone').value = p.tone_level;
+    document.getElementById('edit-artifacts').value = p.cultural_artifacts_level || 0;
     document.getElementById('edit-is-default').checked = p.is_default;
     updateEditToneLabel(p.tone_level);
+    updateArtifactsLabel(p.cultural_artifacts_level || 0, 'edit-artifacts-desc');
 
     document.querySelectorAll('input[name="edit_study_length"]').forEach(r => {
         r.checked = r.value === p.study_length;
@@ -283,6 +313,7 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
         tone_level: parseInt(form.tone_level.value),
         language_complexity: form.edit_language_complexity.value,
         focus_areas: form.focus_areas.value.trim() || null,
+        cultural_artifacts_level: parseInt(form.cultural_artifacts_level.value),
         is_default: form.is_default.checked,
     };
 
