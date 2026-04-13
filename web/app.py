@@ -112,6 +112,20 @@ async def home(request: Request, db: Session = Depends(get_db)):
     })
 
 
+@app.get("/profiles", response_class=HTMLResponse)
+async def profiles_page(request: Request, db: Session = Depends(get_db)):
+    """Profiles management page"""
+    from .models import UserProfile
+    profiles = db.query(UserProfile).order_by(
+        UserProfile.is_default.desc(),
+        UserProfile.name.asc()
+    ).all()
+    return templates.TemplateResponse("profiles.html", {
+        "request": request,
+        "profiles": profiles
+    })
+
+
 @app.get("/generate", response_class=HTMLResponse)
 async def generate_page(request: Request):
     """

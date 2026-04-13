@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block title %}Profiles | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Profiles</h1>
+        <p>Customize how studies are generated for different contexts and audiences.</p>
+    </div>
+
+    <div class="profiles-layout">
+
+        <!-- Profile List -->
+        <section class="profiles-list" id="profiles-list">
+            {% if profiles %}
+                {% for profile in profiles %}
+                <div class="profile-card {% if profile.is_default %}profile-card--default{% endif %}" id="profile-{{ profile.id }}">
+                    <div class="profile-card__header">
+                        <div>
+                            <h2 class="profile-card__name">{{ profile.name }}</h2>
+                            {% if profile.is_default %}
+                            <span class="profile-badge">Default</span>
+                            {% endif %}
+                        </div>
+                        <div class="profile-card__actions">
+                            <button class="btn btn--sm btn--outline" onclick="openEditModal({{ profile.id }})">Edit</button>
+                            {% if not profile.is_default %}
+                            <button class="btn btn--sm btn--ghost" onclick="setDefault({{ profile.id }})">Set Default</button>
+                            <button class="btn btn--sm btn--danger" onclick="deleteProfile({{ profile.id }}, '{{ profile.name }}')">Delete</button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if profile.description %}
+                    <p class="profile-card__desc">{{ profile.description }}</p>
+                    {% endif %}
+
+                    <div class="profile-card__settings">
+                        <div class="profile-setting">
+                            <span class="profile-setting__label">Length</span>
+                            <span class="profile-setting__value">{{ profile.study_length | title }}</span>
+                        </div>
+                        <div class="profile-setting">
+                            <span class="profile-setting__label">Tone</span>
+                            <span class="profile-setting__value">{{ profile.tone_level }}/8</span>
+                        </div>
+                        <div class="profile-setting">
+                            <span class="profile-setting__label">Language</span>
+                            <span class="profile-setting__value">{{ profile.language_complexity | title }}</span>
+                        </div>
+                        {% if profile.focus_areas %}
+                        <div class="profile-setting profile-setting--full">
+                            <span class="profile-setting__label">Focus</span>
+                            <span class="profile-setting__value">{{ profile.focus_areas }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No profiles yet. Create one below to customize your study generation.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- Create Profile Form -->
+        <section class="profile-form-section">
+            <h2>New Profile</h2>
+            <form class="profile-form" id="create-form">
+                <div class="form-group">
+                    <label for="name">Profile Name</label>
+                    <input type="text" id="name" name="name" placeholder="e.g. Seminary, Devotional, Preaching" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description <span class="optional">(optional)</span></label>
+                    <input type="text" id="description" name="description" placeholder="Brief description of this profile's purpose">
+                </div>
+
+                <div class="form-group">
+                    <label>Study Length</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="study_length" value="short"> Short (1000–1500 words)</label>
+                        <label class="radio-label"><input type="radio" name="study_length" value="medium" checked> Medium (1500–2500 words)</label>
+                        <label class="radio-label"><input type="radio" name="study_length" value="long"> Long (2500–4000 words)</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tone_level">Tone <span class="tone-desc" id="tone-desc">Balanced</span></label>
+                    <div class="tone-slider-wrap">
+                        <span class="tone-end">Academic</span>
+                        <input type="range" id="tone_level" name="tone_level" min="0" max="8" value="4" oninput="updateToneLabel(this.value)">
+                        <span class="tone-end">Devotional</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Language Complexity</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="language_complexity" value="accessible"> Accessible</label>
+                        <label class="radio-label"><input type="radio" name="language_complexity" value="standard" checked> Standard</label>
+                        <label class="radio-label"><input type="radio" name="language_complexity" value="advanced"> Advanced</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="focus_areas">Focus Areas <span class="optional">(optional)</span></label>
+                    <textarea id="focus_areas" name="focus_areas" rows="3" placeholder="e.g. justice themes, pastoral application, historical context..."></textarea>
+                </div>
+
+                <div class="form-group form-group--checkbox">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="is_default" name="is_default">
+                        Set as default profile
+                    </label>
+                </div>
+
+                <div class="form-error" id="create-error" style="display:none;"></div>
+
+                <button type="submit" class="btn btn--primary">Create Profile</button>
+            </form>
+        </section>
+
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal" style="display:none;">
+    <div class="modal">
+        <div class="modal__header">
+            <h2>Edit Profile</h2>
+            <button class="modal__close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form class="profile-form" id="edit-form">
+            <input type="hidden" id="edit-id" name="id">
+
+            <div class="form-group">
+                <label for="edit-name">Profile Name</label>
+                <input type="text" id="edit-name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-description">Description <span class="optional">(optional)</span></label>
+                <input type="text" id="edit-description" name="description">
+            </div>
+
+            <div class="form-group">
+                <label>Study Length</label>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="edit_study_length" value="short"> Short</label>
+                    <label class="radio-label"><input type="radio" name="edit_study_length" value="medium"> Medium</label>
+                    <label class="radio-label"><input type="radio" name="edit_study_length" value="long"> Long</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-tone">Tone <span class="tone-desc" id="edit-tone-desc">Balanced</span></label>
+                <div class="tone-slider-wrap">
+                    <span class="tone-end">Academic</span>
+                    <input type="range" id="edit-tone" name="tone_level" min="0" max="8" value="4" oninput="updateEditToneLabel(this.value)">
+                    <span class="tone-end">Devotional</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Language Complexity</label>
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="edit_language_complexity" value="accessible"> Accessible</label>
+                    <label class="radio-label"><input type="radio" name="edit_language_complexity" value="standard"> Standard</label>
+                    <label class="radio-label"><input type="radio" name="edit_language_complexity" value="advanced"> Advanced</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-focus">Focus Areas <span class="optional">(optional)</span></label>
+                <textarea id="edit-focus" name="focus_areas" rows="3"></textarea>
+            </div>
+
+            <div class="form-group form-group--checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="edit-is-default" name="is_default">
+                    Set as default profile
+                </label>
+            </div>
+
+            <div class="form-error" id="edit-error" style="display:none;"></div>
+
+            <div class="modal__footer">
+                <button type="button" class="btn btn--outline" onclick="closeEditModal()">Cancel</button>
+                <button type="submit" class="btn btn--primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const TONE_LABELS = ['Pure Academic', 'Scholarly', 'Analytical', 'Thoughtful', 'Balanced', 'Reflective', 'Pastoral', 'Warm', 'Devotional'];
+
+function updateToneLabel(val) {
+    document.getElementById('tone-desc').textContent = TONE_LABELS[val];
+}
+
+function updateEditToneLabel(val) {
+    document.getElementById('edit-tone-desc').textContent = TONE_LABELS[val];
+}
+
+// Create profile
+document.getElementById('create-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const errorEl = document.getElementById('create-error');
+    errorEl.style.display = 'none';
+
+    const data = {
+        name: form.name.value.trim(),
+        description: form.description.value.trim() || null,
+        study_length: form.study_length.value,
+        tone_level: parseInt(form.tone_level.value),
+        language_complexity: form.language_complexity.value,
+        focus_areas: form.focus_areas.value.trim() || null,
+        is_default: form.is_default.checked,
+    };
+
+    const res = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+
+    if (res.ok) {
+        window.location.reload();
+    } else {
+        const err = await res.json();
+        errorEl.textContent = err.detail || 'Failed to create profile.';
+        errorEl.style.display = 'block';
+    }
+});
+
+// Open edit modal
+async function openEditModal(id) {
+    const res = await fetch(`/api/profiles/${id}`);
+    const p = await res.json();
+
+    document.getElementById('edit-id').value = p.id;
+    document.getElementById('edit-name').value = p.name;
+    document.getElementById('edit-description').value = p.description || '';
+    document.getElementById('edit-focus').value = p.focus_areas || '';
+    document.getElementById('edit-tone').value = p.tone_level;
+    document.getElementById('edit-is-default').checked = p.is_default;
+    updateEditToneLabel(p.tone_level);
+
+    document.querySelectorAll('input[name="edit_study_length"]').forEach(r => {
+        r.checked = r.value === p.study_length;
+    });
+    document.querySelectorAll('input[name="edit_language_complexity"]').forEach(r => {
+        r.checked = r.value === p.language_complexity;
+    });
+
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+// Save edit
+document.getElementById('edit-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const id = document.getElementById('edit-id').value;
+    const errorEl = document.getElementById('edit-error');
+    errorEl.style.display = 'none';
+
+    const data = {
+        name: form.name.value.trim(),
+        description: form.description.value.trim() || null,
+        study_length: form.edit_study_length.value,
+        tone_level: parseInt(form.tone_level.value),
+        language_complexity: form.edit_language_complexity.value,
+        focus_areas: form.focus_areas.value.trim() || null,
+        is_default: form.is_default.checked,
+    };
+
+    const res = await fetch(`/api/profiles/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+    });
+
+    if (res.ok) {
+        window.location.reload();
+    } else {
+        const err = await res.json();
+        errorEl.textContent = err.detail || 'Failed to save changes.';
+        errorEl.style.display = 'block';
+    }
+});
+
+// Set default
+async function setDefault(id) {
+    await fetch(`/api/profiles/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({is_default: true}),
+    });
+    window.location.reload();
+}
+
+// Delete profile
+async function deleteProfile(id, name) {
+    if (!confirm(`Delete profile "${name}"? This cannot be undone.`)) return;
+    const res = await fetch(`/api/profiles/${id}`, {method: 'DELETE'});
+    if (res.ok) {
+        window.location.reload();
+    } else {
+        const err = await res.json();
+        alert(err.detail || 'Failed to delete profile.');
+    }
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditModal();
+});
+</script>
+
+<style>
+.profiles-layout {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: var(--space-xl);
+    align-items: start;
+    margin-top: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+    .profiles-layout { grid-template-columns: 1fr; }
+}
+
+.profile-card {
+    background: var(--color-parchment-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.profile-card--default {
+    border-color: var(--color-gold);
+    border-left: 4px solid var(--color-gold);
+}
+
+.profile-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+}
+
+.profile-card__name {
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.profile-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-gold);
+    border: 1px solid var(--color-gold);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    margin-top: 4px;
+}
+
+.profile-card__actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.profile-card__desc {
+    color: var(--color-ink-muted);
+    font-size: 0.95rem;
+    margin-bottom: var(--space-sm);
+}
+
+.profile-card__settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border);
+}
+
+.profile-setting {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-setting--full { flex-basis: 100%; }
+
+.profile-setting__label {
+    font-size: 0.7rem;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+}
+
+.profile-setting__value {
+    font-size: 0.95rem;
+    color: var(--color-ink);
+}
+
+.empty-state {
+    padding: var(--space-xl);
+    text-align: center;
+    color: var(--color-ink-muted);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.profile-form-section {
+    background: var(--color-parchment-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    position: sticky;
+    top: var(--space-lg);
+}
+
+.profile-form-section h2 {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    margin-bottom: var(--space-md);
+}
+
+.tone-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: 8px;
+}
+
+.tone-slider-wrap input[type="range"] { flex: 1; }
+
+.tone-end {
+    font-size: 0.8rem;
+    color: var(--color-ink-muted);
+    white-space: nowrap;
+}
+
+.tone-desc {
+    font-weight: normal;
+    color: var(--color-gold);
+    font-style: italic;
+    margin-left: 8px;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.form-group--checkbox { margin-top: var(--space-sm); }
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.optional {
+    font-weight: normal;
+    color: var(--color-ink-muted);
+    font-size: 0.85rem;
+}
+
+.form-error {
+    color: #c0392b;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    background: rgba(192, 57, 43, 0.08);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-sm);
+}
+
+/* Buttons */
+.btn { cursor: pointer; font-family: var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; border: none; border-radius: var(--radius-sm); transition: all var(--transition-fast); }
+.btn--primary { background: var(--color-gold); color: var(--color-parchment); padding: 12px 24px; font-size: 0.8rem; }
+.btn--primary:hover { background: var(--color-gold-light); }
+.btn--outline { background: transparent; border: 1px solid var(--color-border-strong); color: var(--color-ink); padding: 6px 14px; font-size: 0.7rem; }
+.btn--outline:hover { border-color: var(--color-gold); color: var(--color-gold); }
+.btn--ghost { background: transparent; color: var(--color-ink-muted); padding: 6px 14px; font-size: 0.7rem; }
+.btn--ghost:hover { color: var(--color-ink); }
+.btn--danger { background: transparent; border: 1px solid rgba(192,57,43,0.3); color: #c0392b; padding: 6px 14px; font-size: 0.7rem; }
+.btn--danger:hover { background: rgba(192,57,43,0.08); }
+.btn--sm { padding: 5px 12px; font-size: 0.65rem; }
+
+/* Modal */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,22,18,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    padding: var(--space-md);
+}
+
+.modal {
+    background: var(--color-parchment);
+    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modal__header h2 { font-family: var(--font-heading); font-size: 1.4rem; }
+
+.modal__close {
+    background: none; border: none; font-size: 1.5rem;
+    cursor: pointer; color: var(--color-ink-muted); line-height: 1;
+}
+
+.modal .profile-form { padding: var(--space-lg); }
+
+.modal__footer {
+    display: flex; justify-content: flex-end; gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--space-md);
+}
+</style>
+{% endblock %}
