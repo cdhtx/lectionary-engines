@@ -15,13 +15,13 @@ from datetime import datetime
 RSS_SOURCES = {
     "ap": {
         "name": "Associated Press",
-        "url": "https://rsshub.app/apnews/topics/apf-topnews",
-        "fallback_url": "https://feeds.apnews.com/rss/topnews",
+        "url": "https://feeds.apnews.com/rss/apf-topnews",
+        "fallback_url": "https://feeds.apnews.com/rss/APTopNews",
     },
-    "reuters": {
-        "name": "Reuters",
-        "url": "https://rsshub.app/reuters/world",
-        "fallback_url": "https://www.reutersagency.com/feed/",
+    "guardian": {
+        "name": "The Guardian",
+        "url": "https://www.theguardian.com/world/rss",
+        "fallback_url": "https://www.theguardian.com/us-news/rss",
     },
     "npr": {
         "name": "NPR",
@@ -30,6 +30,23 @@ RSS_SOURCES = {
     "bbc": {
         "name": "BBC",
         "url": "https://feeds.bbci.co.uk/news/rss.xml",
+    },
+    "nytimes": {
+        "name": "New York Times",
+        "url": "https://rss.nytimes.com/services/xml/rss/nf/HomePage.xml",
+    },
+    "popular_mechanics": {
+        "name": "Popular Mechanics",
+        "url": "https://www.popularmechanics.com/rss/all.xml/",
+    },
+    "rolling_stone": {
+        "name": "Rolling Stone",
+        "url": "https://www.rollingstone.com/feed/",
+    },
+    "natgeo": {
+        "name": "National Geographic",
+        "url": "https://feeds.nationalgeographic.com/ng/News/News_Main",
+        "fallback_url": "https://www.nationalgeographic.com/pages/topic/rss",
     },
 }
 
