@@ -174,7 +174,7 @@ Evaluate this study. Be honest. Be direct. Celebrate what works. Flag what doesn
 # Validation configuration
 VALIDATION_CONFIG = {
     "model": "claude-haiku-4-5-20251001",  # Fast, cheap model for validation
-    "max_tokens": 2000,
+    "max_tokens": 4096,
     "temperature": 0.3,  # Slight creativity in evaluation
 }
 
