@@ -12,6 +12,9 @@ from .models import Base
 
 # Database URL from environment or default to SQLite file
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./lectionary.db")
+# Railway provides postgres:// URLs; SQLAlchemy 2.0 requires postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # Create engine
 # For SQLite, we need check_same_thread=False to work with FastAPI

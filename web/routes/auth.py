@@ -82,7 +82,7 @@ async def login_post(
         max_age=COOKIE_MAX_AGE,
         httponly=True,
         samesite="lax",
-        secure=False,  # set True when behind HTTPS on Render
+        secure=os.getenv("RAILWAY_ENVIRONMENT") is not None or os.getenv("RENDER") is not None,
     )
     return response
 
