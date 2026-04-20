@@ -240,14 +240,20 @@ async def browse_studies(
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(db: Session = Depends(get_db)):
     """
     Health check endpoint
     """
+    from .database import DATABASE_URL
+    study_count = db.query(Study).count()
+    db_type = "postgres" if "postgresql" in DATABASE_URL else "sqlite"
+    db_hint = DATABASE_URL[:30] + "..." if len(DATABASE_URL) > 30 else DATABASE_URL
     return {
         "status": "healthy",
         "api_key_configured": bool(config.anthropic_api_key),
-        "database": "connected"
+        "database_type": db_type,
+        "database_url_prefix": db_hint,
+        "study_count": study_count,
     }
 
 
