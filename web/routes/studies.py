@@ -89,30 +89,41 @@ async def generate_study(
             profile = db.query(UserProfile).filter(UserProfile.id == profile_id).first()
             if profile:
                 profile_name = profile.name
-                # Convert profile to StudyPreferences
                 preferences = profile.to_study_preferences()
 
-                # Apply custom overrides
-                custom_overrides = {}
-                if custom_study_length:
-                    preferences.study_length = custom_study_length
-                    custom_overrides['study_length'] = custom_study_length
-                if custom_tone_level is not None and custom_tone_level >= 0:
-                    preferences.tone_level = custom_tone_level
-                    custom_overrides['tone_level'] = custom_tone_level
-                if custom_language_complexity:
-                    preferences.language_complexity = custom_language_complexity
-                    custom_overrides['language_complexity'] = custom_language_complexity
-                if custom_focus_areas:
-                    preferences.focus_areas = custom_focus_areas
-                    custom_overrides['focus_areas'] = custom_focus_areas
-                if custom_cultural_artifacts_level is not None and custom_cultural_artifacts_level > 0:
-                    preferences.cultural_artifacts_level = custom_cultural_artifacts_level
-                    custom_overrides['cultural_artifacts_level'] = custom_cultural_artifacts_level
+        # Apply custom overrides — works with or without a profile
+        # If no profile, start from defaults so sliders still take effect
+        custom_overrides = {}
+        if custom_study_length or (custom_tone_level is not None and custom_tone_level >= 0) or \
+                custom_language_complexity or custom_focus_areas or \
+                (custom_cultural_artifacts_level is not None and custom_cultural_artifacts_level > 0):
+            if preferences is None:
+                from lectionary_engines.preferences import DEFAULT_PREFERENCES, StudyPreferences
+                preferences = StudyPreferences(
+                    study_length=DEFAULT_PREFERENCES.study_length,
+                    tone_level=DEFAULT_PREFERENCES.tone_level,
+                    language_complexity=DEFAULT_PREFERENCES.language_complexity,
+                    focus_areas=DEFAULT_PREFERENCES.focus_areas,
+                    cultural_artifacts_level=DEFAULT_PREFERENCES.cultural_artifacts_level,
+                )
+            if custom_study_length:
+                preferences.study_length = custom_study_length
+                custom_overrides['study_length'] = custom_study_length
+            if custom_tone_level is not None and custom_tone_level >= 0:
+                preferences.tone_level = custom_tone_level
+                custom_overrides['tone_level'] = custom_tone_level
+            if custom_language_complexity:
+                preferences.language_complexity = custom_language_complexity
+                custom_overrides['language_complexity'] = custom_language_complexity
+            if custom_focus_areas:
+                preferences.focus_areas = custom_focus_areas
+                custom_overrides['focus_areas'] = custom_focus_areas
+            if custom_cultural_artifacts_level is not None and custom_cultural_artifacts_level > 0:
+                preferences.cultural_artifacts_level = custom_cultural_artifacts_level
+                custom_overrides['cultural_artifacts_level'] = custom_cultural_artifacts_level
 
-                # Save custom overrides as JSON if any
-                if custom_overrides:
-                    custom_prefs_json = json.dumps(custom_overrides)
+        if custom_overrides:
+            custom_prefs_json = json.dumps(custom_overrides)
 
         # Handle different text sources
         if source == "moravian":

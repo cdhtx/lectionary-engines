@@ -144,6 +144,7 @@ class ClaudeClient:
         system_prompt: str,
         validation_model: str = "claude-haiku-4-5",
         max_tokens: int = 2000,
+        temperature: float = 0.3,
     ) -> str:
         """
         Validate a generated study for accuracy, helpfulness, and faithfulness.
@@ -169,6 +170,7 @@ class ClaudeClient:
             response = self.client.messages.create(
                 model=validation_model,
                 max_tokens=max_tokens,
+                temperature=temperature,
                 system=self._build_system_param(system_prompt),
                 messages=[{"role": "user", "content": f"""Biblical Reference: {reference}
 

@@ -302,7 +302,8 @@ class StudyGeneratorService:
                 study_content=study_content,
                 system_prompt=validation_protocol.SYSTEM_PROMPT,
                 validation_model=validation_protocol.VALIDATION_CONFIG['model'],
-                max_tokens=validation_protocol.VALIDATION_CONFIG['max_tokens']
+                max_tokens=validation_protocol.VALIDATION_CONFIG['max_tokens'],
+                temperature=validation_protocol.VALIDATION_CONFIG.get('temperature', 0.3),
             )
 
             # Parse response into structured result
