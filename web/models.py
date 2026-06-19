@@ -371,3 +371,21 @@ class CurrentsAnalysis(Base):
             'word_count': self.word_count,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+class CollisionVectorState(Base):
+    """
+    Persists the Collision engine's no-repeat vector sampler bags.
+
+    Stored in the DB rather than local disk because the app filesystem is
+    ephemeral on Railway/Render (wiped on every redeploy and container
+    restart) - only the DB survives across those.
+    """
+
+    __tablename__ = "collision_vector_state"
+
+    category = Column(String(50), primary_key=True)  # 'scientific', 'cultural', etc.
+    remaining_bag = Column(Text, nullable=False)  # JSON list of not-yet-drawn vectors
+
+    def __repr__(self):
+        return f"<CollisionVectorState(category='{self.category}')>"

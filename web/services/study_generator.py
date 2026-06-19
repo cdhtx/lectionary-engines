@@ -16,11 +16,14 @@ from lectionary_engines.claude_client import ClaudeClient
 from lectionary_engines.engines.threshold import ThresholdEngine
 from lectionary_engines.engines.palimpsest import PalimpsestEngine
 from lectionary_engines.engines.collision import CollisionEngine
+from lectionary_engines.engines.collision_sampler import CollisionVectorSampler
 from lectionary_engines.text_fetcher import TextFetcher
 from lectionary_engines.preferences import StudyPreferences
 from lectionary_engines.protocols import validation_protocol
 from lectionary_engines.protocols import news_integration
+from lectionary_engines.protocols import collision_protocol
 from lectionary_engines.validation import ValidationResult
+from .collision_state_store import DatabaseVectorStateStore
 
 
 class StudyGeneratorService:
@@ -43,11 +46,19 @@ class StudyGeneratorService:
         self.fetcher = TextFetcher(default_translation)
         self.default_translation = default_translation
 
+        # Collision engine's no-repeat vector sampler persists to the DB, not
+        # local disk, since the app filesystem is wiped on every Railway/Render
+        # redeploy and restart.
+        collision_sampler = CollisionVectorSampler(
+            collision_protocol.COLLISION_VECTORS,
+            store=DatabaseVectorStateStore(),
+        )
+
         # Initialize all three engines
         self.engines = {
             'threshold': ThresholdEngine(self.claude),
             'palimpsest': PalimpsestEngine(self.claude),
-            'collision': CollisionEngine(self.claude)
+            'collision': CollisionEngine(self.claude, vector_sampler=collision_sampler)
         }
 
     def generate_study(

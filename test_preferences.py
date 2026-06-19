@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from lectionary_engines.preferences import StudyPreferences
 from lectionary_engines.protocol_builder import build_system_prompt, build_output_constraints
-from lectionary_engines.protocols import threshold_protocol
+from lectionary_engines.protocols import threshold_protocol, palimpsest_protocol, collision_protocol
 from lectionary_engines.claude_client import ClaudeClient
 from lectionary_engines.engines.threshold import ThresholdEngine
 from lectionary_engines.config import Config
@@ -110,6 +110,46 @@ def test_output_constraints():
     print("\n✓ Constraints adjusted correctly\n")
 
 
+def test_cultural_artifacts_scales_across_all_engines():
+    """
+    Cultural artifacts intensity scaling lives in build_system_prompt() (shared
+    by all three engines via generate_with_preferences), not per-engine code.
+    Confirm the fix (per-level reference counts, distinct top-tier language)
+    actually reaches Threshold and Palimpsest, not just Collision.
+    """
+    print("=" * 60)
+    print("Test: Cultural artifacts scaling applies to all three engines")
+    print("=" * 60)
+
+    for engine_name, protocol in [
+        ("threshold", threshold_protocol),
+        ("palimpsest", palimpsest_protocol),
+        ("collision", collision_protocol),
+    ]:
+        blocks = {}
+        for level in range(1, 11):
+            prefs = StudyPreferences(cultural_artifacts_level=level)
+            prompt = build_system_prompt(protocol.SYSTEM_PROMPT, prefs)
+            start = prompt.find("**CULTURAL ARTIFACTS**")
+            end = prompt.find("**Source Categories**", start)
+            blocks[level] = prompt[start:end]
+            assert f"Level {level}/10" in blocks[level]
+            assert f"at least {level + 1} cultural references" in blocks[level]
+
+        assert blocks[7] != blocks[10], f"{engine_name}: level 7 and 10 must no longer be identical"
+        assert blocks[9] != blocks[10], f"{engine_name}: level 9 and 10 must differ"
+        assert "top of the scale" in blocks[10]
+        assert "top of the scale" not in blocks[6]
+
+        # Level 0 omits the block entirely
+        prompt_off = build_system_prompt(protocol.SYSTEM_PROMPT, StudyPreferences(cultural_artifacts_level=0))
+        assert "**CULTURAL ARTIFACTS**" not in prompt_off
+
+        print(f"  {engine_name}: all 10 levels distinct, level 10 reads as a true ceiling - OK")
+
+    print("\n✓ Cultural artifacts scaling confirmed shared across Threshold, Palimpsest, Collision\n")
+
+
 def test_threshold_with_preferences():
     """Test generating a study with preferences (actual Claude API call)"""
     print("=" * 60)
@@ -184,6 +224,7 @@ def main():
         test_preferences_creation()
         test_protocol_builder()
         test_output_constraints()
+        test_cultural_artifacts_scales_across_all_engines()
         test_threshold_with_preferences()
 
         print("\n")

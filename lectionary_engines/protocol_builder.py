@@ -81,19 +81,33 @@ Pay special attention to how this text speaks to these interests. Let these them
     # 5. Cultural Artifacts (if enabled)
     if preferences.cultural_artifacts_level > 0:
         level = preferences.cultural_artifacts_level
-        # Determine density description based on level
-        if level <= 3:
+        # Minimum reference count scales with every level (1-10), not just 3 buckets,
+        # so level 10 always asks for visibly more than level 7.
+        min_refs = level + 1
+
+        if level <= 2:
+            density = "light"
+            emphasis = "Keep these rare and well-chosen - most paragraphs should have none."
+        elif level <= 4:
             density = "occasional"
-            frequency = "Include 2-4 well-chosen cultural references throughout the study"
+            emphasis = "Sprinkle these in at natural moments. Don't force one into every section."
         elif level <= 6:
             density = "moderate"
-            frequency = "Include 5-8 cultural references woven throughout the study"
+            emphasis = "Most major sections should carry at least one reference."
+        elif level <= 8:
+            density = "heavy"
+            emphasis = "Nearly every paragraph should carry a reference - this should feel saturated, not sparing."
         else:
-            density = "rich"
-            frequency = "Include 10+ cultural references woven densely throughout the study"
+            density = "maximum" if level == 10 else "near-maximum"
+            emphasis = (
+                "This is the top of the scale. Do not hold back: multiple references per "
+                "paragraph, even stacking artifacts within the same sentence where it serves "
+                "the point. If in doubt, add one more. A reader should feel like they're "
+                "immersed in contemporary reference points by the end."
+            )
 
         customization_parts.append(f"""**CULTURAL ARTIFACTS**: Level {level}/10 ({density} density)
-{frequency}, drawing from diverse sources that illuminate the scripture and make it immediately relevant to contemporary life.
+Include at least {min_refs} cultural references woven throughout the study, drawing from diverse sources that illuminate the scripture and make it immediately relevant to contemporary life. {emphasis}
 
 **Source Categories** (mix recent and classic, weight for impact and relevance):
 - **News & Current Events**: Headlines, recent stories, or ongoing cultural conversations that echo the text's themes

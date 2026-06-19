@@ -5,14 +5,21 @@ Forces unexpected connections between ancient texts and contemporary realities
 through randomized collision vectors. Maximum intensity, building to crescendo.
 """
 
-import random
 from datetime import datetime
 from typing import Dict, Optional
 
 from .base import BaseEngine
+from .collision_sampler import CollisionVectorSampler
+from ..claude_client import ClaudeClient
 from ..protocols import collision_protocol
 from ..preferences import StudyPreferences
 from ..protocol_builder import build_system_prompt, build_output_constraints
+
+# Default singleton for CLI/standalone use: shares in-memory bag state across
+# calls within a process and persists to a local JSON file. The web app
+# injects a database-backed sampler instead (see CollisionEngine.__init__)
+# since the app filesystem is ephemeral on Railway/Render.
+_default_vector_sampler = CollisionVectorSampler(collision_protocol.COLLISION_VECTORS)
 
 
 class CollisionEngine(BaseEngine):
@@ -27,6 +34,10 @@ class CollisionEngine(BaseEngine):
 
     Tone: Brueggemann meets Cormac McCarthy meets Radiohead
     """
+
+    def __init__(self, claude_client: ClaudeClient, vector_sampler: Optional[CollisionVectorSampler] = None):
+        super().__init__(claude_client)
+        self._vector_sampler = vector_sampler or _default_vector_sampler
 
     @property
     def name(self) -> str:
@@ -52,14 +63,13 @@ class CollisionEngine(BaseEngine):
         vectors = {}
 
         # If custom vector provided, try to use it for appropriate category
-        # Otherwise random for all
+        # Otherwise draw from the no-repeat-until-exhausted bag for all
         for category, options in collision_protocol.COLLISION_VECTORS.items():
             if custom_vector and custom_vector.lower() in [opt.lower() for opt in options]:
                 # Use the custom vector for this category
                 vectors[category] = custom_vector
             else:
-                # Random selection
-                vectors[category] = random.choice(options)
+                vectors[category] = self._vector_sampler.draw(category)
 
         return vectors
 
