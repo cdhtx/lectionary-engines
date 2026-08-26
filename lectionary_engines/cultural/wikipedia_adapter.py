@@ -116,10 +116,13 @@ class WikipediaAdapter(BaseAdapter):
 
         artifacts = []
 
-        # Build search query with era context
+        # Search on the theme alone. An earlier version appended a literal
+        # "{start}s {end}s" (e.g. "healing 1977s 1999s") intending a decade
+        # hint, but that string doesn't match how Wikipedia's search indexes
+        # decade pages and reliably returned zero results regardless of
+        # theme. Era filtering already happens via _extract_year() below.
         for theme in themes[:3]:  # Limit themes to avoid too many requests
-            query = f"{theme} {start}s {end}s"
-            results = await self._search_wikipedia(query, limit=limit)
+            results = await self._search_wikipedia(theme, limit=limit)
 
             for result in results:
                 # Try to extract year from title or snippet

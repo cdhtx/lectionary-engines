@@ -15,8 +15,11 @@ logger = logging.getLogger(__name__)
 from ..database import get_db
 from ..models import Study, UserProfile
 from ..services.study_generator import StudyGeneratorService
+from ..services.currents_service import CurrentsService
+from ..services.cultural_grounding_service import build_grounding_for_passage
 from ..config import WebConfig
 from lectionary_engines.preferences import StudyPreferences
+from lectionary_engines.theme_extractor import extract_themes
 import json
 
 router = APIRouter()
@@ -26,6 +29,7 @@ config = WebConfig.load()
 
 # Initialize study generator service (singleton pattern)
 _generator_service = None
+_currents_service = None
 
 
 def get_generator_service() -> StudyGeneratorService:
@@ -37,6 +41,14 @@ def get_generator_service() -> StudyGeneratorService:
             default_translation=config.default_translation
         )
     return _generator_service
+
+
+def get_currents_service() -> CurrentsService:
+    """Get or create Currents service instance (used for auto news integration)"""
+    global _currents_service
+    if _currents_service is None:
+        _currents_service = CurrentsService(api_key=config.anthropic_api_key)
+    return _currents_service
 
 
 @router.post("/generate")
@@ -81,6 +93,7 @@ async def generate_study(
 
         # Build preferences from profile and custom overrides
         preferences = None
+        profile = None
         profile_name = None
         custom_prefs_json = None
 
@@ -167,6 +180,40 @@ async def generate_study(
                 resolved_news_context = news_context.strip()
                 resolved_news_date = news_date or ""
 
+        # Shared theme extraction - one cheap call feeds both auto news
+        # integration and cultural grounding below, if either is needed.
+        passage_themes = None
+        needs_auto_news = (
+            not resolved_news_context and profile is not None and profile.auto_news_integration
+        )
+        needs_grounding = preferences is not None and preferences.cultural_artifacts_level > 0
+        if needs_auto_news or needs_grounding:
+            passage_themes = extract_themes(generator.claude, reference, text)
+
+        # Auto news integration: pick a real, currently-fetched headline
+        # instead of requiring the user to browse and paste one manually.
+        if needs_auto_news and passage_themes:
+            try:
+                auto_headline = get_currents_service().auto_select_headline(passage_themes)
+            except Exception as auto_news_error:
+                logger.warning(f"Auto news integration skipped: {auto_news_error}")
+                auto_headline = None
+            if auto_headline:
+                resolved_news_context = auto_headline["news_context"]
+                resolved_news_date = auto_headline["news_date"]
+
+        # Cultural grounding: ground the intensity-scaled cultural-artifacts
+        # instruction (see protocol_builder.py) in real Wikipedia/TMDB
+        # artifacts instead of leaving it entirely to Claude's recall.
+        cultural_grounding_block = None
+        if needs_grounding and passage_themes:
+            cultural_grounding_block = await build_grounding_for_passage(
+                claude=generator.claude,
+                reference=reference,
+                text=text,
+                tmdb_api_key=config.tmdb_api_key if hasattr(config, "tmdb_api_key") else None,
+            )
+
         # Generate study (this calls Claude API - may take 30-60 seconds)
         # Pass preferences if available
         study_data = generator.generate_study(
@@ -178,6 +225,7 @@ async def generate_study(
             preferences=preferences,
             news_context=resolved_news_context,
             news_date=resolved_news_date,
+            cultural_grounding_block=cultural_grounding_block,
         )
 
         # Run validation pass (if enabled)

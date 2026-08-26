@@ -71,6 +71,7 @@ class StudyGeneratorService:
         preferences: Optional[StudyPreferences] = None,
         news_context: Optional[str] = None,
         news_date: Optional[str] = None,
+        cultural_grounding_block: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate a study using the specified engine
@@ -84,6 +85,9 @@ class StudyGeneratorService:
             preferences: Optional user preferences to customize the study
             news_context: Optional news story text for news integration
             news_date: Optional date of news event
+            cultural_grounding_block: Optional pre-built markdown block of
+                real cultural artifacts (see protocols/cultural_grounding.py)
+                to append to the system prompt
 
         Returns:
             dict with keys:
@@ -116,16 +120,20 @@ class StudyGeneratorService:
         # Get the engine
         engine = self.engines[engine_name]
 
-        # News integration: modify system prompt with injection fragment
-        if news_context and news_context.strip():
-            study = self._generate_with_news(
+        has_news = bool(news_context and news_context.strip())
+        has_grounding = bool(cultural_grounding_block and cultural_grounding_block.strip())
+
+        # News and/or cultural grounding: modify system prompt with injection fragments
+        if has_news or has_grounding:
+            study = self._generate_with_extras(
                 engine=engine,
                 engine_name=engine_name,
                 text=text,
                 reference=reference,
                 preferences=preferences,
-                news_context=news_context,
+                news_context=news_context if has_news else None,
                 news_date=news_date or "",
+                cultural_grounding_block=cultural_grounding_block if has_grounding else None,
             )
         else:
             # Standard generation
@@ -146,27 +154,30 @@ class StudyGeneratorService:
         study['metadata']['source'] = source
         study['metadata']['translation'] = actual_translation
 
-        if news_context and news_context.strip():
+        if has_news:
             study['metadata']['news_integrated'] = True
             study['metadata']['news_date'] = news_date
 
         return study
 
-    def _generate_with_news(
+    def _generate_with_extras(
         self,
         engine,
         engine_name: str,
         text: str,
         reference: str,
         preferences: Optional[StudyPreferences],
-        news_context: str,
+        news_context: Optional[str],
         news_date: str,
+        cultural_grounding_block: Optional[str],
     ) -> Dict[str, Any]:
         """
-        Generate a study with news integration by appending injection to system prompt.
+        Generate a study with news integration and/or cultural grounding by
+        appending injection fragments to the system prompt.
 
-        Uses the engine's protocol system prompt + news injection fragment,
-        then calls Claude directly.
+        Uses the engine's protocol system prompt + any applicable injection
+        fragments, then calls Claude directly (bypassing engine.generate(),
+        which only knows the base protocol).
         """
         from lectionary_engines.protocol_builder import build_system_prompt, build_output_constraints
         from lectionary_engines.protocols import collision_protocol
@@ -180,15 +191,19 @@ class StudyGeneratorService:
             preferences.validate()
             base_system_prompt = build_system_prompt(base_system_prompt, preferences)
 
-        # Append news injection fragment
-        injection = news_integration.get_news_injection(engine_name, news_context, news_date)
-        modified_system_prompt = base_system_prompt + injection
+        modified_system_prompt = base_system_prompt
+        if news_context:
+            modified_system_prompt += news_integration.get_news_injection(
+                engine_name, news_context, news_date
+            )
+        if cultural_grounding_block:
+            modified_system_prompt += cultural_grounding_block
 
         # Build the user message using the engine's normal input wrapping
         if engine_name == "collision":
             vectors = engine.generate_collision_vectors()
             user_message = collision_protocol.INPUT_WRAPPER(text, reference, vectors)
-            max_tokens = 8000  # Extra tokens for news integration
+            max_tokens = 8000  # Extra tokens for injected context
         else:
             # Threshold and Palimpsest use simpler input
             from lectionary_engines.protocols import threshold_protocol, palimpsest_protocol
@@ -197,7 +212,7 @@ class StudyGeneratorService:
                 user_message = protocol_module.INPUT_WRAPPER(text, reference)
             else:
                 user_message = f"Biblical Reference: {reference}\n\nBiblical Text:\n{text}"
-            max_tokens = 7000  # Extra tokens for news integration
+            max_tokens = 7000  # Extra tokens for injected context
 
         # Call Claude directly with modified prompt
         content = self.claude.generate_study(
@@ -213,8 +228,9 @@ class StudyGeneratorService:
             "content": content,
             "metadata": {
                 "word_count": len(content.split()),
-                "news_integrated": True,
-                "news_date": news_date,
+                "news_integrated": bool(news_context),
+                "news_date": news_date if news_context else None,
+                "cultural_grounding_applied": bool(cultural_grounding_block),
             },
         }
 

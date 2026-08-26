@@ -53,6 +53,10 @@
                             <span class="profile-setting__label">Artifacts</span>
                             <span class="profile-setting__value">{% if profile.cultural_artifacts_level == 0 %}Off{% else %}{{ profile.cultural_artifacts_level }}/10{% endif %}</span>
                         </div>
+                        <div class="profile-setting">
+                            <span class="profile-setting__label">Auto News</span>
+                            <span class="profile-setting__value">{% if profile.auto_news_integration %}On{% else %}Off{% endif %}</span>
+                        </div>
                         {% if profile.focus_areas %}
                         <div class="profile-setting profile-setting--full">
                             <span class="profile-setting__label">Focus</span>
@@ -122,6 +126,15 @@
                         <input type="range" id="cultural_artifacts_level" name="cultural_artifacts_level" min="0" max="10" value="0" oninput="updateArtifactsLabel(this.value, 'artifacts-desc')">
                         <span class="tone-end">Maximum</span>
                     </div>
+                    <p class="field-note">Grounded in real artifacts pulled from Wikipedia and TMDB (classic 1977&ndash;1999 and contemporary), not just Claude's memory.</p>
+                </div>
+
+                <div class="form-group form-group--checkbox">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="auto_news_integration" name="auto_news_integration">
+                        Auto-integrate current events
+                    </label>
+                    <p class="field-note">When on, studies automatically pull in a genuinely relevant recent headline instead of requiring you to fetch and paste one.</p>
                 </div>
 
                 <div class="form-group form-group--checkbox">
@@ -199,6 +212,15 @@
                     <input type="range" id="edit-artifacts" name="cultural_artifacts_level" min="0" max="10" value="0" oninput="updateArtifactsLabel(this.value, 'edit-artifacts-desc')">
                     <span class="tone-end">Maximum</span>
                 </div>
+                <p class="field-note">Grounded in real artifacts pulled from Wikipedia and TMDB (classic 1977&ndash;1999 and contemporary), not just Claude's memory.</p>
+            </div>
+
+            <div class="form-group form-group--checkbox">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="edit-auto-news" name="auto_news_integration">
+                    Auto-integrate current events
+                </label>
+                <p class="field-note">When on, studies automatically pull in a genuinely relevant recent headline instead of requiring you to fetch and paste one.</p>
             </div>
 
             <div class="form-group form-group--checkbox">
@@ -251,6 +273,7 @@ document.getElementById('create-form').addEventListener('submit', async function
         language_complexity: form.language_complexity.value,
         focus_areas: form.focus_areas.value.trim() || null,
         cultural_artifacts_level: parseInt(form.cultural_artifacts_level.value),
+        auto_news_integration: form.auto_news_integration.checked,
         is_default: form.is_default.checked,
     };
 
@@ -280,6 +303,7 @@ async function openEditModal(id) {
     document.getElementById('edit-focus').value = p.focus_areas || '';
     document.getElementById('edit-tone').value = p.tone_level;
     document.getElementById('edit-artifacts').value = p.cultural_artifacts_level || 0;
+    document.getElementById('edit-auto-news').checked = !!p.auto_news_integration;
     document.getElementById('edit-is-default').checked = p.is_default;
     updateEditToneLabel(p.tone_level);
     updateArtifactsLabel(p.cultural_artifacts_level || 0, 'edit-artifacts-desc');
@@ -314,6 +338,7 @@ document.getElementById('edit-form').addEventListener('submit', async function(e
         language_complexity: form.edit_language_complexity.value,
         focus_areas: form.focus_areas.value.trim() || null,
         cultural_artifacts_level: parseInt(form.cultural_artifacts_level.value),
+        auto_news_integration: form.auto_news_integration.checked,
         is_default: form.is_default.checked,
     };
 
@@ -528,6 +553,14 @@ document.getElementById('edit-modal').addEventListener('click', function(e) {
     font-weight: normal;
     color: var(--color-ink-muted);
     font-size: 0.85rem;
+}
+
+.field-note {
+    font-size: 0.8rem;
+    color: var(--color-ink-muted);
+    font-style: italic;
+    margin-top: 6px;
+    line-height: 1.4;
 }
 
 .form-error {

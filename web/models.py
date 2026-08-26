@@ -126,6 +126,7 @@ class UserProfile(Base):
     language_complexity = Column(String(20), default='standard', nullable=False)  # 'accessible', 'standard', 'advanced'
     focus_areas = Column(Text)  # Free text, user-specified (nullable)
     cultural_artifacts_level = Column(Integer, default=0, nullable=False)  # 0-10 scale (0=off, 10=maximum)
+    auto_news_integration = Column(Boolean, default=False, nullable=False)  # auto-select a headline instead of requiring manual paste
 
     # Metadata
     is_default = Column(Boolean, default=False, nullable=False)  # Only one profile can be default
@@ -154,6 +155,7 @@ class UserProfile(Base):
             'language_complexity': self.language_complexity,
             'focus_areas': self.focus_areas,
             'cultural_artifacts_level': self.cultural_artifacts_level,
+            'auto_news_integration': self.auto_news_integration,
             'is_default': self.is_default,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

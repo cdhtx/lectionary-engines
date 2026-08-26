@@ -20,6 +20,7 @@ from .routes import auth as auth_routes
 from .models import Study
 from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
+from lectionary_engines.scripture_linker import link_scripture_references
 
 # Load configuration
 config = WebConfig.load()
@@ -153,13 +154,15 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
             "message": "Study not found"
         }, status_code=404)
 
-    # Convert markdown to HTML
+    # Convert markdown to HTML, linking scripture references to Bible Gateway
+    # first so they render as normal markdown links.
+    linked_content = link_scripture_references(study.content, study.translation)
     md = markdown.Markdown(extensions=[
         'extra',          # Tables, footnotes, etc.
         'nl2br',          # Newline to <br>
         'sane_lists',     # Better list handling
     ])
-    study_html = md.convert(study.content)
+    study_html = md.convert(linked_content)
 
     # Parse validation data if present
     validation = None

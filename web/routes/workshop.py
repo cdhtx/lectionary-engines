@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from lectionary_engines.claude_client import ClaudeClient
 from lectionary_engines.engines.workshop import WorkshopEngine
+from lectionary_engines.scripture_linker import link_scripture_references
 from lectionary_engines.text_fetcher import TextFetcher
 from lectionary_engines.protocols import workshop_protocol
 
@@ -207,9 +208,10 @@ async def view_workshop_prep(
             "message": "Workshop prep not found"
         }, status_code=404)
 
-    # Convert markdown to HTML
+    # Convert markdown to HTML, linking scripture references to Bible Gateway
+    linked_content = link_scripture_references(prep.content, prep.translation)
     md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
-    content_html = md.convert(prep.content)
+    content_html = md.convert(linked_content)
 
     # Get lens info for display
     lens_info = workshop_protocol.LENSES.get(prep.lens, {})

@@ -19,6 +19,8 @@ from ..config import WebConfig
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from lectionary_engines.scripture_linker import link_scripture_references
+
 from lectionary_engines.claude_client import ClaudeClient
 from lectionary_engines.cultural import ResonanceEngine, WikipediaAdapter, TMDBAdapter
 
@@ -166,9 +168,10 @@ async def view_resonance(
     if not resonance:
         raise HTTPException(status_code=404, detail="Resonance not found")
 
-    # Convert markdown to HTML
+    # Convert markdown to HTML, linking scripture references to Bible Gateway
+    linked_content = link_scripture_references(resonance.content)
     md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
-    content_html = md.convert(resonance.content)
+    content_html = md.convert(linked_content)
 
     # Parse JSON fields
     themes = json.loads(resonance.themes) if resonance.themes else []

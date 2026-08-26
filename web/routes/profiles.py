@@ -23,6 +23,7 @@ class ProfileCreate(BaseModel):
     language_complexity: str = Field(default='standard', pattern='^(accessible|standard|advanced)$')
     focus_areas: Optional[str] = None
     cultural_artifacts_level: int = Field(default=0, ge=0, le=10)
+    auto_news_integration: bool = False
     is_default: bool = False
 
 
@@ -35,6 +36,7 @@ class ProfileUpdate(BaseModel):
     language_complexity: Optional[str] = Field(None, pattern='^(accessible|standard|advanced)$')
     focus_areas: Optional[str] = None
     cultural_artifacts_level: Optional[int] = Field(None, ge=0, le=10)
+    auto_news_integration: Optional[bool] = None
     is_default: Optional[bool] = None
 
 
@@ -123,6 +125,7 @@ async def create_profile(profile_data: ProfileCreate, db: Session = Depends(get_
         language_complexity=profile_data.language_complexity,
         focus_areas=profile_data.focus_areas,
         cultural_artifacts_level=profile_data.cultural_artifacts_level,
+        auto_news_integration=profile_data.auto_news_integration,
         is_default=profile_data.is_default,
     )
 

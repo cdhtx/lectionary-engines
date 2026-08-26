@@ -14,6 +14,7 @@ from ..database import get_db
 from ..models import CurrentsAnalysis
 from ..config import WebConfig
 from ..services.currents_service import CurrentsService
+from lectionary_engines.scripture_linker import link_scripture_references
 
 router = APIRouter()
 
@@ -181,9 +182,10 @@ async def view_currents(
             "message": "Currents analysis not found"
         }, status_code=404)
 
-    # Convert markdown to HTML
+    # Convert markdown to HTML, linking scripture references to Bible Gateway
+    linked_content = link_scripture_references(analysis.content)
     md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
-    content_html = md.convert(analysis.content)
+    content_html = md.convert(linked_content)
 
     return templates.TemplateResponse("currents_result.html", {
         "request": request,

@@ -8,13 +8,27 @@ Follows study_generator.py singleton pattern.
 import sys
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from datetime import datetime
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+from datetime import datetime
 
 from lectionary_engines.claude_client import ClaudeClient
 from lectionary_engines.news_fetcher import NewsFetcher
 from lectionary_engines.protocols import currents_protocol
+from lectionary_engines.theme_extractor import MODEL as THEME_EXTRACTOR_MODEL
+from lectionary_engines.json_extraction import extract_first_json
+
+# General-news sources used for auto headline selection - skips the niche
+# ones (Popular Mechanics, Rolling Stone, NatGeo) since a "current event"
+# integrated into a study should read as a real news event, not a hobbyist
+# feed item.
+AUTO_SELECT_SOURCES = ["ap", "guardian", "npr"]
+
+HEADLINE_SELECTION_PROMPT = """You are picking the single most theologically resonant news headline for a biblical study, out of a short list of today's actual headlines.
+
+Given a list of themes drawn from the passage, and a numbered list of headlines, return ONLY JSON: {"index": N} where N is the 0-based index of the best match, or {"index": null} if none of the headlines have a real, non-forced connection to these themes.
+
+Be honest - a forced connection is worse than no connection. Only pick a headline if it would let someone write a genuinely specific, non-generic reflection connecting it to these themes."""
 
 
 class CurrentsService:
@@ -60,6 +74,84 @@ class CurrentsService:
             Article text
         """
         return self.news_fetcher.fetch_story_context(url)
+
+    def auto_select_headline(
+        self,
+        themes: List[str],
+        sources: Optional[List[str]] = None,
+        limit_per_source: int = 6,
+    ) -> Optional[Dict[str, str]]:
+        """
+        Fetch today's headlines and have Claude pick the single most
+        thematically relevant one, instead of requiring a user to browse
+        and paste one manually.
+
+        Args:
+            themes: Theme keywords from theme_extractor.extract_themes()
+            sources: RSS source keys to pull from (defaults to AUTO_SELECT_SOURCES)
+            limit_per_source: Max headlines to fetch per source
+
+        Returns:
+            Dict with news_context, news_date, headline, source - or None
+            if fetching failed, nothing was found, or nothing was a real
+            match. Callers should treat None as "skip auto news this time,"
+            not an error - generation should never be blocked by this.
+        """
+        if not themes:
+            return None
+
+        headlines: List[Dict[str, str]] = []
+        for source in (sources or AUTO_SELECT_SOURCES):
+            try:
+                headlines.extend(self.fetch_headlines(source=source, limit=limit_per_source))
+            except Exception:
+                continue  # one source failing shouldn't sink the others
+
+        if not headlines:
+            return None
+
+        listing = "\n".join(
+            f"{i}. [{h['source']}] {h['title']} — {h['summary'][:150]}"
+            for i, h in enumerate(headlines)
+        )
+        user_message = f"Themes: {', '.join(themes)}\n\nHeadlines:\n{listing}"
+
+        try:
+            raw = self.claude.complete(
+                system_prompt=HEADLINE_SELECTION_PROMPT,
+                user_message=user_message,
+                model=THEME_EXTRACTOR_MODEL,
+                max_tokens=150,
+                temperature=0.3,
+            )
+            # Haiku sometimes adds an explanation after the JSON despite being
+            # told not to (observed live) - extract_first_json parses just
+            # the JSON value and ignores anything around it, rather than
+            # requiring the whole response to be clean JSON.
+            selection = extract_first_json(raw)
+            index = selection.get("index") if isinstance(selection, dict) else None
+        except Exception:
+            return None
+
+        if index is None or not isinstance(index, int) or not (0 <= index < len(headlines)):
+            return None
+
+        chosen = headlines[index]
+
+        try:
+            story_context = self.fetch_story_context(chosen["link"]) if chosen.get("link") else chosen["summary"]
+        except Exception:
+            story_context = chosen["summary"]
+
+        if not story_context or not story_context.strip():
+            story_context = chosen["summary"]
+
+        return {
+            "news_context": story_context,
+            "news_date": chosen.get("date") or datetime.now().strftime("%B %d, %Y"),
+            "headline": chosen["title"],
+            "source": chosen["source"],
+        }
 
     def analyze_story(
         self,

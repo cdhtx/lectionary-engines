@@ -31,49 +31,78 @@ else:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def init_db():
-    """
-    Initialize database - create all tables and add any missing columns.
-    Call this when the application starts.
-    """
-    Base.metadata.create_all(bind=engine)
+# Columns that may be missing on older DB schemas (added after a table was
+# first created). Applied on every startup for both SQLite (dev) and
+# Postgres (Railway production) - see _migrate_missing_columns().
+#
+# sqlite_type / postgres_type differ only where boolean default literals
+# differ (SQLite: 0/1, Postgres: FALSE/TRUE); everything else is identical
+# DDL syntax on both backends.
+COLUMN_MIGRATIONS = [
+    # (table, column, sqlite_type, postgres_type)
+    ("studies", "news_integrated", "BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE"),
+    ("studies", "news_context", "TEXT", "TEXT"),
+    ("studies", "news_date", "VARCHAR(100)", "VARCHAR(100)"),
+    ("studies", "validation_score", "INTEGER", "INTEGER"),
+    ("studies", "validation_recommendation", "VARCHAR(50)", "VARCHAR(50)"),
+    ("studies", "validation_data", "TEXT", "TEXT"),
+    ("studies", "profile_name", "VARCHAR(200)", "VARCHAR(200)"),
+    ("studies", "custom_preferences", "TEXT", "TEXT"),
+    ("studies", "biblical_text", "TEXT", "TEXT"),
+    ("user_profiles", "cultural_artifacts_level", "INTEGER DEFAULT 0", "INTEGER DEFAULT 0"),
+    ("user_profiles", "auto_news_integration", "BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE"),
+    ("users", "is_active", "BOOLEAN DEFAULT 1", "BOOLEAN DEFAULT TRUE"),
+]
 
-    # Add any missing columns that may not exist in older DB schemas
+
+def _migrate_missing_columns():
+    """
+    Add any columns listed in COLUMN_MIGRATIONS that don't exist yet.
+
+    Base.metadata.create_all() only creates missing *tables* - it never
+    alters a table that already exists, on either backend. Without this,
+    a new model column only ever reaches a fresh SQLite file; an existing
+    Railway/Postgres database would keep the old schema forever and error
+    the first time the app touched the new column.
+    """
     if DATABASE_URL.startswith("sqlite"):
         import sqlite3
         db_path = DATABASE_URL.replace("sqlite:///", "")
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        def add_column_if_missing(table, column, col_type):
+        tables = {t for t, _, _, _ in COLUMN_MIGRATIONS}
+        existing_cols = {}
+        for table in tables:
             cursor.execute(f"PRAGMA table_info({table})")
-            cols = {row[1] for row in cursor.fetchall()}
-            if column not in cols:
-                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+            existing_cols[table] = {row[1] for row in cursor.fetchall()}
+
+        for table, column, sqlite_type, _ in COLUMN_MIGRATIONS:
+            if column not in existing_cols[table]:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {sqlite_type}")
                 print(f"  Migrated: added {table}.{column}")
-
-        # Studies table migrations
-        for col, typ in [
-            ("news_integrated", "BOOLEAN DEFAULT 0"),
-            ("news_context", "TEXT"),
-            ("news_date", "VARCHAR(100)"),
-            ("validation_score", "INTEGER"),
-            ("validation_recommendation", "VARCHAR(50)"),
-            ("validation_data", "TEXT"),
-            ("profile_name", "VARCHAR(200)"),
-            ("custom_preferences", "TEXT"),
-            ("biblical_text", "TEXT"),
-        ]:
-            add_column_if_missing("studies", col, typ)
-
-        # User profiles table migrations
-        add_column_if_missing("user_profiles", "cultural_artifacts_level", "INTEGER DEFAULT 0")
-
-        # Users table migrations
-        add_column_if_missing("users", "is_active", "BOOLEAN DEFAULT 1")
 
         conn.commit()
         conn.close()
+
+    else:
+        # Postgres supports IF NOT EXISTS on ADD COLUMN natively (9.6+),
+        # so this is safe to run unconditionally on every startup.
+        with engine.begin() as conn:
+            for table, column, _, postgres_type in COLUMN_MIGRATIONS:
+                conn.exec_driver_sql(
+                    f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {postgres_type}"
+                )
+        print("  Migrated: verified Postgres columns are up to date")
+
+
+def init_db():
+    """
+    Initialize database - create all tables and add any missing columns.
+    Call this when the application starts.
+    """
+    Base.metadata.create_all(bind=engine)
+    _migrate_missing_columns()
 
     print(f"Database initialized at {DATABASE_URL}")
 

@@ -984,6 +984,22 @@ main {
     font-style: italic;
 }
 
+/* Scripture references auto-linked to Bible Gateway - see scripture_linker.py.
+   Applies wherever engine output is rendered: studies, workshop preps,
+   resonance results, currents analyses. */
+.scripture-link {
+    color: var(--color-gold);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--color-gold);
+    transition: border-bottom-color 0.15s ease, color 0.15s ease;
+}
+
+.scripture-link:hover,
+.scripture-link:focus-visible {
+    color: var(--color-gold-light);
+    border-bottom-style: solid;
+}
+
 .study-footer {
     display: flex;
     justify-content: space-between;

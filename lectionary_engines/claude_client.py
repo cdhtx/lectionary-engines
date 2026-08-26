@@ -96,6 +96,52 @@ class ClaudeClient:
         except Exception as e:
             raise Exception(f"Unexpected error generating study for {reference}: {e}")
 
+    def complete(
+        self,
+        system_prompt: str,
+        user_message: str,
+        model: Optional[str] = None,
+        max_tokens: int = 500,
+        temperature: float = 0.3,
+    ) -> str:
+        """
+        Generic single-turn completion for lightweight supporting calls
+        (theme extraction, headline matching) that aren't a full study or
+        validation pass and don't need caching.
+
+        Args:
+            system_prompt: System prompt for this call
+            user_message: User message content
+            model: Model override (defaults to this client's configured model)
+            max_tokens: Maximum response length
+            temperature: Sampling temperature
+
+        Returns:
+            str: Raw response text
+
+        Raises:
+            Exception: If Claude API returns an error
+        """
+        try:
+            response = self.client.messages.create(
+                model=model or self.model,
+                max_tokens=max_tokens,
+                # temperature isn't a typed kwarg on messages.create() in this
+                # SDK version (anthropic>=1.0.0 dropped it from the method
+                # signature) - pass via extra_body so it still reaches models
+                # that accept it (e.g. Haiku 4.5; removed entirely on
+                # Opus/Sonnet 4.6+).
+                extra_body={"temperature": temperature},
+                system=system_prompt,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            return response.content[0].text
+
+        except anthropic.APIError as e:
+            raise Exception(f"Claude API error: {e}")
+        except Exception as e:
+            raise Exception(f"Unexpected error in completion call: {e}")
+
     def generate_study_streaming(
         self,
         text: str,
@@ -170,7 +216,15 @@ class ClaudeClient:
             response = self.client.messages.create(
                 model=validation_model,
                 max_tokens=max_tokens,
-                temperature=temperature,
+                # See complete()'s comment: temperature isn't a typed kwarg on
+                # messages.create() in this SDK version, so it's passed via
+                # extra_body instead. Pre-existing bug, not something this
+                # change introduced - the old direct kwarg raised a plain
+                # TypeError, which routes/studies.py's broad "except Exception
+                # as validation_error" catches and silently downgrades to
+                # validation_recommendation = "skipped" - so this was likely
+                # failing quietly in production too.
+                extra_body={"temperature": temperature},
                 system=self._build_system_param(system_prompt),
                 messages=[{"role": "user", "content": f"""Biblical Reference: {reference}
 
