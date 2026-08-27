@@ -439,35 +439,39 @@ main {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-xs);
-    padding: 0.85rem 2rem;
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-decoration: none;
+    gap: 8px;
+    padding: 9px 14px;
     border-radius: var(--radius-sm);
-    border: none;
+    border: 1px solid var(--border-medium);
+    background: var(--surface-white);
+    color: var(--ink-950);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: 550;
+    text-decoration: none;
     cursor: pointer;
-    transition: all var(--transition-medium);
-    letter-spacing: 0.02em;
+    transition: all var(--transition-fast);
+}
+
+.btn:hover {
+    background: var(--ivory-100);
+    transform: translateY(-1px);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--color-ink) 0%, var(--color-ink-light) 100%);
-    color: var(--color-parchment);
-    box-shadow: 0 4px 15px var(--color-shadow-strong);
+    background: var(--navy-900);
+    color: #fff;
+    border-color: var(--navy-900);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px var(--color-shadow-strong);
-    background: linear-gradient(135deg, var(--color-ink-light) 0%, var(--color-ink) 100%);
+    background: var(--navy-850);
 }
 
 .btn-secondary {
-    background: transparent;
-    color: var(--color-ink);
-    border: 2px solid var(--color-border-strong);
+    background: var(--surface-white);
+    color: var(--ink-950);
+    border-color: var(--border-medium);
 }
 
 .btn-secondary:hover {
@@ -520,10 +524,11 @@ main {
 }
 
 .engine-card {
-    background: var(--color-parchment-light);
+    background: rgba(255, 255, 255, 0.58);
     padding: var(--space-xl);
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
     transition: all var(--transition-medium);
@@ -542,9 +547,7 @@ main {
 }
 
 .engine-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px var(--color-shadow-strong);
-    border-color: var(--color-gold);
+    border-color: var(--border-medium);
 }
 
 .engine-card:hover::before {
@@ -610,14 +613,15 @@ main {
 .engine-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.3rem 0.9rem;
-    font-family: var(--font-display);
-    font-size: 0.7rem;
-    font-weight: 600;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    border-radius: var(--radius-sm);
-    color: var(--color-parchment);
+    letter-spacing: 0.07em;
+    color: #fff;
 }
 
 .engine-threshold { background: var(--color-threshold); }
@@ -1266,18 +1270,21 @@ main {
 
 .search-bar input[type="text"] {
     flex: 1;
-    padding: var(--space-sm) var(--space-md);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--color-ink);
-    background: var(--color-parchment-light);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--ink-950);
+    font-family: var(--font-ui);
+    font-size: 0.95rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .search-bar input[type="text"]:focus {
     outline: none;
-    border-color: var(--color-gold);
+    border-color: var(--blue-400);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.10), var(--shadow-sm);
 }
 
 .search-clear {
@@ -1365,17 +1372,16 @@ main {
 }
 
 .study-card {
-    background: var(--color-parchment-light);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     padding: var(--space-lg);
     transition: all var(--transition-medium);
 }
 
 .study-card:hover {
-    border-color: var(--color-gold);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px var(--color-shadow-strong);
+    border-color: var(--border-medium);
 }
 
 .study-card-link {
