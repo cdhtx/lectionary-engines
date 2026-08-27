@@ -1035,9 +1035,9 @@ main {
 .currents-content,
 .workshop-content,
 .resonance-content {
-    font-family: var(--font-editorial);
-    font-size: 18px;
-    line-height: 1.7;
+    font-family: var(--font-editorial) !important;
+    font-size: 18px !important;
+    line-height: 1.7 !important;
 }
 
 /* Study Content - Manuscript Reading Experience */
