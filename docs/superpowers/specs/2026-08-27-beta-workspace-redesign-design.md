@@ -204,23 +204,45 @@ Ordered by risk and dependency. Each tier is its own spec → plan → build cyc
 
 ### Tier 1 — Foundation shell *(start here)*
 
-New design tokens, typography split, navy sidebar app-shell, compressed header, Today
-homepage, Workbench reframe, Library unification. Wraps the existing Study / Currents /
-Resonance / Workshop pages in the new shell.
+Split into two independently shippable halves. They mix different risk profiles: 1a is a
+pure cutover with no new backend surface, 1b introduces new routes. Separating them means
+the single riskiest change in the project ships alone, with one obvious cause if anything
+breaks.
 
-**Hard constraint: Tier 1 is strictly presentational.** No changes to `routes/`, `services/`,
-or `models.py`. Every existing capability — Claude generation, PDF export, share, email,
-scripture linking, cultural grounding — lives in Python and is untouched by definition, not
-merely by care. This is what makes "clean new site without broken pipes" structurally
-achievable rather than aspirational.
+**Hard constraint on both halves: Tier 1 is strictly presentational.** No changes to
+`routes/` logic, `services/`, or `models.py` beyond adding new read-only routes in 1b.
+Every existing capability — Claude generation, PDF export, share, email, scripture linking,
+cultural grounding — lives in Python and is untouched by definition, not merely by care.
+This is what makes "clean new site without broken pipes" structurally achievable rather
+than aspirational.
 
-Today ships incrementally. Tier 1 delivers: the shell, This Week in the Lectionary (built
-from the existing `fetch_rcl`), the three engine cards, Quick Actions, and Continue Your
-Studies *without* progress percentages. The Currents / Signals / Notes widgets appear as
-their backing features land in later tiers.
+#### Tier 1a — Restyle in place *(no new routes)*
 
-Workbench Tier 1 delivers the existing paths (passage / lectionary / paste) reflowed into
-the new two-step framing. "Theme" and "question" as entry points are new capability, later.
+The whole site adopts the Beta look: token replacement in `:root`, font `@import` swap,
+navy sidebar app-shell in `base.html`, every existing template restyled in place. Sidebar
+uses Beta nomenclature pointing at existing routes (Workbench → `/generate`, Library →
+`/browse`).
+
+Touches `styles.css`, `base.html`, and ~11 templates. Touches no Python at all. If any of
+the existing 82 tests fail during 1a, the presentational constraint has been violated —
+that failure is the signal, not noise.
+
+#### Tier 1b — New pages
+
+Today homepage (replacing the current index), Library unifying the three separate browse
+pages (`browse.html`, `currents_browse.html`, `workshop_browse.html`), and the Engines
+directory.
+
+Today ships incrementally: the shell, This Week in the Lectionary (built from the existing
+`fetch_rcl`), the three engine cards, Quick Actions, and Continue Your Studies *without*
+progress percentages. The Currents / Signals / Notes widgets appear as their backing
+features land in later tiers.
+
+Workbench 1b delivers the existing paths (passage / lectionary / paste) reflowed into the
+new two-step framing. "Theme" and "question" as entry points are new capability, later.
+
+The Library unification query — multi-type filtering and pagination across four content
+models — is real logic with clear expected outputs, and is written test-first.
 
 ### Tier 2 — Signals
 
@@ -256,6 +278,16 @@ interaction model, and relationship data that does not yet exist.
 **Gate:** revisit only after Signals proves the underlying relationship data is rich enough
 to be worth exploring visually. Building it first risks an impressive-looking view over
 coincidence.
+
+### Dependency order
+
+```
+1a ──> 1b ──> 2 ──> 3
+                └──> 4 ──> 5
+```
+
+1a → 1b is the only hard sequence. Tier 3 (Palimpsest) has no dependency on Tier 2 and can
+run first if the reading experience matters more than Signals.
 
 ## 7. Component hierarchy
 
@@ -300,7 +332,7 @@ false positive earlier in this project.
 |---|---|
 | `base.html` is shared by every page — highest blast radius in the codebase | Systematic route-by-route verification, not sampling. Feature branch, not direct-to-main. |
 | Sidebar links to pages that do not exist yet → beautiful shell, dead links behind half the nav | Only surface nav items that are built, or honest "coming soon" stubs. Never a link that lies. |
-| Partial migration reads as broken even when nothing is failing | Treat Tier 1 as a clean cutover: build the full visual layer on a branch, verify every page, merge as one coherent unit. |
+| Partial migration reads as broken even when nothing is failing | Treat Tier 1a as a clean cutover: build the full visual layer on a branch, verify every page, merge as one coherent unit. Never merge a half-restyled site. |
 | Engine color remap touches many files; risk of half-migrated color | Tokens are the single source of truth. No hardcoded engine hex anywhere. |
 | Design drift across later, deeper screens | This document is the reference. Tokens and guardrails are binding, not suggestions. |
 
