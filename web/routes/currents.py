@@ -5,6 +5,7 @@ Currents routes - API endpoints for theological news analysis
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from typing import Optional
 from pathlib import Path
@@ -59,7 +60,10 @@ async def fetch_headlines(
     """
     try:
         service = get_currents_service()
-        headlines = service.fetch_headlines(source=source, limit=limit)
+        # fetch_headlines() is a blocking `requests` call to an RSS feed -
+        # run off the event loop so it can't stall the whole app on a slow
+        # or hanging feed.
+        headlines = await run_in_threadpool(service.fetch_headlines, source=source, limit=limit)
         return {"headlines": headlines}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch headlines: {str(e)}")
@@ -86,7 +90,13 @@ async def analyze_story(
     try:
         service = get_currents_service()
 
-        result = service.analyze_story(
+        # analyze_story() is a blocking Claude API call that can take
+        # 30-60+ seconds for a full analysis. Running it off the event loop
+        # means the single Uvicorn worker can still serve other requests
+        # (including this same page reloading) while it's in flight,
+        # instead of the whole app appearing to hang.
+        result = await run_in_threadpool(
+            service.analyze_story,
             news_context=story_context,
             date=analysis_date if analysis_date else None,
             source_info=news_source,

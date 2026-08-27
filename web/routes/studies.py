@@ -4,6 +4,7 @@ Study routes - API endpoints for study generation and retrieval
 
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from typing import Optional
 import markdown
@@ -138,18 +139,21 @@ async def generate_study(
         if custom_overrides:
             custom_prefs_json = json.dumps(custom_overrides)
 
-        # Handle different text sources
+        # Handle different text sources. These are all blocking network
+        # calls - run off the event loop.
         if source == "moravian":
             # Fetch Moravian Daily Text
-            reference, text = generator.fetch_moravian()
+            reference, text = await run_in_threadpool(generator.fetch_moravian)
         elif source == "rcl":
             # Fetch RCL reading
-            reference, text = generator.fetch_rcl(reading_type=rcl_reading, translation=translation)
+            reference, text = await run_in_threadpool(
+                generator.fetch_rcl, reading_type=rcl_reading, translation=translation
+            )
         elif source == "run":
             # Fetch from Bible Gateway (reference required)
             if not reference:
                 raise ValueError("Reference is required for Bible Gateway source")
-            text = generator.fetch_text(reference, translation)
+            text = await run_in_threadpool(generator.fetch_text, reference, translation)
         # For 'paste' source, reference and text come from form
 
         # Prepend user context/question if provided (applies to all sources)
@@ -188,13 +192,17 @@ async def generate_study(
         )
         needs_grounding = preferences is not None and preferences.cultural_artifacts_level > 0
         if needs_auto_news or needs_grounding:
-            passage_themes = extract_themes(generator.claude, reference, text)
+            # extract_themes() is a blocking Claude call - run off the event loop.
+            passage_themes = await run_in_threadpool(extract_themes, generator.claude, reference, text)
 
         # Auto news integration: pick a real, currently-fetched headline
         # instead of requiring the user to browse and paste one manually.
         if needs_auto_news and passage_themes:
             try:
-                auto_headline = get_currents_service().auto_select_headline(passage_themes)
+                # Blocking: fetches RSS headlines + a Claude call to pick one.
+                auto_headline = await run_in_threadpool(
+                    get_currents_service().auto_select_headline, passage_themes
+                )
             except Exception as auto_news_error:
                 logger.warning(f"Auto news integration skipped: {auto_news_error}")
                 auto_headline = None
@@ -213,9 +221,14 @@ async def generate_study(
                 tmdb_api_key=config.tmdb_api_key if hasattr(config, "tmdb_api_key") else None,
             )
 
-        # Generate study (this calls Claude API - may take 30-60 seconds)
-        # Pass preferences if available
-        study_data = generator.generate_study(
+        # Generate study (this calls Claude API - may take 30-60 seconds).
+        # Blocking call - run off the event loop so the single Uvicorn
+        # worker can still serve other requests while it's in flight,
+        # instead of the whole app appearing to hang (see incident
+        # 2026-08-27: a stalled Currents analysis stacked up abandoned
+        # blocking requests and made the app unresponsive).
+        study_data = await run_in_threadpool(
+            generator.generate_study,
             engine_name=engine,
             reference=reference,
             text=text,
@@ -235,7 +248,9 @@ async def generate_study(
         should_validate = run_validation and run_validation.lower() == "true"
         if should_validate:
             try:
-                validation_result = generator.validate_study(
+                # Also a blocking Claude call - run off the event loop.
+                validation_result = await run_in_threadpool(
+                    generator.validate_study,
                     biblical_text=study_data.get('biblical_text', text),
                     reference=reference,
                     study_content=study_data['content']

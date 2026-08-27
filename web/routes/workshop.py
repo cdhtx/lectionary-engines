@@ -5,6 +5,7 @@ Workshop routes - API endpoints for Pastor's Workshop sermon prep tool
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from typing import Optional
 from pathlib import Path
@@ -95,15 +96,16 @@ async def generate_workshop(
         engine = get_workshop_engine()
         fetcher = get_text_fetcher()
 
-        # Handle different text sources
+        # Handle different text sources. fetch_moravian()/fetch_rcl()/fetch()
+        # are all blocking network calls - run off the event loop.
         if source == "moravian":
-            reference, text = fetcher.fetch_moravian()
+            reference, text = await run_in_threadpool(fetcher.fetch_moravian)
         elif source == "rcl":
-            reference, text = fetcher.fetch_rcl(rcl_reading)
+            reference, text = await run_in_threadpool(fetcher.fetch_rcl, rcl_reading)
         elif source == "run":
             if not reference:
                 raise ValueError("Reference is required for Bible Gateway source")
-            text = fetcher.fetch(reference, translation)
+            text = await run_in_threadpool(fetcher.fetch, reference, translation)
         # For 'paste' source, reference and text come from form
 
         # Prepend user context/question if provided (applies to all sources)
@@ -119,8 +121,12 @@ async def generate_workshop(
         if not reference:
             raise ValueError("Reference is required")
 
-        # Generate workshop scaffolding
-        result = engine.generate(
+        # Generate workshop scaffolding. This is a blocking Claude API call
+        # that can take 30-60+ seconds - run off the event loop so the
+        # single Uvicorn worker can still serve other requests while it's
+        # in flight.
+        result = await run_in_threadpool(
+            engine.generate,
             text=text,
             reference=reference,
             lens=lens

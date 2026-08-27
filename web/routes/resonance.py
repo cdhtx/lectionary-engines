@@ -6,6 +6,7 @@ import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from pathlib import Path
@@ -100,8 +101,12 @@ async def find_resonances(
             raise ValueError("At least one theme is required")
 
         # Use Claude-first mining (new approach)
+        # mine_artifacts()/synthesize_connections() are blocking Claude API
+        # calls - run off the event loop so a slow generation can't stall
+        # the whole app (find_resonances() is already async/adapter-only).
         if mining_mode == "claude" and engine.claude:
-            content = engine.mine_artifacts(
+            content = await run_in_threadpool(
+                engine.mine_artifacts,
                 themes=theme_list,
                 reference=reference,
                 context=context
@@ -123,7 +128,8 @@ async def find_resonances(
             )
 
             if engine.claude:
-                content = engine.synthesize_connections(
+                content = await run_in_threadpool(
+                    engine.synthesize_connections,
                     artifacts=artifacts,
                     biblical_themes=theme_list,
                     reference=reference
