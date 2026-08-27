@@ -6,8 +6,18 @@
 <div class="container">
     <div class="page-header">
         <h1>Browse Studies</h1>
-        <p>{{ total }} studies total</p>
+        <p>{{ total }} studies total{% if search_query %} matching "{{ search_query }}"{% endif %}</p>
     </div>
+
+    <form class="search-bar" action="/browse" method="get">
+        {% if engine_filter %}<input type="hidden" name="engine" value="{{ engine_filter }}">{% endif %}
+        {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search reference or study content...">
+        <button type="submit" class="btn btn-secondary">Search</button>
+        {% if search_query %}
+        <a href="/browse{% if engine_filter %}?engine={{ engine_filter }}{% endif %}{% if source_filter %}{% if engine_filter %}&{% else %}?{% endif %}source={{ source_filter }}{% endif %}" class="search-clear">Clear</a>
+        {% endif %}
+    </form>
 
     <div class="browse-layout">
         <aside class="browse-sidebar">
@@ -16,16 +26,16 @@
             <div class="filter-group">
                 <h4>Engine</h4>
                 <div class="filter-options">
-                    <a href="/browse" class="filter-link {% if not engine_filter %}active{% endif %}">
+                    <a href="/browse{% if search_query %}?q={{ search_query }}{% endif %}" class="filter-link {% if not engine_filter %}active{% endif %}">
                         All
                     </a>
-                    <a href="/browse?engine=threshold" class="filter-link {% if engine_filter == 'threshold' %}active{% endif %}">
+                    <a href="/browse?engine=threshold{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if engine_filter == 'threshold' %}active{% endif %}">
                         Threshold
                     </a>
-                    <a href="/browse?engine=palimpsest" class="filter-link {% if engine_filter == 'palimpsest' %}active{% endif %}">
+                    <a href="/browse?engine=palimpsest{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if engine_filter == 'palimpsest' %}active{% endif %}">
                         Palimpsest
                     </a>
-                    <a href="/browse?engine=collision" class="filter-link {% if engine_filter == 'collision' %}active{% endif %}">
+                    <a href="/browse?engine=collision{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if engine_filter == 'collision' %}active{% endif %}">
                         Collision
                     </a>
                 </div>
@@ -34,23 +44,23 @@
             <div class="filter-group">
                 <h4>Source</h4>
                 <div class="filter-options">
-                    <a href="/browse{% if engine_filter %}?engine={{ engine_filter }}{% endif %}"
+                    <a href="/browse{% if engine_filter %}?engine={{ engine_filter }}{% endif %}{% if search_query %}{% if engine_filter %}&{% else %}?{% endif %}q={{ search_query }}{% endif %}"
                        class="filter-link {% if not source_filter %}active{% endif %}">
                         All
                     </a>
-                    <a href="/browse?source=paste{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                    <a href="/browse?source=paste{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
                        class="filter-link {% if source_filter == 'paste' %}active{% endif %}">
                         Paste
                     </a>
-                    <a href="/browse?source=run{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                    <a href="/browse?source=run{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
                        class="filter-link {% if source_filter == 'run' %}active{% endif %}">
                         Bible Gateway
                     </a>
-                    <a href="/browse?source=moravian{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                    <a href="/browse?source=moravian{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
                        class="filter-link {% if source_filter == 'moravian' %}active{% endif %}">
                         Moravian
                     </a>
-                    <a href="/browse?source=rcl{% if engine_filter %}&engine={{ engine_filter }}{% endif %}"
+                    <a href="/browse?source=rcl{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
                        class="filter-link {% if source_filter == 'rcl' %}active{% endif %}">
                         RCL
                     </a>
@@ -86,14 +96,14 @@
             {% if total_pages > 1 %}
             <div class="pagination">
                 {% if has_prev %}
-                <a href="/browse?page={{ page - 1 }}{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+                <a href="/browse?page={{ page - 1 }}{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
                    class="btn btn-secondary">← Previous</a>
                 {% endif %}
 
                 <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
 
                 {% if has_next %}
-                <a href="/browse?page={{ page + 1 }}{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}"
+                <a href="/browse?page={{ page + 1 }}{% if engine_filter %}&engine={{ engine_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
                    class="btn btn-secondary">Next →</a>
                 {% endif %}
             </div>
@@ -102,7 +112,11 @@
             {% else %}
             <div class="empty-state">
                 <h2>No studies found</h2>
+                {% if search_query %}
+                <p>Nothing matches "{{ search_query }}". Try a different term, or <a href="/browse{% if engine_filter %}?engine={{ engine_filter }}{% endif %}">clear the search</a>.</p>
+                {% else %}
                 <p>Try adjusting your filters or <a href="/generate">generate a new study</a>.</p>
+                {% endif %}
             </div>
             {% endif %}
         </div>

@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 import markdown
 import json
 from pathlib import Path
@@ -197,10 +198,11 @@ async def browse_studies(
     page: int = 1,
     engine: str = None,
     source: str = None,
+    q: str = None,
     db: Session = Depends(get_db)
 ):
     """
-    Browse studies page - lists all studies with filtering
+    Browse studies page - lists all studies with filtering and search
     """
     # Calculate pagination
     per_page = config.studies_per_page
@@ -214,6 +216,18 @@ async def browse_studies(
         query = query.filter(Study.engine == engine)
     if source:
         query = query.filter(Study.source == source)
+    if q and q.strip():
+        # .ilike() is case-insensitive on both SQLite and Postgres via
+        # SQLAlchemy's dialect handling. Searches the raw reference column
+        # (not reference_normalized) since older rows predating that
+        # column's migration may have it NULL.
+        search_term = f"%{q.strip()}%"
+        query = query.filter(
+            or_(
+                Study.reference.ilike(search_term),
+                Study.content.ilike(search_term),
+            )
+        )
 
     # Order by most recent first
     query = query.order_by(Study.created_at.desc())
@@ -238,7 +252,8 @@ async def browse_studies(
         "has_next": has_next,
         "total": total,
         "engine_filter": engine,
-        "source_filter": source
+        "source_filter": source,
+        "search_query": q or ""
     })
 
 

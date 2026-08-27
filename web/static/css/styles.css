@@ -1009,6 +1009,45 @@ main {
 }
 
 /* ============================================================================
+   Search Bar (Browse page)
+   ============================================================================ */
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+}
+
+.search-bar input[type="text"] {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--color-ink);
+    background: var(--color-parchment-light);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.search-bar input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-gold);
+}
+
+.search-clear {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    color: var(--color-ink-muted);
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+.search-clear:hover {
+    color: var(--color-ink);
+}
+
+/* ============================================================================
    Browse Layout
    ============================================================================ */
 
