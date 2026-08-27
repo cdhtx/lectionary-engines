@@ -113,11 +113,16 @@ Include at least {min_refs} cultural references woven throughout the study, draw
 - **News & Current Events**: Headlines, recent stories, or ongoing cultural conversations that echo the text's themes
 - **Music**: Lyrics, album themes, artist stories, music history that resonates with the passage
 - **Film & Television**: Movie scenes, dialogue, character arcs, TV moments that illustrate the text's truths
-- **Books**: Fiction and non-fiction themes, passages, author insights - both popular and literary
+- **Books & Literary Interpretation**: Fiction and non-fiction themes, passages, a critic's or scholar's reading of a text, author insights - both popular and literary
 - **Podcasts & YouTube**: Notable episodes, creators, conversations that connect to the scripture
 - **Social Media & Online Culture**: Reddit threads, viral posts, LinkedIn insights, online community wisdom
 - **Interviews & Transcripts**: Quotes from interviews, speeches, or conversations that illuminate the text
-- **Art & Visual Culture**: Paintings, photography, design, visual references that enhance understanding
+- **Art**: Paintings, sculpture, photography, design, visual references that enhance understanding
+- **Etymology & Word Origins**: Where a key word in the passage - or a word used to translate or discuss it - actually comes from, and what that history reveals
+- **Biography**: A real person's documented life - a decision, a turning point, a public failure or reinvention - that mirrors the text's movement
+- **Autobiography & Memoir**: A writer's own account of living through something the text is naming, in their words
+- **Travel & Geography**: A real place - its landscape, history, or the experience of being there - that gives the text's setting or metaphor physical weight
+- **Culinary**: A dish, ingredient, or food tradition and its history - what it meant to make or share it, and to whom
 
 **Integration Guidelines**:
 - Weave references naturally into the study's flow - don't create a separate "cultural references" section
@@ -125,7 +130,9 @@ Include at least {min_refs} cultural references woven throughout the study, draw
 - Mix high and popular culture - a Dylan lyric alongside a TikTok trend
 - Include both timeless classics and current phenomena
 - Reference specific works (titles, quotes, scenes) - not vague gestures
-- Weight references by their power to illuminate, not just their relevance""")
+- Weight references by their power to illuminate, not just their relevance
+- Depth beats breadth: don't just namedrop a reference and move on. Pick at least one and actually wrestle with it - sit with a specific scene, lyric, biographical detail, word history, or literary passage long enough to do real interpretive work with it, not just gesture at it in passing
+- Reach beyond the categories you'd reach for by default (music, film, news). A study that only ever cites song lyrics and movies is thinner than one that also pulls in a word's etymology, a real person's biography, or the history of a place or dish""")
 
     # Build the complete injection block
     injection = f"""

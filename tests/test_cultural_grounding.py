@@ -75,3 +75,70 @@ def test_instructs_claude_to_prefer_real_over_invented():
     result = build_grounding_block([make_artifact()], [])
     assert "not invented from memory" in result
     assert "may still draw on your own knowledge" in result
+
+
+def test_instructs_claude_to_develop_not_just_namedrop():
+    result = build_grounding_block([make_artifact()], [])
+    assert "actually develop it" in result
+
+
+def make_cross_disciplinary_artifact(title, description="A description."):
+    return CulturalArtifact(
+        title=title,
+        creator="Wikipedia",
+        year=0,
+        category="etymology",
+        source_name="Wikipedia",
+        quote_or_description=description,
+        context="",
+        themes=[],
+    )
+
+
+def test_cross_disciplinary_section_included_when_present():
+    result = build_grounding_block(
+        [], [], cross_disciplinary={"etymology": [make_cross_disciplinary_artifact("Folk etymology")]}
+    )
+    assert "Etymology & Word Origins" in result
+    assert "Folk etymology" in result
+
+
+def test_cross_disciplinary_omits_year():
+    result = build_grounding_block(
+        [], [], cross_disciplinary={"biography": [make_cross_disciplinary_artifact("Mary Ingalls")]}
+    )
+    assert "Mary Ingalls* (0" not in result
+
+
+def test_cross_disciplinary_categories_only_shown_when_nonempty():
+    result = build_grounding_block(
+        [],
+        [],
+        cross_disciplinary={
+            "etymology": [make_cross_disciplinary_artifact("Folk etymology")],
+            "travel": [],
+        },
+    )
+    assert "Etymology & Word Origins" in result
+    assert "Travel & Geography" not in result
+
+
+def test_pop_culture_and_cross_disciplinary_both_included():
+    result = build_grounding_block(
+        [make_artifact(title="Purple Rain")],
+        [],
+        cross_disciplinary={"art": [make_cross_disciplinary_artifact("Chinese art")]},
+    )
+    assert "Purple Rain" in result
+    assert "Chinese art" in result
+    assert "Art" in result
+
+
+def test_none_cross_disciplinary_does_not_error():
+    result = build_grounding_block([make_artifact()], [], cross_disciplinary=None)
+    assert "Test Song" in result
+
+
+def test_empty_cross_disciplinary_dict_with_empty_eras_returns_empty_string():
+    assert build_grounding_block([], [], cross_disciplinary={}) == ""
+    assert build_grounding_block([], [], cross_disciplinary={"etymology": []}) == ""

@@ -45,6 +45,19 @@ class WikipediaAdapter(BaseAdapter):
         "{year}",  # General year page
     ]
 
+    # Query templates for search_topics() - cross-disciplinary reference
+    # material that isn't tied to a decade the way pop culture is. Each
+    # template biases Wikipedia's search toward that category, since the
+    # search API returns no structured category metadata to classify
+    # results after the fact.
+    CROSS_DISCIPLINARY_QUERY_TEMPLATES = {
+        "etymology": "{theme} etymology word origin",
+        "biography": "{theme} biography",
+        "travel": "{theme} travel geography place",
+        "art": "{theme} painting sculpture visual art",
+        "literature": "{theme} novel poem literary work",
+    }
+
     @property
     def name(self) -> str:
         return "Wikipedia"
@@ -151,6 +164,77 @@ class WikipediaAdapter(BaseAdapter):
                 break
 
         return artifacts[:limit]
+
+    async def search_topics(
+        self,
+        themes: List[str],
+        categories: Optional[List[str]] = None,
+        limit_per_category: int = 3,
+    ) -> Dict[str, List[CulturalArtifact]]:
+        """
+        Search Wikipedia for cross-disciplinary reference material -
+        etymology, biography, travel/geography, art, and literature -
+        matched to themes.
+
+        Unlike search(), this isn't era-scoped: a word's etymology or a
+        historical figure's biography doesn't have a "which decade" framing
+        the way pop culture does. Each category gets its own query so
+        results can be tagged and grouped by what they actually are, since
+        Wikipedia's search API returns no structured category metadata to
+        classify results after the fact.
+
+        Args:
+            themes: Theme keywords to search for
+            categories: Subset of CROSS_DISCIPLINARY_QUERY_TEMPLATES keys
+                to search (defaults to all of them)
+            limit_per_category: Max artifacts to return per category
+
+        Returns:
+            Dict mapping category name -> list of CulturalArtifact
+        """
+        categories = categories or list(self.CROSS_DISCIPLINARY_QUERY_TEMPLATES.keys())
+        results: Dict[str, List[CulturalArtifact]] = {}
+
+        for category in categories:
+            template = self.CROSS_DISCIPLINARY_QUERY_TEMPLATES.get(category)
+            if not template:
+                continue
+
+            artifacts = []
+            seen_titles = set()
+            for theme in themes[:2]:  # bounded: up to 5 categories x 2 themes per call
+                query = template.format(theme=theme)
+                raw_results = await self._search_wikipedia(query, limit=limit_per_category)
+
+                for result in raw_results:
+                    title = result.get("title", "")
+                    if not title or title.lower() in seen_titles:
+                        continue
+                    seen_titles.add(title.lower())
+
+                    snippet = result.get("snippet", "")
+                    artifacts.append(CulturalArtifact(
+                        title=title,
+                        creator="Wikipedia",
+                        year=0,  # not era-bound; year isn't meaningful for these categories
+                        category=category,
+                        source_name=self.name,
+                        quote_or_description=self._clean_snippet(snippet),
+                        context=f"From Wikipedia article: {title}",
+                        themes=[theme],
+                        url=f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}",
+                        confidence=0.65,
+                    ))
+
+                    if len(artifacts) >= limit_per_category:
+                        break
+
+                if len(artifacts) >= limit_per_category:
+                    break
+
+            results[category] = artifacts[:limit_per_category]
+
+        return results
 
     async def get_by_year(
         self,

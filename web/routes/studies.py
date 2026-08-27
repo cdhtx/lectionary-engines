@@ -205,12 +205,11 @@ async def generate_study(
         # Cultural grounding: ground the intensity-scaled cultural-artifacts
         # instruction (see protocol_builder.py) in real Wikipedia/TMDB
         # artifacts instead of leaving it entirely to Claude's recall.
+        # Reuses passage_themes from above rather than re-extracting.
         cultural_grounding_block = None
         if needs_grounding and passage_themes:
             cultural_grounding_block = await build_grounding_for_passage(
-                claude=generator.claude,
-                reference=reference,
-                text=text,
+                themes=passage_themes,
                 tmdb_api_key=config.tmdb_api_key if hasattr(config, "tmdb_api_key") else None,
             )
 
