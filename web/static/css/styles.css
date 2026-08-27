@@ -14,37 +14,72 @@
 }
 
 :root {
-    /* Sacred Manuscript Color Palette */
-    --color-parchment: #f5f0e6;
-    --color-parchment-light: #faf8f3;
-    --color-parchment-dark: #e8dfd0;
-    --color-ink: #1a1612;
-    --color-ink-light: #3d342a;
-    --color-ink-muted: #6b5d4d;
-    --color-gold: #b8860b;
-    --color-gold-light: #d4a642;
-    --color-gold-muted: rgba(184, 134, 11, 0.15);
+    /* ========================================================================
+       BETA DESIGN TOKENS (authoritative)
+       See docs/superpowers/specs/2026-08-27-beta-workspace-redesign-design.md
+       ======================================================================== */
 
-    /* Engine Colors - Jewel Tones */
-    --color-threshold: #6b2d5b;      /* Deep plum */
-    --color-threshold-light: #8b4d7b;
-    --color-palimpsest: #1e5631;     /* Forest green */
-    --color-palimpsest-light: #2d7a47;
-    --color-collision: #8b2500;       /* Burnt sienna */
-    --color-collision-light: #b33a00;
-    --color-resonance: #8b4513;       /* Saddle brown */
-    --color-resonance-light: #a0522d;
-    --color-currents: #2c3e50;        /* Deep navy */
-    --color-currents-light: #34495e;
-    --engine-color: #6b2d5b;          /* Engine card accent color (overridden per card) */
+    /* Backgrounds */
+    --navy-950: #071B33;
+    --navy-900: #0A2342;
+    --navy-850: #0D2D52;
+    --ivory-50: #FAF8F3;
+    --ivory-100: #F6F2EA;
+    --ivory-200: #EEE8DE;
 
-    /* Functional Colors */
-    --color-border: rgba(107, 93, 77, 0.2);
-    --color-border-strong: rgba(107, 93, 77, 0.4);
-    --color-shadow: rgba(26, 22, 18, 0.08);
-    --color-shadow-strong: rgba(26, 22, 18, 0.15);
+    /* Text */
+    --ink-950: #10233F;
+    --ink-800: #24364D;
+    --ink-600: #5E6B78;
+    --ink-400: #8B949E;
 
-    /* Typography */
+    /* Primary accents */
+    --blue-600: #1565C0;
+    --blue-500: #1976D2;
+    --blue-400: #3B8EDB;
+    --orange-600: #E55300;
+    --orange-500: #F36C12;
+    --orange-400: #FF8A35;
+    --teal-700: #006C78;
+    --teal-600: #008797;
+    --teal-500: #13A6B5;
+
+    /* Engine colors - REMAPPED from the pre-Beta palette. Do not revert. */
+    --threshold: #E95B13;
+    --palimpsest: #1565B5;
+    --collision: #007D8A;
+
+    /* Theological accent */
+    --gold-500: #C9962C;
+    --gold-300: #E2BC63;
+
+    /* Borders and surfaces */
+    --border-light: #DED8CF;
+    --border-medium: #CBC3B8;
+    --surface-white: #FFFDFC;
+    --surface-muted: #F4F0E9;
+
+    /* States */
+    --success: #287A57;
+    --warning: #D9951E;
+    --danger: #A93B2A;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(12, 32, 54, 0.06);
+    --shadow-md: 0 8px 24px rgba(12, 32, 54, 0.09);
+    --shadow-lg: 0 18px 50px rgba(12, 32, 54, 0.13);
+
+    /* Layout */
+    --sidebar-width: 188px;
+    --content-max: 1440px;
+
+    /* Radii - larger than pre-Beta (was 3/6/12), but still restrained.
+       No giant SaaS marshmallows. */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    /* Typography - Task 3 repoints these to Source Serif 4 + Inter */
     --font-display: 'Cinzel', serif;
     --font-heading: 'Cormorant Garamond', serif;
     --font-body: 'Crimson Pro', serif;
@@ -58,15 +93,52 @@
     --space-xl: 3rem;
     --space-2xl: 5rem;
 
-    /* Border radius */
-    --radius-sm: 3px;
-    --radius-md: 6px;
-    --radius-lg: 12px;
-
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-medium: 0.3s ease;
     --transition-slow: 0.5s ease;
+
+    /* ========================================================================
+       LEGACY ALIAS LAYER
+       ~2,500 lines of existing CSS reference these names. Rather than
+       rewriting every line (large, risky, and easy to half-finish), the old
+       names are preserved and re-pointed at the Beta palette. The whole site
+       inherits the new look with no other edits.
+
+       New CSS should use the Beta tokens above directly.
+       ======================================================================== */
+    --color-parchment: var(--ivory-50);
+    --color-parchment-light: var(--surface-white);
+    --color-parchment-dark: var(--ivory-200);
+
+    --color-ink: var(--ink-950);
+    --color-ink-light: var(--ink-800);
+    --color-ink-muted: var(--ink-600);
+
+    --color-gold: var(--gold-500);
+    --color-gold-light: var(--gold-300);
+    --color-gold-muted: rgba(201, 150, 44, 0.15);
+
+    --color-threshold: var(--threshold);
+    --color-threshold-light: var(--orange-400);
+    --color-palimpsest: var(--palimpsest);
+    --color-palimpsest-light: var(--blue-400);
+    --color-collision: var(--collision);
+    --color-collision-light: var(--teal-500);
+
+    /* Resonance and Currents are surfaces, not engines. The spec assigns no
+       colors for them; these are judgment calls kept in the Beta family. */
+    --color-resonance: var(--gold-500);
+    --color-resonance-light: var(--gold-300);
+    --color-currents: var(--navy-900);
+    --color-currents-light: var(--navy-850);
+
+    --color-border: var(--border-light);
+    --color-border-strong: var(--border-medium);
+    --color-shadow: rgba(12, 32, 54, 0.06);
+    --color-shadow-strong: rgba(12, 32, 54, 0.13);
+
+    --engine-color: var(--threshold); /* Fallback default; .engine-card:nth-child(n) overrides this per card (styles.css ~L381-383) */
 }
 
 /* Base Body Styles */
@@ -76,24 +148,7 @@ body {
     line-height: 1.7;
     color: var(--color-ink);
     background-color: var(--color-parchment);
-    background-image:
-        url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
     min-height: 100vh;
-}
-
-/* Subtle page texture overlay */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(ellipse at top, transparent 0%, var(--color-parchment) 70%),
-        radial-gradient(ellipse at bottom, rgba(184, 134, 11, 0.03) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: -1;
 }
 
 /* Container */
