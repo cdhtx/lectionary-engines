@@ -51,3 +51,21 @@ def test_health_endpoint():
     response = TestClient(app).get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
+
+
+def test_missing_study_renders_404_not_500(client):
+    response = client.get("/study/99999999")
+    assert response.status_code == 404, (
+        f"Expected 404, got {response.status_code}. A 500 here means the "
+        "404.html template is missing."
+    )
+
+
+def test_missing_currents_renders_404_not_500(client):
+    response = client.get("/currents/99999999")
+    assert response.status_code == 404
+
+
+def test_missing_workshop_prep_renders_404_not_500(client):
+    response = client.get("/workshop/99999999")
+    assert response.status_code == 404
