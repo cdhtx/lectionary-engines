@@ -163,6 +163,121 @@ body {
 }
 
 /* ============================================================================
+   App Shell
+   ============================================================================ */
+
+.app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    min-height: 100vh;
+}
+
+.main-content {
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 28px 36px 64px;
+}
+
+/* ============================================================================
+   Sidebar
+   ============================================================================ */
+
+.sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #06182E 0%, #082445 55%, #061A31 100%);
+    color: rgba(255, 255, 255, 0.86);
+    padding: 28px 16px;
+}
+
+.brand {
+    display: block;
+    text-decoration: none;
+    margin-bottom: 34px;
+}
+
+.brand-mark {
+    display: block;
+    color: var(--orange-400);
+    font-family: var(--font-editorial);
+    font-size: 2.8rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.brand-name {
+    display: block;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.62);
+    font-family: var(--font-ui);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    color: rgba(255, 255, 255, 0.88);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+
+/* The inset blue rail is what makes this read as software rather than a
+   styled ecclesiastical website. */
+.sidebar-link.active {
+    background: rgba(35, 105, 185, 0.25);
+    box-shadow: inset 3px 0 0 var(--blue-400);
+    color: #fff;
+}
+
+.sidebar-link--button {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.sidebar-divider {
+    height: 1px;
+    margin: 14px 12px;
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.sidebar-signout {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+/* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
+   markup these rules targeted no longer exists in base.html. Kept
+   temporarily; safe to delete once Tier 1b settles the layout. */
+
+/* ============================================================================
    Header and Navigation
    ============================================================================ */
 
@@ -1329,6 +1444,10 @@ main {
     margin-bottom: var(--space-sm);
     color: var(--color-ink-muted);
 }
+
+/* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
+   markup these rules targeted no longer exists in base.html. Kept
+   temporarily; safe to delete once Tier 1b settles the layout. */
 
 /* ============================================================================
    Footer
