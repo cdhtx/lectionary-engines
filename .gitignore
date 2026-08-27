@@ -55,3 +55,5 @@ lectionary_engines/engines/.collision_vector_state.json
 # Keep directory structure
 !outputs/.gitkeep
 !.env.example
+
+.worktrees/
