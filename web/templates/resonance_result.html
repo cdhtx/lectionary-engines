@@ -3,7 +3,7 @@
 {% block title %}Cultural Resonances | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container resonance-result-container">
+<div class="container resonance-result-container" data-share-title="{{ resonance.reference or 'Cultural Connections' }}">
     <div class="resonance-result-header">
         <div class="resonance-meta">
             <span class="resonance-badge">Cultural Resonance</span>
@@ -31,7 +31,13 @@
         {% endfor %}
     </div>
 
-    <div class="resonance-content">
+    <div class="currents-actions-bar">
+        <a href="/resonance/{{ resonance.id }}/pdf" class="btn btn-secondary">Download PDF</a>
+        <button type="button" class="btn btn-secondary" id="share-page-btn">Share</button>
+        <a href="mailto:?subject={{ (resonance.reference or 'Cultural Connections') | urlencode }}&body={{ ('Take a look at these cultural resonances: ' ~ request.url) | urlencode }}" class="btn btn-secondary">Email</a>
+    </div>
+
+    <div class="resonance-content" data-highlight-share>
         {{ content_html | safe }}
     </div>
 
@@ -41,4 +47,8 @@
         <a href="/workshop" class="btn btn-primary">Pastor's Workshop</a>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/content-actions.js" defer></script>
 {% endblock %}

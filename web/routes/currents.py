@@ -3,7 +3,7 @@ Currents routes - API endpoints for theological news analysis
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
@@ -15,6 +15,7 @@ from ..database import get_db
 from ..models import CurrentsAnalysis
 from ..config import WebConfig
 from ..services.currents_service import CurrentsService
+from ..services.pdf_service import render_pdf, slugify
 from lectionary_engines.scripture_linker import link_scripture_references
 
 router = APIRouter()
@@ -202,3 +203,48 @@ async def view_currents(
         "analysis": analysis,
         "content_html": content_html,
     })
+
+
+@router.get("/currents/{analysis_id}/pdf")
+async def download_currents_pdf(
+    request: Request,
+    analysis_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Download a Currents analysis as a PDF
+    """
+    analysis = db.query(CurrentsAnalysis).filter(
+        CurrentsAnalysis.id == analysis_id
+    ).first()
+
+    if not analysis:
+        return templates.TemplateResponse("404.html", {
+            "request": request,
+            "message": "Currents analysis not found"
+        }, status_code=404)
+
+    linked_content = link_scripture_references(analysis.content)
+    md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+    content_html = md.convert(linked_content)
+
+    meta_parts = ["The Currents", analysis.analysis_date]
+    if analysis.word_count:
+        meta_parts.append(f"{analysis.word_count} words")
+    if analysis.news_source:
+        meta_parts.append(f"Source: {analysis.news_source}")
+
+    pdf_bytes = await run_in_threadpool(
+        render_pdf,
+        title=analysis.headline_summary or "Theological News Analysis",
+        meta_line=" · ".join(meta_parts),
+        content_html=content_html,
+        source_url=str(request.url).replace("/pdf", ""),
+    )
+
+    filename = f"{slugify(analysis.headline_summary or 'currents-analysis')}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

@@ -823,6 +823,65 @@ main {
 }
 
 /* ============================================================================
+   Highlight-to-Share
+   ============================================================================ */
+
+.highlight-share-popover {
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 500;
+    background: var(--color-ink);
+    color: var(--color-parchment);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px var(--color-shadow-strong);
+    transition: background var(--transition-fast);
+}
+
+.highlight-share-popover:hover {
+    background: var(--color-gold);
+    color: var(--color-ink);
+}
+
+.highlight-share-popover::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--color-ink);
+}
+
+.share-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    z-index: 1100;
+    background: var(--color-ink);
+    color: var(--color-parchment);
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    box-shadow: 0 4px 12px var(--color-shadow-strong);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.share-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================================
    Loading Overlay
    ============================================================================ */
 

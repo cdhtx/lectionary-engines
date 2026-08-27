@@ -6,8 +6,9 @@ FastAPI-based web interface for biblical interpretation engines
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.concurrency import run_in_threadpool
 from contextlib import asynccontextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
@@ -21,6 +22,7 @@ from .routes import auth as auth_routes
 from .models import Study
 from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
+from .services.pdf_service import render_pdf, slugify
 from lectionary_engines.scripture_linker import link_scripture_references
 
 # Load configuration
@@ -190,6 +192,47 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
         "study_html": study_html,
         "validation": validation
     })
+
+
+@app.get("/study/{study_id}/pdf")
+async def download_study_pdf(request: Request, study_id: int, db: Session = Depends(get_db)):
+    """
+    Download a study as a PDF
+    """
+    study = db.query(Study).filter(Study.id == study_id).first()
+
+    if not study:
+        return templates.TemplateResponse("404.html", {
+            "request": request,
+            "message": "Study not found"
+        }, status_code=404)
+
+    linked_content = link_scripture_references(study.content, study.translation)
+    md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+    study_html = md.convert(linked_content)
+
+    meta_parts = [study.engine.title(), study.created_at.strftime('%B %d, %Y')]
+    if study.word_count:
+        meta_parts.append(f"{study.word_count} words")
+    if study.translation:
+        meta_parts.append(study.translation)
+
+    # PDF generation is synchronous CPU work (reportlab) - run off the
+    # event loop like every other potentially-slow call in this app.
+    pdf_bytes = await run_in_threadpool(
+        render_pdf,
+        title=study.reference,
+        meta_line=" · ".join(meta_parts),
+        content_html=study_html,
+        source_url=str(request.url).replace("/pdf", ""),
+    )
+
+    filename = f"{slugify(study.reference)}-{study.engine}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/browse", response_class=HTMLResponse)

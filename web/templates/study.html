@@ -3,7 +3,7 @@
 {% block title %}{{ study.reference }} | {{ study.engine | title }} | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container study-container">
+<div class="container study-container" data-share-title="{{ study.reference }} — {{ study.engine | title }}">
     <div class="study-header">
         <div class="study-meta">
             <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
@@ -32,6 +32,12 @@
             {% endif %}
         </div>
         <h1>{{ study.reference }}</h1>
+    </div>
+
+    <div class="currents-actions-bar">
+        <a href="/study/{{ study.id }}/pdf" class="btn btn-secondary">Download PDF</a>
+        <button type="button" class="btn btn-secondary" id="share-page-btn">Share</button>
+        <a href="mailto:?subject={{ (study.reference ~ ' — ' ~ (study.engine | title)) | urlencode }}&body={{ ('Take a look at this ' ~ study.engine ~ ' study: ' ~ request.url) | urlencode }}" class="btn btn-secondary">Email</a>
     </div>
 
     {% if validation %}
@@ -129,7 +135,7 @@
     </details>
     {% endif %}
 
-    <div class="study-content">
+    <div class="study-content" data-highlight-share>
         {{ study_html | safe }}
     </div>
 
@@ -138,4 +144,8 @@
         <a href="/generate" class="btn btn-primary">Generate Another Study</a>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/content-actions.js" defer></script>
 {% endblock %}

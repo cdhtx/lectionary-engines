@@ -4,7 +4,7 @@ Cultural Resonance routes - API endpoints for finding cultural connections
 
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
@@ -16,6 +16,7 @@ import markdown
 from ..database import get_db
 from ..models import CulturalResonance, Study, WorkshopPrep
 from ..config import WebConfig
+from ..services.pdf_service import render_pdf, slugify
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -190,6 +191,44 @@ async def view_resonance(
         "themes": themes,
         "sources": sources,
     })
+
+
+@router.get("/resonance/{resonance_id}/pdf")
+async def download_resonance_pdf(
+    request: Request,
+    resonance_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Download a cultural resonance result as a PDF
+    """
+    resonance = db.query(CulturalResonance).filter(CulturalResonance.id == resonance_id).first()
+
+    if not resonance:
+        raise HTTPException(status_code=404, detail="Resonance not found")
+
+    linked_content = link_scripture_references(resonance.content)
+    md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+    content_html = md.convert(linked_content)
+
+    meta_parts = ["Cultural Resonance", resonance.created_at.strftime('%B %d, %Y')]
+    if resonance.artifacts_found:
+        meta_parts.append(f"{resonance.artifacts_found} artifacts found")
+
+    pdf_bytes = await run_in_threadpool(
+        render_pdf,
+        title=resonance.reference or "Cultural Connections",
+        meta_line=" · ".join(meta_parts),
+        content_html=content_html,
+        source_url=str(request.url).replace("/pdf", ""),
+    )
+
+    filename = f"{slugify(resonance.reference or 'cultural-resonance')}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("/resonance/from-study/{study_id}")

@@ -3,7 +3,7 @@
 {% block title %}{{ prep.reference }} | {{ prep.lens_name }} | Pastor's Workshop{% endblock %}
 
 {% block content %}
-<div class="container workshop-result-container">
+<div class="container workshop-result-container" data-share-title="{{ prep.reference }} — {{ prep.lens_name }}">
     <div class="workshop-result-header">
         <div class="workshop-meta">
             <span class="lens-badge lens-{{ prep.lens }}">{{ prep.lens_name }}</span>
@@ -22,7 +22,13 @@
         {% endif %}
     </div>
 
-    <div class="workshop-content">
+    <div class="currents-actions-bar">
+        <a href="/workshop/{{ prep.id }}/pdf" class="btn btn-secondary">Download PDF</a>
+        <button type="button" class="btn btn-secondary" id="share-page-btn">Share</button>
+        <a href="mailto:?subject={{ (prep.reference ~ ' — ' ~ prep.lens_name) | urlencode }}&body={{ ('Take a look at this sermon prep: ' ~ request.url) | urlencode }}" class="btn btn-secondary">Email</a>
+    </div>
+
+    <div class="workshop-content" data-highlight-share>
         {{ content_html | safe }}
     </div>
 
@@ -32,4 +38,8 @@
         <a href="/generate" class="btn btn-primary">Generate Full Study</a>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/content-actions.js" defer></script>
 {% endblock %}

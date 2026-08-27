@@ -3,7 +3,7 @@ Workshop routes - API endpoints for Pastor's Workshop sermon prep tool
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from pathlib import Path
 from ..database import get_db
 from ..models import WorkshopPrep
 from ..config import WebConfig
+from ..services.pdf_service import render_pdf, slugify
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -228,6 +229,51 @@ async def view_workshop_prep(
         "content_html": content_html,
         "lens_info": lens_info
     })
+
+
+@router.get("/workshop/{prep_id}/pdf")
+async def download_workshop_pdf(
+    request: Request,
+    prep_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Download a workshop prep as a PDF
+    """
+    import markdown
+
+    prep = db.query(WorkshopPrep).filter(WorkshopPrep.id == prep_id).first()
+
+    if not prep:
+        return templates.TemplateResponse("404.html", {
+            "request": request,
+            "message": "Workshop prep not found"
+        }, status_code=404)
+
+    linked_content = link_scripture_references(prep.content, prep.translation)
+    md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+    content_html = md.convert(linked_content)
+
+    meta_parts = [prep.lens_name, prep.created_at.strftime('%B %d, %Y')]
+    if prep.word_count:
+        meta_parts.append(f"{prep.word_count} words")
+    if prep.translation:
+        meta_parts.append(prep.translation)
+
+    pdf_bytes = await run_in_threadpool(
+        render_pdf,
+        title=prep.reference,
+        meta_line=" · ".join(meta_parts),
+        content_html=content_html,
+        source_url=str(request.url).replace("/pdf", ""),
+    )
+
+    filename = f"{slugify(prep.reference)}-{slugify(prep.lens_name)}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/api/workshop/lenses")

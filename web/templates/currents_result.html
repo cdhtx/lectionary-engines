@@ -3,7 +3,7 @@
 {% block title %}Currents Analysis | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container currents-result-container">
+<div class="container currents-result-container" data-share-title="{{ analysis.headline_summary or 'Theological News Analysis' }}">
     <div class="currents-result-header">
         <div class="currents-meta">
             <span class="currents-badge">The Currents</span>
@@ -22,9 +22,12 @@
         <button type="button" class="btn btn-secondary" onclick="expandAll()">Expand All</button>
         <button type="button" class="btn btn-secondary" onclick="collapseAll()">Collapse All</button>
         <button type="button" class="btn btn-secondary" onclick="window.print()">Print</button>
+        <a href="/currents/{{ analysis.id }}/pdf" class="btn btn-secondary">Download PDF</a>
+        <button type="button" class="btn btn-secondary" id="share-page-btn">Share</button>
+        <a href="mailto:?subject={{ (analysis.headline_summary or 'Theological News Analysis') | urlencode }}&body={{ ('Take a look at this Currents analysis: ' ~ request.url) | urlencode }}" class="btn btn-secondary">Email</a>
     </div>
 
-    <div class="currents-content study-content">
+    <div class="currents-content study-content" data-highlight-share>
         {{ content_html | safe }}
     </div>
 
@@ -37,6 +40,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="/static/js/content-actions.js" defer></script>
 <script>
 function expandAll() {
     document.querySelectorAll('.currents-content details').forEach(function(d) {
