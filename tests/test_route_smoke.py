@@ -1,0 +1,53 @@
+"""
+Smoke tests: every parameter-free page renders.
+
+base.html is shared by every page in the app, so a mistake there breaks
+everything at once. These tests make that immediate and obvious.
+
+Auth note: AuthMiddleware only checks that the session cookie decodes -
+it does not verify the user exists - so a signed cookie is sufficient.
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+
+from web.app import app
+from web.auth import create_session_cookie, COOKIE_NAME
+
+PAGES = [
+    "/",
+    "/generate",
+    "/browse",
+    "/workshop",
+    "/workshop/browse",
+    "/currents",
+    "/currents/browse",
+    "/resonance",
+    "/profiles",
+]
+
+
+@pytest.fixture
+def client():
+    c = TestClient(app)
+    c.cookies.set(COOKIE_NAME, create_session_cookie(1))
+    return c
+
+
+@pytest.mark.parametrize("path", PAGES)
+def test_page_renders(client, path):
+    response = client.get(path)
+    assert response.status_code == 200, f"{path} returned {response.status_code}"
+    assert "<html" in response.text.lower(), f"{path} did not return an HTML document"
+
+
+def test_login_page_renders_without_auth():
+    # login is a public path and must render for a signed-out visitor.
+    response = TestClient(app).get("/login")
+    assert response.status_code == 200
+
+
+def test_health_endpoint():
+    response = TestClient(app).get("/health")
+    assert response.status_code == 200
+    assert response.json()["status"] == "healthy"

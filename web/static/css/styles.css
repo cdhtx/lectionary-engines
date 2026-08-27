@@ -36,6 +36,7 @@
     --color-resonance-light: #a0522d;
     --color-currents: #2c3e50;        /* Deep navy */
     --color-currents-light: #34495e;
+    --engine-color: #6b2d5b;          /* Engine card accent color (overridden per card) */
 
     /* Functional Colors */
     --color-border: rgba(107, 93, 77, 0.2);
