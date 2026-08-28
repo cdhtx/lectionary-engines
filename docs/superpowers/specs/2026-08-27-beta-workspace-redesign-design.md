@@ -65,6 +65,15 @@ rationale doc) all specified engine colors as plum / forest green / rust. The CS
 spec supersedes all three and **remaps every engine color**. This is intentional and
 approved. Do not "correct" these back toward the old palette.
 
+Reference: `assets/beta-workspace-mockup-2026-08-27.png` (saved 2026-08-27) is the
+dashboard-style mockup referenced above — Today dashboard, Workbench, Library, Engines,
+Signals, Currents, Resonance, Browse, Profiles, Settings in the sidebar, plus global
+search, notifications, a notes system, and per-study progress tracking. Tier 1a
+(the restyle-in-place work) deliberately implements only the visual palette/shell from
+this mockup against *existing* routes; the Engines directory, Signals, search, notes,
+notifications, and per-study progress are new functionality deferred to Tier 1b/2 — see
+the plan's own "Deferred to Tier 1b" section.
+
 | Engine | Old (current live site) | **New (authoritative)** |
 |---|---|---|
 | Threshold | plum `#6b2d5b` | **burnt orange `#E95B13`** |
