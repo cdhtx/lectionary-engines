@@ -12,9 +12,14 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from web.app import app
 from web.auth import create_session_cookie, COOKIE_NAME
+from web.database import get_db
+from web.models import Base
 
 PAGES = [
     "/",
@@ -35,6 +40,44 @@ def client():
     c = TestClient(app)
     c.cookies.set(COOKIE_NAME, create_session_cookie(1))
     return c
+
+
+@pytest.fixture
+def isolated_client():
+    """
+    Like `client`, but backed by an in-memory SQLite DB via a get_db
+    override instead of the real local lectionary.db.
+
+    test_today_homepage_shows_this_week_readings is the first test in this
+    file whose route (/) has a write side effect - it caches the mocked
+    RCL readings via LectionaryReadingCache. Using the shared `client`
+    fixture would leak those fake rows into the real local DB file with
+    no cleanup. This fixture isolates that write and clears the override
+    on teardown so it can't leak into other tests running in the same
+    session.
+    """
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+
+    def override_get_db():
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    c = TestClient(app)
+    c.cookies.set(COOKIE_NAME, create_session_cookie(1))
+    yield c
+
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.mark.parametrize("path", PAGES)
@@ -90,11 +133,11 @@ def test_sidebar_links_to_engines(client):
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
-def test_today_homepage_shows_this_week_readings(mock_fetcher_class, client):
+def test_today_homepage_shows_this_week_readings(mock_fetcher_class, isolated_client):
     mock_fetcher = mock_fetcher_class.return_value
     mock_fetcher.fetch_rcl.side_effect = lambda reading_type: (f"{reading_type}-ref", f"{reading_type}-text")
 
-    response = client.get("/")
+    response = isolated_client.get("/")
 
     assert response.status_code == 200
     body = response.text
