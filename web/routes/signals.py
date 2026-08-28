@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from lectionary_engines.claude_client import ClaudeClient
 
@@ -28,7 +29,7 @@ async def signals_page(request: Request, db: Session = Depends(get_db)):
     four lectionary readings.
     """
     claude = ClaudeClient(config.anthropic_api_key)
-    connections = get_this_week_signals(db, claude)
+    connections = await run_in_threadpool(get_this_week_signals, db, claude)
 
     return templates.TemplateResponse("signals.html", {
         "request": request,

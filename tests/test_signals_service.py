@@ -179,6 +179,67 @@ def test_results_sorted_by_shared_theme_count_descending(
     assert result[0]["reading_b_type"] == "ot"
 
 
+@patch("web.services.signals_service.get_this_week_readings")
+@patch("web.services.signals_service.TextFetcher")
+@patch("web.services.signals_service.extract_themes")
+def test_pair_order_and_reading_assignment_deterministic_regardless_of_input_dict_order(
+    mock_extract_themes, mock_signals_fetcher_class, mock_get_this_week_readings, db
+):
+    """
+    get_this_week_readings() reads from an unordered DB query, so its
+    returned dict's key order isn't guaranteed to be the same across
+    requests (especially on Postgres in production). Two pairs here tie at
+    1 shared theme each (gospel/ot share "a", epistle/psalm share "b") -
+    exactly the case where an unstable tie-break would let pair order and
+    reading_a/reading_b assignment vary between requests. Calling
+    get_this_week_signals() twice, once with the readings dict in canonical
+    order and once in reversed order (simulating two requests that got rows
+    back in different order), must produce identical output both times.
+    """
+    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
+
+    def themes_by_reference(claude, reference, text):
+        return {
+            "Luke 14:1-14": ["a"],
+            "Hebrews 13:1-8, 15-16": ["b"],
+            "Jeremiah 2:4-13": ["a"],
+            "Psalm 81:1, 10-16": ["b"],
+        }[reference]
+
+    mock_extract_themes.side_effect = themes_by_reference
+
+    readings_canonical_order = {
+        "gospel": {"reference": "Luke 14:1-14"},
+        "epistle": {"reference": "Hebrews 13:1-8, 15-16"},
+        "ot": {"reference": "Jeremiah 2:4-13"},
+        "psalm": {"reference": "Psalm 81:1, 10-16"},
+    }
+    readings_reversed_order = {
+        "psalm": {"reference": "Psalm 81:1, 10-16"},
+        "ot": {"reference": "Jeremiah 2:4-13"},
+        "epistle": {"reference": "Hebrews 13:1-8, 15-16"},
+        "gospel": {"reference": "Luke 14:1-14"},
+    }
+
+    mock_get_this_week_readings.return_value = readings_canonical_order
+    result_1 = get_this_week_signals(db, claude=Mock())
+
+    # Clear the theme cache so the second call re-extracts rather than
+    # short-circuiting on the cache-hit path populated by the first call.
+    db.query(LectionaryThemeCache).delete()
+    db.commit()
+
+    mock_get_this_week_readings.return_value = readings_reversed_order
+    result_2 = get_this_week_signals(db, claude=Mock())
+
+    assert len(result_1) == 2
+    assert result_1 == result_2
+    assert [(c["reading_a_type"], c["reading_b_type"]) for c in result_1] == [
+        ("epistle", "psalm"),
+        ("gospel", "ot"),
+    ]
+
+
 @patch("web.services.signals_service.TextFetcher")
 @patch("web.services.signals_service.extract_themes")
 def test_concurrent_cache_write_race_handled_gracefully(

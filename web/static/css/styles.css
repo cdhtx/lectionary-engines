@@ -617,12 +617,14 @@ main {
    ============================================================================ */
 
 .this-week-section,
+.signals-section,
 .choose-engine-section,
 .quick-actions-section {
     margin-bottom: var(--space-2xl);
 }
 
 .this-week-section h2,
+.signals-section h2,
 .choose-engine-section h2,
 .quick-actions-section h2 {
     font-family: var(--font-display);

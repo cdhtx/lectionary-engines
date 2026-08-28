@@ -93,7 +93,10 @@ def _get_themes_for_reading(
 def get_this_week_signals(db: Session, claude: ClaudeClient) -> list:
     """
     Returns a list of connection dicts, sorted by shared-theme count
-    descending: [{"reading_a_type", "reading_a_label", "reading_a_reference",
+    descending (ties broken by reading_a_type, then reading_b_type, both
+    in canonical gospel/epistle/ot/psalm order, for a deterministic
+    total order regardless of DB row order):
+    [{"reading_a_type", "reading_a_label", "reading_a_reference",
     "reading_b_type", "reading_b_label", "reading_b_reference",
     "shared_themes"}, ...]. Empty list if fewer than 2 readings end up
     with a non-empty theme list, or no pair shares a theme.
@@ -102,7 +105,10 @@ def get_this_week_signals(db: Session, claude: ClaudeClient) -> list:
     sunday = _upcoming_sunday(date.today())
 
     themes_by_type = {}
-    for reading_type, reading in this_week.items():
+    for reading_type in READING_LABELS:
+        if reading_type not in this_week:
+            continue
+        reading = this_week[reading_type]
         themes = _get_themes_for_reading(db, claude, sunday, reading_type, reading["reference"])
         if themes:
             themes_by_type[reading_type] = {
@@ -124,5 +130,5 @@ def get_this_week_signals(db: Session, claude: ClaudeClient) -> list:
                 "shared_themes": sorted(t.title() for t in shared),
             })
 
-    connections.sort(key=lambda c: len(c["shared_themes"]), reverse=True)
+    connections.sort(key=lambda c: (-len(c["shared_themes"]), c["reading_a_type"], c["reading_b_type"]))
     return connections
