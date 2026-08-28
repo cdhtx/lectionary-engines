@@ -19,7 +19,7 @@ from sqlalchemy.pool import StaticPool
 from web.app import app
 from web.auth import create_session_cookie, COOKIE_NAME
 from web.database import get_db
-from web.models import Base
+from web.models import Base, Study
 
 PAGES = [
     "/generate",
@@ -74,6 +74,37 @@ def isolated_client():
     c = TestClient(app)
     c.cookies.set(COOKIE_NAME, create_session_cookie(1))
     yield c
+
+    app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture
+def study_client():
+    """
+    Like isolated_client, but also yields the session factory so tests
+    can seed a Study row into the same in-memory DB before hitting the
+    route under test.
+    """
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    SessionLocal = sessionmaker(bind=engine)
+
+    def override_get_db():
+        db = SessionLocal()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    c = TestClient(app)
+    c.cookies.set(COOKIE_NAME, create_session_cookie(1))
+    yield c, SessionLocal
 
     app.dependency_overrides.pop(get_db, None)
 
@@ -248,3 +279,94 @@ def test_today_homepage_shows_signals_widget(mock_extract_themes, mock_signals_f
 
     assert response.status_code == 200
     assert "Signals" in response.text
+
+
+_PALIMPSEST_FIXTURE_CONTENT = """# Palimpsest Study: John 3:16-21
+
+Intro paragraph here.
+
+## Layer One: Peshat (Simple/Literal)
+
+Peshat content.
+
+## Layer Two: Remez (Hint/Allegory)
+
+Remez content.
+
+## Layer Three: Derash (Search/Interpretation)
+
+Derash content.
+
+## Layer Four: Sod (Secret/Mystery)
+
+Sod content.
+
+## Layer Five: Incarnation (Contemporary Body)
+
+### For Individuals in Transition
+
+Incarnation content.
+"""
+
+
+def test_palimpsest_study_page_shows_rail(study_client):
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    study = Study(
+        engine="palimpsest", reference="John 3:16-21",
+        content=_PALIMPSEST_FIXTURE_CONTENT, word_count=50,
+    )
+    session.add(study)
+    session.commit()
+    study_id = study.id
+    session.close()
+
+    response = client.get(f"/study/{study_id}")
+
+    assert response.status_code == 200
+    body = response.text
+    assert 'class="palimpsest-rail"' in body
+    for key in ["peshat", "remez", "derash", "sod", "incarnation"]:
+        assert f'id="layer-{key}"' in body
+
+
+def test_threshold_study_page_has_no_rail(study_client):
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    study = Study(
+        engine="threshold", reference="Mark 5:1-5",
+        content="## Threshold One: Archaeological Dive\n\nSome content.",
+        word_count=10,
+    )
+    session.add(study)
+    session.commit()
+    study_id = study.id
+    session.close()
+
+    response = client.get(f"/study/{study_id}")
+
+    assert response.status_code == 200
+    assert 'class="palimpsest-rail"' not in response.text
+
+
+def test_malformed_palimpsest_study_falls_back_to_flat_rendering(study_client):
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    malformed_content = (
+        "## Layer One: Peshat (Simple/Literal)\n\n"
+        "Only one layer here, missing the other four."
+    )
+    study = Study(
+        engine="palimpsest", reference="Mark 5:1-5",
+        content=malformed_content, word_count=10,
+    )
+    session.add(study)
+    session.commit()
+    study_id = study.id
+    session.close()
+
+    response = client.get(f"/study/{study_id}")
+
+    assert response.status_code == 200
+    assert 'class="palimpsest-rail"' not in response.text
+    assert "Only one layer here" in response.text

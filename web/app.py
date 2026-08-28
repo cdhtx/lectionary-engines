@@ -19,10 +19,11 @@ from pathlib import Path
 from .database import init_db, close_db, get_db
 from .routes import studies, profiles, workshop, resonance, currents, engines, signals
 from .routes import auth as auth_routes
-from .models import Study
+from .models import Base, Study
 from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 from .services.pdf_service import render_pdf, slugify
+from .services.palimpsest_layers import parse_palimpsest_layers, RAIL_LABELS
 from lectionary_engines.scripture_linker import link_scripture_references
 
 # Load configuration
@@ -174,12 +175,30 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
     # Convert markdown to HTML, linking scripture references to Bible Gateway
     # first so they render as normal markdown links.
     linked_content = link_scripture_references(study.content, study.translation)
-    md = markdown.Markdown(extensions=[
-        'extra',          # Tables, footnotes, etc.
-        'nl2br',          # Newline to <br>
-        'sane_lists',     # Better list handling
-    ])
-    study_html = md.convert(linked_content)
+
+    parsed_layers = None
+    if study.engine == "palimpsest":
+        parsed_layers = parse_palimpsest_layers(linked_content)
+
+    palimpsest_rail = None
+    if parsed_layers:
+        md = markdown.Markdown(extensions=['extra', 'nl2br', 'sane_lists'])
+        html_parts = [md.convert(parsed_layers["intro_markdown"])]
+        for layer in parsed_layers["layers"]:
+            md.reset()
+            layer_html = md.convert(layer["markdown"])
+            html_parts.append(
+                f'<section id="layer-{layer["key"]}" class="palimpsest-layer">{layer_html}</section>'
+            )
+        study_html = "".join(html_parts)
+        palimpsest_rail = RAIL_LABELS
+    else:
+        md = markdown.Markdown(extensions=[
+            'extra',          # Tables, footnotes, etc.
+            'nl2br',          # Newline to <br>
+            'sane_lists',     # Better list handling
+        ])
+        study_html = md.convert(linked_content)
 
     # Parse validation data if present
     validation = None
@@ -204,6 +223,7 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
         "request": request,
         "study": study,
         "study_html": study_html,
+        "palimpsest_rail": palimpsest_rail,
         "validation": validation
     })
 

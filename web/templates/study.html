@@ -3,7 +3,7 @@
 {% block title %}{{ study.reference }} | {{ study.engine | title }} | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container study-container" data-share-title="{{ study.reference }} — {{ study.engine | title }}">
+<div class="container study-container{% if palimpsest_rail %} study-container--with-rail{% endif %}" data-share-title="{{ study.reference }} — {{ study.engine | title }}">
     <div class="study-header">
         <div class="study-meta">
             <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
@@ -135,9 +135,22 @@
     </details>
     {% endif %}
 
+    {% if palimpsest_rail %}
+    <div class="study-body-with-rail">
+        <nav class="palimpsest-rail">
+            {% for item in palimpsest_rail %}
+            <a href="#layer-{{ item.key }}" class="palimpsest-rail-link" data-layer-key="{{ item.key }}">{{ item.label }}</a>
+            {% endfor %}
+        </nav>
+        <div class="study-content" data-highlight-share>
+            {{ study_html | safe }}
+        </div>
+    </div>
+    {% else %}
     <div class="study-content" data-highlight-share>
         {{ study_html | safe }}
     </div>
+    {% endif %}
 
     <div class="study-footer">
         <a href="/browse" class="btn btn-secondary">← Back to Browse</a>

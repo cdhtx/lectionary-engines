@@ -1313,6 +1313,58 @@ a.engine-card {
     font-style: italic;
 }
 
+/* Palimpsest spatial rail - see
+   docs/superpowers/specs/2026-08-28-tier-3-palimpsest-design.md */
+.study-container--with-rail {
+    max-width: calc(750px + 220px + var(--space-xl));
+}
+
+.study-container--with-rail .study-header,
+.study-container--with-rail .currents-actions-bar,
+.study-container--with-rail .validation-panel,
+.study-container--with-rail .study-footer {
+    max-width: 750px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.study-body-with-rail {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+}
+
+.palimpsest-rail {
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.palimpsest-rail-link {
+    display: block;
+    padding: var(--space-xs) var(--space-sm);
+    border-left: 2px solid var(--color-border);
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    transition: border-left-color 0.15s ease, color 0.15s ease;
+}
+
+.palimpsest-rail-link:hover {
+    color: var(--color-ink);
+}
+
+.palimpsest-rail-link.active {
+    border-left-color: var(--color-gold);
+    color: var(--color-ink);
+    font-weight: 600;
+}
+
 /* Scripture references auto-linked to Bible Gateway - see scripture_linker.py.
    Applies wherever engine output is rendered: studies, workshop preps,
    resonance results, currents analyses. */
@@ -2691,6 +2743,36 @@ footer p {
 
     .browse-main {
         order: 1;
+    }
+
+    .study-container--with-rail {
+        max-width: 100%;
+    }
+
+    .study-body-with-rail {
+        grid-template-columns: 1fr;
+    }
+
+    .palimpsest-rail {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        flex-direction: row;
+        overflow-x: auto;
+        background: var(--color-parchment);
+        padding: var(--space-sm) 0;
+        gap: var(--space-sm);
+    }
+
+    .palimpsest-rail-link {
+        border-left: none;
+        border-bottom: 2px solid var(--color-border);
+        white-space: nowrap;
+    }
+
+    .palimpsest-rail-link.active {
+        border-left-color: transparent;
+        border-bottom-color: var(--color-gold);
     }
 }
 
