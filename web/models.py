@@ -416,3 +416,27 @@ class LectionaryReadingCache(Base):
 
     def __repr__(self):
         return f"<LectionaryReadingCache(reading_date='{self.reading_date}', reading_type='{self.reading_type}')>"
+
+
+class LectionaryThemeCache(Base):
+    """
+    Caches each of the upcoming Sunday's four readings' extracted theme
+    keywords, so Signals doesn't re-fetch full text and re-call Claude
+    on every page load. Mirrors LectionaryReadingCache's day-granularity
+    caching pattern.
+    """
+
+    __tablename__ = "lectionary_theme_cache"
+
+    id = Column(Integer, primary_key=True)
+    reading_date = Column(Date, nullable=False, index=True)
+    reading_type = Column(String(20), nullable=False)  # "gospel", "ot", "psalm", "epistle"
+    themes = Column(Text, nullable=False)  # JSON array of theme keyword strings
+    fetched_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("reading_date", "reading_type", name="uq_theme_date_type"),
+    )
+
+    def __repr__(self):
+        return f"<LectionaryThemeCache(reading_date='{self.reading_date}', reading_type='{self.reading_type}')>"
