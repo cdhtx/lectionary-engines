@@ -11,6 +11,7 @@
 
     <section class="this-week-section">
         <h2>This Week in the Lectionary</h2>
+        {% if this_week %}
         <div class="this-week-grid">
             {% if this_week.gospel %}
             <div class="reading-card">
@@ -37,6 +38,11 @@
             </div>
             {% endif %}
         </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Readings unavailable right now. Check back soon.</p>
+        </div>
+        {% endif %}
     </section>
 
     <section class="choose-engine-section">

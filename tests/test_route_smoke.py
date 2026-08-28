@@ -22,7 +22,6 @@ from web.database import get_db
 from web.models import Base
 
 PAGES = [
-    "/",
     "/generate",
     "/browse",
     "/workshop",
@@ -48,13 +47,12 @@ def isolated_client():
     Like `client`, but backed by an in-memory SQLite DB via a get_db
     override instead of the real local lectionary.db.
 
-    test_today_homepage_shows_this_week_readings is the first test in this
-    file whose route (/) has a write side effect - it caches the mocked
-    RCL readings via LectionaryReadingCache. Using the shared `client`
-    fixture would leak those fake rows into the real local DB file with
-    no cleanup. This fixture isolates that write and clears the override
-    on teardown so it can't leak into other tests running in the same
-    session.
+    Every test that hits / needs this: that route has a write side effect
+    - it caches the mocked Sunday readings via LectionaryReadingCache.
+    Using the shared `client` fixture would leak those fake rows into the
+    real local DB file with no cleanup. This fixture isolates that write
+    and clears the override on teardown so it can't leak into other tests
+    running in the same session.
     """
     engine = create_engine(
         "sqlite:///:memory:",
@@ -126,8 +124,17 @@ def test_engines_page_lists_all_three_engines(client):
     assert "Collision" in body
 
 
-def test_sidebar_links_to_engines(client):
-    response = client.get("/")
+@patch("web.services.lectionary_widget_service.TextFetcher")
+def test_sidebar_links_to_engines(mock_fetcher_class, isolated_client):
+    mock_fetcher = mock_fetcher_class.return_value
+    mock_fetcher.fetch_sunday_lectionary_readings.return_value = {
+        "gospel": "Luke 14:1-14",
+        "epistle": "Hebrews 13:1-8, 15-16",
+        "ot": "Jeremiah 2:4-13",
+        "psalm": "Psalm 81:1, 10-16",
+    }
+
+    response = isolated_client.get("/")
     assert response.status_code == 200
     assert 'href="/engines"' in response.text
 
@@ -135,7 +142,12 @@ def test_sidebar_links_to_engines(client):
 @patch("web.services.lectionary_widget_service.TextFetcher")
 def test_today_homepage_shows_this_week_readings(mock_fetcher_class, isolated_client):
     mock_fetcher = mock_fetcher_class.return_value
-    mock_fetcher.fetch_rcl.side_effect = lambda reading_type: (f"{reading_type}-ref", f"{reading_type}-text")
+    mock_fetcher.fetch_sunday_lectionary_readings.return_value = {
+        "gospel": "Luke 14:1-14",
+        "epistle": "Hebrews 13:1-8, 15-16",
+        "ot": "Jeremiah 2:4-13",
+        "psalm": "Psalm 81:1, 10-16",
+    }
 
     response = isolated_client.get("/")
 
@@ -145,3 +157,14 @@ def test_today_homepage_shows_this_week_readings(mock_fetcher_class, isolated_cl
     assert "Epistle" in body
     assert "Hebrew Scripture" in body
     assert "Psalm" in body
+
+
+@patch("web.services.lectionary_widget_service.TextFetcher")
+def test_home_page_renders(mock_fetcher_class, isolated_client):
+    mock_fetcher = mock_fetcher_class.return_value
+    mock_fetcher.fetch_sunday_lectionary_readings.return_value = {}
+
+    response = isolated_client.get("/")
+
+    assert response.status_code == 200
+    assert "<html" in response.text.lower()

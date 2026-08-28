@@ -103,7 +103,7 @@ app.include_router(engines.router, tags=["engines"])
 # ============================================================================
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request, db: Session = Depends(get_db)):
+def home(request: Request, db: Session = Depends(get_db)):
     """
     Today homepage - This Week in the Lectionary, engine cards, quick
     actions, and recent studies

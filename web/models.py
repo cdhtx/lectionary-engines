@@ -395,9 +395,11 @@ class CollisionVectorState(Base):
 
 class LectionaryReadingCache(Base):
     """
-    Caches one day's RCL readings so the Today homepage doesn't re-fetch
-    from Vanderbilt's site on every page load. fetch_rcl() has no caching
-    of its own - this table adds a day-granularity cache in front of it.
+    Caches the upcoming Sunday's RCL service readings so the Today
+    homepage doesn't re-fetch from Vanderbilt's site on every page load.
+    Keyed by the Sunday's date (the readings' effective date), not the
+    date of the request - every day in the same week shares one row per
+    reading type.
     """
 
     __tablename__ = "lectionary_reading_cache"
@@ -406,7 +408,6 @@ class LectionaryReadingCache(Base):
     reading_date = Column(Date, nullable=False, index=True)
     reading_type = Column(String(20), nullable=False)  # "gospel", "ot", "psalm", "epistle"
     reference = Column(String(500), nullable=False)
-    text = Column(Text, nullable=False)
     fetched_at = Column(DateTime, default=datetime.utcnow)
 
     __table_args__ = (

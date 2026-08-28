@@ -356,6 +356,89 @@ class TextFetcher:
         except Exception as e:
             raise Exception(f"Failed to fetch RCL reading: {e}")
 
+    def fetch_sunday_lectionary_readings(self) -> dict:
+        """
+        Fetch this week's Sunday RCL service readings (Gospel, Epistle,
+        Hebrew Scripture, Psalm - primary/semicontinuous track) as clean
+        biblical references (e.g. "Luke 14:1-14"), not full text.
+
+        Unlike fetch_rcl() (which serves the *daily office* reading for
+        today, used by the /generate RCL source option), this targets
+        Vanderbilt's separate Sunday-specific lectionary texts page, which
+        has a clean per-reading-type structure the daily-readings page
+        lacks: weekdays wrap 3 readings in one link with no Gospel at all,
+        and Sundays have zero scripture links in that page's daily section.
+
+        Returns:
+            dict: {"gospel": str, "epistle": str, "ot": str, "psalm": str}
+            Keys are present only for readings successfully parsed - a
+            malformed/missing single pericope on the page is skipped
+            rather than failing the whole fetch.
+
+        Raises:
+            Exception: if the daily-readings page or the linked Sunday
+            texts page can't be fetched, or this Sunday's entry can't be
+            found at all (the page's fundamental structure changed).
+        """
+        from datetime import datetime, timedelta
+
+        today = datetime.now().date()
+        days_until_sunday = (6 - today.weekday()) % 7  # Monday=0 ... Sunday=6
+        sunday = today + timedelta(days=days_until_sunday)
+        date_id = sunday.strftime("%m%d%Y")
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+
+        daily_url = "https://lectionary.library.vanderbilt.edu/daily-readings/"
+        response = requests.get(daily_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        sunday_entry = soup.find(id=date_id)
+        if not sunday_entry:
+            raise Exception(f"No lectionary entry found for Sunday {sunday.strftime('%B %d, %Y')}")
+
+        texts_link = sunday_entry.find("a", href=True)
+        if not texts_link:
+            raise Exception(f"No texts page link found for Sunday {sunday.strftime('%B %d, %Y')}")
+
+        texts_url = texts_link["href"]
+        if texts_url.startswith("/"):
+            texts_url = "https://lectionary.library.vanderbilt.edu" + texts_url
+
+        texts_response = requests.get(texts_url, headers=headers, timeout=30)
+        texts_response.raise_for_status()
+        texts_soup = BeautifulSoup(texts_response.text, "html.parser")
+
+        pericope_ids = {
+            "gospel": "pericope_gospel_reading",
+            "epistle": "pericope_epistle_reading",
+            "ot": "pericope_hebrew_reading",
+            "psalm": "pericope_psalm_reading",
+        }
+
+        readings = {}
+        for reading_type, div_id in pericope_ids.items():
+            div = texts_soup.find(id=div_id)
+            if not div:
+                continue
+            h2 = div.find("h2")
+            if not h2:
+                continue
+            span = h2.find("span")
+            reference = span.get_text(strip=True) if span else h2.get_text(strip=True)
+            if reference:
+                readings[reading_type] = reference
+
+        if not readings:
+            raise Exception(
+                f"Found Sunday {sunday.strftime('%B %d, %Y')}'s texts page but could not parse any readings from it"
+            )
+
+        return readings
+
     @staticmethod
     def list_translations() -> dict:
         """

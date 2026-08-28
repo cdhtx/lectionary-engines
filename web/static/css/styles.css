@@ -2625,6 +2625,10 @@ footer p {
         grid-template-columns: 1fr;
     }
 
+    .this-week-grid {
+        grid-template-columns: 1fr;
+    }
+
     .browse-layout {
         grid-template-columns: 1fr;
     }
