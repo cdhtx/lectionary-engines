@@ -10,14 +10,15 @@ extract_themes (the Claude call). No test in this file makes a real
 network or Claude API call.
 """
 
+from datetime import date
 from unittest.mock import Mock, patch
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from web.models import Base
-from web.services.signals_service import get_this_week_signals
+from web.models import Base, LectionaryThemeCache
+from web.services.signals_service import _get_themes_for_reading, get_this_week_signals
 
 
 @pytest.fixture
@@ -176,3 +177,42 @@ def test_results_sorted_by_shared_theme_count_descending(
     assert len(result[0]["shared_themes"]) == 2
     assert result[0]["reading_a_type"] == "gospel"
     assert result[0]["reading_b_type"] == "ot"
+
+
+@patch("web.services.signals_service.TextFetcher")
+@patch("web.services.signals_service.extract_themes")
+def test_concurrent_cache_write_race_handled_gracefully(
+    mock_extract_themes, mock_signals_fetcher_class, db
+):
+    """
+    When two requests get a cache miss for the same (sunday, reading_type)
+    concurrently, the second commit() will raise IntegrityError from the
+    unique constraint. The function should catch this, rollback, re-query
+    for the existing row the other request committed, and return its themes.
+    """
+    import json
+
+    sunday = date(2026, 8, 31)
+    reading_type = "gospel"
+    reference = "Luke 14:1-14"
+    cached_themes = ["faith", "trust"]
+
+    # Pre-insert a cache row to simulate another concurrent request winning
+    # the race and committing first
+    existing_row = LectionaryThemeCache(
+        reading_date=sunday,
+        reading_type=reading_type,
+        themes=json.dumps(cached_themes),
+    )
+    db.add(existing_row)
+    db.commit()
+
+    # Now call _get_themes_for_reading() which will compute different themes
+    # and try to insert, hitting IntegrityError
+    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
+    mock_extract_themes.return_value = ["computed", "themes"]
+
+    result = _get_themes_for_reading(db, claude=Mock(), sunday=sunday, reading_type=reading_type, reference=reference)
+
+    # Should return the cached themes, not the computed ones
+    assert result == cached_themes

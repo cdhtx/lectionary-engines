@@ -18,6 +18,7 @@ from datetime import date, timedelta
 from itertools import combinations
 from typing import List
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from lectionary_engines.claude_client import ClaudeClient
@@ -69,7 +70,22 @@ def _get_themes_for_reading(
         themes=json.dumps(themes),
     )
     db.add(row)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Another concurrent request already cached this reading type
+        # for this Sunday - back off and use its row instead of ours.
+        db.rollback()
+        existing = (
+            db.query(LectionaryThemeCache)
+            .filter(
+                LectionaryThemeCache.reading_date == sunday,
+                LectionaryThemeCache.reading_type == reading_type,
+            )
+            .first()
+        )
+        if existing:
+            themes = json.loads(existing.themes)
 
     return themes
 
