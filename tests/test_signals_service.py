@@ -185,34 +185,54 @@ def test_concurrent_cache_write_race_handled_gracefully(
     mock_extract_themes, mock_signals_fetcher_class, db
 ):
     """
-    When two requests get a cache miss for the same (sunday, reading_type)
-    concurrently, the second commit() will raise IntegrityError from the
-    unique constraint. The function should catch this, rollback, re-query
-    for the existing row the other request committed, and return its themes.
+    Verify the race condition handling: when two requests both get a cache
+    miss for the same (sunday, reading_type) and race to write, the loser
+    (who encounters IntegrityError) rolls back, re-queries, and returns the
+    winner's cached themes instead of raising.
+
+    The trick: we mock db.commit to raise IntegrityError, but during that
+    mock we also insert the "winner's" row so the re-query finds it.
     """
     import json
+    from sqlalchemy.exc import IntegrityError
 
     sunday = date(2026, 8, 31)
     reading_type = "gospel"
     reference = "Luke 14:1-14"
-    cached_themes = ["faith", "trust"]
 
-    # Pre-insert a cache row to simulate another concurrent request winning
-    # the race and committing first
-    existing_row = LectionaryThemeCache(
-        reading_date=sunday,
-        reading_type=reading_type,
-        themes=json.dumps(cached_themes),
-    )
-    db.add(existing_row)
-    db.commit()
+    # Themes the "other concurrent request" will have cached
+    other_request_themes = ["faith", "trust"]
+    # Themes this call freshly extracts (different, so we can verify the
+    # function returned the winner's themes, not the loser's freshly-computed ones)
+    my_themes = ["computed", "themes"]
 
-    # Now call _get_themes_for_reading() which will compute different themes
-    # and try to insert, hitting IntegrityError
     mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
-    mock_extract_themes.return_value = ["computed", "themes"]
+    mock_extract_themes.return_value = my_themes
 
-    result = _get_themes_for_reading(db, claude=Mock(), sunday=sunday, reading_type=reading_type, reference=reference)
+    # Mock db.commit to simulate the race: raise IntegrityError, but first
+    # insert the "other request's" row so the re-query in the except block finds it
+    original_commit = db.commit
 
-    # Should return the cached themes, not the computed ones
-    assert result == cached_themes
+    def mock_commit_with_race():
+        # Simulate the other request winning the race by inserting its row first
+        db.expunge_all()  # Clear session state
+        other_row = LectionaryThemeCache(
+            reading_date=sunday,
+            reading_type=reading_type,
+            themes=json.dumps(other_request_themes),
+        )
+        db.add(other_row)
+        original_commit()  # Actually commit the other request's row to the database
+
+        # Now raise IntegrityError as if our insert failed due to the constraint
+        raise IntegrityError("statement", "params", "orig")
+
+    with patch.object(db, 'commit', side_effect=mock_commit_with_race):
+        result = _get_themes_for_reading(
+            db, claude=Mock(), sunday=sunday, reading_type=reading_type, reference=reference
+        )
+
+    # The function should have returned the other request's cached themes,
+    # not the freshly extracted ones. This proves the except-block was reached.
+    assert result == other_request_themes
+    assert result != my_themes
