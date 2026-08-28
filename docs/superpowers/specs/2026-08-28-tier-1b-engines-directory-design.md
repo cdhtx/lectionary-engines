@@ -41,6 +41,14 @@ new element: a "Start a [Engine] study" button linking to `/generate` (no
 query-param preselect — passing the chosen engine through to `/generate` is new
 `/generate` behavior and belongs to the Workbench reflow piece, out of scope here).
 
+**One known exception to "exactly":** the Threshold step list's fourth bullet reads
+"Embodied Practice + Tech" in `index.html`. There's a standing, already-approved
+request (noted in project memory 2026-08-27) to change this to just "Embodied
+Practice" wherever it appears next. Since this page is a fresh transcription of that
+content, not an edit to the existing line, apply the correction here directly rather
+than relocating the not-yet-fixed wording and needing a second pass. `index.html`
+itself is untouched either way (see "do not touch index.html" below).
+
 **Nav integration:** `base.html`'s sidebar gets a new `Engines` link immediately
 after Library, *before* the existing `sidebar-divider` (i.e. inside the primary
 group with Today/Workbench/Library, matching the parent spec's IA table grouping
