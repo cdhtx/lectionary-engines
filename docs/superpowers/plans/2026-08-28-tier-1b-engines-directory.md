@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - **Branch from `beta-tier-1a-restyle`, not `main`.** The navy sidebar `base.html` shell this plan modifies only exists on that branch (Tier 1a's PR is open, not yet merged). When setting up the worktree for this plan, create it from `beta-tier-1a-restyle` explicitly.
-- **Content is relocated, not invented.** Every word of the three engine descriptions, methodology-step lists, and word-count/read-time meta lines must match `web/templates/index.html:17-51` exactly. No new marketing copy.
+- **Content is relocated, not invented.** Every word of the three engine descriptions, methodology-step lists, and word-count/read-time meta lines must match `web/templates/index.html:17-51` exactly, with one documented exception: the Threshold step list's fourth bullet is "Embodied Practice" here (not "Embodied Practice + Tech" as it currently reads in `index.html`), per the already-approved copy-fix request noted in project memory and carried into Task 1 Step 6. No other new marketing copy.
 - **`/generate?engine=X` preselect is out of scope.** The "Start a [Engine] study" button links to plain `/generate`. Query-param preselect belongs to a different Tier 1b piece (Workbench reflow).
 - **Do not touch `index.html`.** It gets replaced wholesale when the Today homepage piece ships; duplicate/premature edits here create merge conflicts with that later work.
 - **The existing test suite must stay green** (99 tests as of Tier 1a, plus this plan's additions).
