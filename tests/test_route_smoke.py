@@ -69,3 +69,21 @@ def test_missing_currents_renders_404_not_500(client):
 def test_missing_workshop_prep_renders_404_not_500(client):
     response = client.get("/workshop/99999999")
     assert response.status_code == 404
+
+
+def test_workbench_reflow_orders_sections_correctly(client):
+    response = client.get("/generate")
+    assert response.status_code == 200
+    body = response.text
+    exploring_idx = body.find("What are you exploring?")
+    engine_idx = body.find("Choose an Engine")
+    profile_idx = body.find("Select Your Profile")
+    news_idx = body.find("News Integration")
+    assert exploring_idx != -1, "Missing 'What are you exploring?' heading"
+    assert engine_idx != -1, "Missing 'Choose an Engine' heading"
+    assert profile_idx != -1, "Missing 'Select Your Profile' heading"
+    assert news_idx != -1, "Missing 'News Integration' heading"
+    assert exploring_idx < engine_idx < profile_idx < news_idx, (
+        "Sections are not in the expected Workbench order: "
+        "What are you exploring? -> Choose an Engine -> Select Your Profile -> News Integration"
+    )

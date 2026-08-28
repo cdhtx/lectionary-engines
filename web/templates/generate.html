@@ -11,155 +11,7 @@
 
     <form method="POST" action="/generate" class="generate-form" id="generateForm">
         <div class="form-section">
-            <h2>1. Choose an Engine</h2>
-            <div class="radio-group">
-                <label class="radio-card">
-                    <input type="radio" name="engine" value="threshold" {% if default_engine == 'threshold' %}checked{% endif %} required>
-                    <div class="radio-content">
-                        <strong>Threshold</strong>
-                        <p>Four progressive thresholds + tech touchpoint (2,500-3,500 words)</p>
-                    </div>
-                </label>
-
-                <label class="radio-card">
-                    <input type="radio" name="engine" value="palimpsest" {% if default_engine == 'palimpsest' %}checked{% endif %}>
-                    <div class="radio-content">
-                        <strong>Palimpsest</strong>
-                        <p>Five hermeneutical layers using PaRDeS (3,000-4,000 words)</p>
-                    </div>
-                </label>
-
-                <label class="radio-card">
-                    <input type="radio" name="engine" value="collision" {% if default_engine == 'collision' %}checked{% endif %}>
-                    <div class="radio-content">
-                        <strong>Collision</strong>
-                        <p>Five-step collision with randomizer (3,000-5,000 words)</p>
-                    </div>
-                </label>
-            </div>
-        </div>
-
-        <div class="form-section">
-            <h2>2. Select Your Profile</h2>
-
-            <div class="form-group">
-                <label for="profile-select">User Profile</label>
-                <select id="profile-select" name="profile_id" class="form-select">
-                    <option value="">Loading profiles...</option>
-                </select>
-                <p class="help-text">Choose a profile to customize study length, tone, and language complexity</p>
-            </div>
-
-            <div id="profile-info" class="profile-info" style="display: none;">
-                <div class="profile-details">
-                    <h3 id="profile-name">Default</h3>
-                    <p id="profile-description"></p>
-                    <ul class="profile-specs">
-                        <li><strong>Length:</strong> <span id="profile-length"></span></li>
-                        <li><strong>Tone:</strong> <span id="profile-tone"></span></li>
-                        <li><strong>Language:</strong> <span id="profile-language"></span></li>
-                        <li id="profile-focus-item" style="display: none;"><strong>Focus:</strong> <span id="profile-focus"></span></li>
-                    </ul>
-                </div>
-            </div>
-
-            <details class="custom-preferences">
-                <summary>Customize for This Study</summary>
-                <div class="preferences-content">
-                    <p class="help-text">Override profile settings for this study only. Leave blank to use profile defaults.</p>
-
-                    <div class="form-group">
-                        <label>Study Length</label>
-                        <div class="radio-group-inline">
-                            <label class="radio-inline">
-                                <input type="radio" name="custom_study_length" value="short">
-                                <span>Short (1000-1500 words)</span>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="custom_study_length" value="medium">
-                                <span>Medium (2500-3500 words)</span>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="custom_study_length" value="long">
-                                <span>Long (5000-7000 words)</span>
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="custom_study_length" value="" checked>
-                                <span>Use Profile Default</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="tone-slider">
-                            Tone: <span id="tone-label">Balanced (5)</span>
-                        </label>
-                        <div class="tone-slider-container">
-                            <span class="tone-label-left">Academic</span>
-                            <input
-                                type="range"
-                                id="tone-slider"
-                                name="custom_tone_level"
-                                min="-1"
-                                max="8"
-                                value="-1"
-                                class="tone-slider">
-                            <span class="tone-label-right">Devotional</span>
-                        </div>
-                        <div class="tone-scale">
-                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
-                        </div>
-                        <p class="help-text">Set to -1 to use profile default</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="language-select">Language Complexity</label>
-                        <select id="language-select" name="custom_language_complexity" class="form-select">
-                            <option value="">Use Profile Default</option>
-                            <option value="accessible">Accessible (High school level)</option>
-                            <option value="standard">Standard (College level)</option>
-                            <option value="advanced">Advanced (Graduate level)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="focus-areas">Focus Areas</label>
-                        <textarea
-                            id="focus-areas"
-                            name="custom_focus_areas"
-                            rows="3"
-                            class="form-textarea"
-                            placeholder="e.g., social justice, personal growth, historical context"></textarea>
-                        <p class="help-text">Specify themes or interests to emphasize (leave blank to use profile default)</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="artifacts-slider">
-                            Cultural Artifacts: <span id="artifacts-label">Off</span>
-                        </label>
-                        <div class="artifacts-slider-container">
-                            <span class="artifacts-label-left">Off</span>
-                            <input
-                                type="range"
-                                id="artifacts-slider"
-                                name="custom_cultural_artifacts_level"
-                                min="0"
-                                max="10"
-                                value="0"
-                                class="artifacts-slider">
-                            <span class="artifacts-label-right">Rich</span>
-                        </div>
-                        <div class="artifacts-scale">
-                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-                        </div>
-                        <p class="help-text">Weave cultural references (news, music, film, books, podcasts, etc.) throughout the study to illuminate scripture</p>
-                    </div>
-                </div>
-            </details>
-        </div>
-
-        <div class="form-section">
-            <h2>3. Choose Text Source</h2>
+            <h2>1. What are you exploring?</h2>
 
             <div class="source-tabs">
                 <label class="source-tab">
@@ -331,6 +183,154 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="form-section">
+            <h2>2. Choose an Engine</h2>
+            <div class="radio-group">
+                <label class="radio-card">
+                    <input type="radio" name="engine" value="threshold" {% if default_engine == 'threshold' %}checked{% endif %} required>
+                    <div class="radio-content">
+                        <strong>Threshold</strong>
+                        <p>Four progressive thresholds + tech touchpoint (2,500-3,500 words)</p>
+                    </div>
+                </label>
+
+                <label class="radio-card">
+                    <input type="radio" name="engine" value="palimpsest" {% if default_engine == 'palimpsest' %}checked{% endif %}>
+                    <div class="radio-content">
+                        <strong>Palimpsest</strong>
+                        <p>Five hermeneutical layers using PaRDeS (3,000-4,000 words)</p>
+                    </div>
+                </label>
+
+                <label class="radio-card">
+                    <input type="radio" name="engine" value="collision" {% if default_engine == 'collision' %}checked{% endif %}>
+                    <div class="radio-content">
+                        <strong>Collision</strong>
+                        <p>Five-step collision with randomizer (3,000-5,000 words)</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>3. Select Your Profile</h2>
+
+            <div class="form-group">
+                <label for="profile-select">User Profile</label>
+                <select id="profile-select" name="profile_id" class="form-select">
+                    <option value="">Loading profiles...</option>
+                </select>
+                <p class="help-text">Choose a profile to customize study length, tone, and language complexity</p>
+            </div>
+
+            <div id="profile-info" class="profile-info" style="display: none;">
+                <div class="profile-details">
+                    <h3 id="profile-name">Default</h3>
+                    <p id="profile-description"></p>
+                    <ul class="profile-specs">
+                        <li><strong>Length:</strong> <span id="profile-length"></span></li>
+                        <li><strong>Tone:</strong> <span id="profile-tone"></span></li>
+                        <li><strong>Language:</strong> <span id="profile-language"></span></li>
+                        <li id="profile-focus-item" style="display: none;"><strong>Focus:</strong> <span id="profile-focus"></span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <details class="custom-preferences">
+                <summary>Customize for This Study</summary>
+                <div class="preferences-content">
+                    <p class="help-text">Override profile settings for this study only. Leave blank to use profile defaults.</p>
+
+                    <div class="form-group">
+                        <label>Study Length</label>
+                        <div class="radio-group-inline">
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="short">
+                                <span>Short (1000-1500 words)</span>
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="medium">
+                                <span>Medium (2500-3500 words)</span>
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="long">
+                                <span>Long (5000-7000 words)</span>
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="custom_study_length" value="" checked>
+                                <span>Use Profile Default</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tone-slider">
+                            Tone: <span id="tone-label">Balanced (5)</span>
+                        </label>
+                        <div class="tone-slider-container">
+                            <span class="tone-label-left">Academic</span>
+                            <input
+                                type="range"
+                                id="tone-slider"
+                                name="custom_tone_level"
+                                min="-1"
+                                max="8"
+                                value="-1"
+                                class="tone-slider">
+                            <span class="tone-label-right">Devotional</span>
+                        </div>
+                        <div class="tone-scale">
+                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span>
+                        </div>
+                        <p class="help-text">Set to -1 to use profile default</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="language-select">Language Complexity</label>
+                        <select id="language-select" name="custom_language_complexity" class="form-select">
+                            <option value="">Use Profile Default</option>
+                            <option value="accessible">Accessible (High school level)</option>
+                            <option value="standard">Standard (College level)</option>
+                            <option value="advanced">Advanced (Graduate level)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="focus-areas">Focus Areas</label>
+                        <textarea
+                            id="focus-areas"
+                            name="custom_focus_areas"
+                            rows="3"
+                            class="form-textarea"
+                            placeholder="e.g., social justice, personal growth, historical context"></textarea>
+                        <p class="help-text">Specify themes or interests to emphasize (leave blank to use profile default)</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="artifacts-slider">
+                            Cultural Artifacts: <span id="artifacts-label">Off</span>
+                        </label>
+                        <div class="artifacts-slider-container">
+                            <span class="artifacts-label-left">Off</span>
+                            <input
+                                type="range"
+                                id="artifacts-slider"
+                                name="custom_cultural_artifacts_level"
+                                min="0"
+                                max="10"
+                                value="0"
+                                class="artifacts-slider">
+                            <span class="artifacts-label-right">Rich</span>
+                        </div>
+                        <div class="artifacts-scale">
+                            <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                        </div>
+                        <p class="help-text">Weave cultural references (news, music, film, books, podcasts, etc.) throughout the study to illuminate scripture</p>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <div class="form-section">
