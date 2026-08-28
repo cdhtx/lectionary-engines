@@ -171,6 +171,26 @@ def test_heading_text_variance_still_matches_on_keyword():
     assert result["layers"][0]["key"] == "peshat"
 
 
+def test_heading_with_two_keywords_matches_the_first_one():
+    # A heading that mentions a second layer's keyword in passing (e.g. to
+    # contrast with what's coming later) must still be attributed to the
+    # FIRST keyword it contains, since that's the layer the heading is
+    # actually naming. A greedy regex would wrongly grab the last keyword
+    # on the line instead.
+    two_keyword_heading = VALID_PALIMPSEST_MARKDOWN.replace(
+        "## Layer One: Peshat (Simple/Literal)",
+        "## Layer One: Peshat (Simple/Literal) - not yet time for Remez",
+    )
+
+    result = parse_palimpsest_layers(two_keyword_heading)
+
+    assert result is not None
+    assert result["layers"][0]["key"] == "peshat"
+    assert [layer["key"] for layer in result["layers"]] == [
+        "peshat", "remez", "derash", "sod", "incarnation",
+    ]
+
+
 def test_empty_content_returns_none():
     assert parse_palimpsest_layers("") is None
 

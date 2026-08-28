@@ -35,7 +35,7 @@ RAIL_LABELS = [
 ]
 
 _HEADING_PATTERN = re.compile(
-    r"^##\s+.*\b(" + "|".join(LAYER_KEYWORDS) + r")\b.*$",
+    r"^##\s+.*?\b(" + "|".join(LAYER_KEYWORDS) + r")\b.*$",
     re.MULTILINE | re.IGNORECASE,
 )
 

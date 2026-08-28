@@ -326,6 +326,7 @@ def test_palimpsest_study_page_shows_rail(study_client):
     assert response.status_code == 200
     body = response.text
     assert 'class="palimpsest-rail"' in body
+    assert "palimpsest-rail.js" in body
     for key in ["peshat", "remez", "derash", "sod", "incarnation"]:
         assert f'id="layer-{key}"' in body
 
@@ -347,6 +348,7 @@ def test_threshold_study_page_has_no_rail(study_client):
 
     assert response.status_code == 200
     assert 'class="palimpsest-rail"' not in response.text
+    assert "palimpsest-rail.js" not in response.text
 
 
 def test_malformed_palimpsest_study_falls_back_to_flat_rendering(study_client):

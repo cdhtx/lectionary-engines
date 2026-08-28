@@ -1323,9 +1323,7 @@ a.engine-card {
 .study-container--with-rail .currents-actions-bar,
 .study-container--with-rail .validation-panel,
 .study-container--with-rail .study-footer {
-    max-width: 750px;
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: calc(220px + var(--space-xl));
 }
 
 .study-body-with-rail {
@@ -2749,8 +2747,15 @@ footer p {
         max-width: 100%;
     }
 
+    .study-container--with-rail .study-header,
+    .study-container--with-rail .currents-actions-bar,
+    .study-container--with-rail .validation-panel,
+    .study-container--with-rail .study-footer {
+        margin-left: 0;
+    }
+
     .study-body-with-rail {
-        grid-template-columns: 1fr;
+        display: block;
     }
 
     .palimpsest-rail {
