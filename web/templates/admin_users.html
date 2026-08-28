@@ -6,30 +6,30 @@
   <title>User Management — Lectionary Engines</title>
   <link rel="stylesheet" href="/static/css/styles.css">
   <style>
-    body { font-family: system-ui, sans-serif; background: #f8f9fa; color: #212529; margin: 0; padding: 32px; }
-    h1 { font-size: 24px; margin-bottom: 4px; }
+    body { font-family: var(--font-ui); background: var(--ivory-50); color: var(--ink-950); margin: 0; padding: 32px; }
+    h1 { font-family: var(--font-editorial); font-size: 24px; margin-bottom: 4px; }
     .subtitle { color: #6c757d; font-size: 13px; margin-bottom: 32px; }
-    .card { background: #fff; border: 1px solid #dee2e6; border-radius: 8px; padding: 28px 32px; margin-bottom: 24px; }
+    .card { background: #fff; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 28px 32px; margin-bottom: 24px; }
     .card h2 { font-size: 16px; margin: 0 0 20px; color: #495057; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #dee2e6; color: #6c757d; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-    td { padding: 10px 12px; border-bottom: 1px solid #f1f3f5; vertical-align: middle; }
+    th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border-light); color: #6c757d; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: var(--radius-md); font-size: 11px; font-weight: 600; }
     .badge--active { background: #d4edda; color: #155724; }
     .badge--inactive { background: #f8d7da; color: #721c24; }
-    .btn { padding: 5px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .btn { font-family: var(--font-ui); padding: 5px 12px; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; font-weight: 600; }
     .btn-danger { background: #dc3545; color: #fff; }
     .btn-warn { background: #ffc107; color: #212529; }
-    .btn-primary { background: #2c5f8a; color: #fff; padding: 9px 20px; font-size: 14px; border-radius: 5px; }
+    .btn-primary { background: #2c5f8a; color: #fff; padding: 9px 20px; font-size: 14px; border-radius: var(--radius-sm); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
-    .form-row label { display: block; font-size: 12px; font-weight: 600; color: #6c757d; margin-bottom: 4px; }
-    .form-row input { width: 100%; padding: 8px 12px; border: 1px solid #ced4da; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
-    .message { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px 16px; border-radius: 5px; margin-bottom: 20px; font-size: 13px; }
-    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px 16px; border-radius: 5px; margin-bottom: 20px; font-size: 13px; }
+    .form-row label { font-family: var(--font-ui); display: block; font-size: 12px; font-weight: 600; color: #6c757d; margin-bottom: 4px; }
+    .form-row input { font-family: var(--font-ui); width: 100%; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 14px; box-sizing: border-box; }
+    .message { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px 16px; border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 13px; }
+    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px 16px; border-radius: var(--radius-sm); margin-bottom: 20px; font-size: 13px; }
     .reset-row { display: flex; gap: 8px; align-items: center; }
-    .reset-row input { padding: 5px 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 12px; width: 140px; }
-    .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; }
+    .reset-row input { font-family: var(--font-ui); padding: 5px 10px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 12px; width: 140px; }
+    .btn-sm { font-family: var(--font-ui); padding: 4px 10px; font-size: 12px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-weight: 600; }
     .btn-sm-blue { background: #4a90e2; color: #fff; }
   </style>
 </head>

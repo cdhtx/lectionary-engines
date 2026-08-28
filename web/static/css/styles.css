@@ -4,7 +4,7 @@
    ============================================================================ */
 
 /* Import distinctive fonts */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Cinzel:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter:wght@400;500;600;700&display=swap');
 
 /* Reset and Base Styles */
 * {
@@ -14,39 +14,79 @@
 }
 
 :root {
-    /* Sacred Manuscript Color Palette */
-    --color-parchment: #f5f0e6;
-    --color-parchment-light: #faf8f3;
-    --color-parchment-dark: #e8dfd0;
-    --color-ink: #1a1612;
-    --color-ink-light: #3d342a;
-    --color-ink-muted: #6b5d4d;
-    --color-gold: #b8860b;
-    --color-gold-light: #d4a642;
-    --color-gold-muted: rgba(184, 134, 11, 0.15);
+    /* ========================================================================
+       BETA DESIGN TOKENS (authoritative)
+       See docs/superpowers/specs/2026-08-27-beta-workspace-redesign-design.md
+       ======================================================================== */
 
-    /* Engine Colors - Jewel Tones */
-    --color-threshold: #6b2d5b;      /* Deep plum */
-    --color-threshold-light: #8b4d7b;
-    --color-palimpsest: #1e5631;     /* Forest green */
-    --color-palimpsest-light: #2d7a47;
-    --color-collision: #8b2500;       /* Burnt sienna */
-    --color-collision-light: #b33a00;
-    --color-resonance: #8b4513;       /* Saddle brown */
-    --color-resonance-light: #a0522d;
-    --color-currents: #2c3e50;        /* Deep navy */
-    --color-currents-light: #34495e;
+    /* Backgrounds */
+    --navy-950: #071B33;
+    --navy-900: #0A2342;
+    --navy-850: #0D2D52;
+    --ivory-50: #FAF8F3;
+    --ivory-100: #F6F2EA;
+    --ivory-200: #EEE8DE;
 
-    /* Functional Colors */
-    --color-border: rgba(107, 93, 77, 0.2);
-    --color-border-strong: rgba(107, 93, 77, 0.4);
-    --color-shadow: rgba(26, 22, 18, 0.08);
-    --color-shadow-strong: rgba(26, 22, 18, 0.15);
+    /* Text */
+    --ink-950: #10233F;
+    --ink-800: #24364D;
+    --ink-600: #5E6B78;
+    --ink-400: #8B949E;
 
-    /* Typography */
-    --font-display: 'Cinzel', serif;
-    --font-heading: 'Cormorant Garamond', serif;
-    --font-body: 'Crimson Pro', serif;
+    /* Primary accents */
+    --blue-600: #1565C0;
+    --blue-500: #1976D2;
+    --blue-400: #3B8EDB;
+    --orange-600: #E55300;
+    --orange-500: #F36C12;
+    --orange-400: #FF8A35;
+    --teal-700: #006C78;
+    --teal-600: #008797;
+    --teal-500: #13A6B5;
+
+    /* Engine colors - REMAPPED from the pre-Beta palette. Do not revert. */
+    --threshold: #E95B13;
+    --palimpsest: #1565B5;
+    --collision: #007D8A;
+
+    /* Theological accent */
+    --gold-500: #C9962C;
+    --gold-300: #E2BC63;
+
+    /* Borders and surfaces */
+    --border-light: #DED8CF;
+    --border-medium: #CBC3B8;
+    --surface-white: #FFFDFC;
+    --surface-muted: #F4F0E9;
+
+    /* States */
+    --success: #287A57;
+    --warning: #D9951E;
+    --danger: #A93B2A;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(12, 32, 54, 0.06);
+    --shadow-md: 0 8px 24px rgba(12, 32, 54, 0.09);
+    --shadow-lg: 0 18px 50px rgba(12, 32, 54, 0.13);
+
+    /* Layout */
+    --sidebar-width: 188px;
+    --content-max: 1440px;
+
+    /* Radii - larger than pre-Beta (was 3/6/12), but still restrained.
+       No giant SaaS marshmallows. */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    /* Typography - two voices. UI says "software", content says "theology". */
+    --font-editorial: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Legacy aliases */
+    --font-display: var(--font-editorial);
+    --font-heading: var(--font-editorial);
+    --font-body: var(--font-ui);
     --font-mono: 'SF Mono', 'Monaco', 'Consolas', monospace;
 
     /* Spacing */
@@ -57,42 +97,62 @@
     --space-xl: 3rem;
     --space-2xl: 5rem;
 
-    /* Border radius */
-    --radius-sm: 3px;
-    --radius-md: 6px;
-    --radius-lg: 12px;
-
     /* Transitions */
     --transition-fast: 0.15s ease;
     --transition-medium: 0.3s ease;
     --transition-slow: 0.5s ease;
+
+    /* ========================================================================
+       LEGACY ALIAS LAYER
+       ~2,500 lines of existing CSS reference these names. Rather than
+       rewriting every line (large, risky, and easy to half-finish), the old
+       names are preserved and re-pointed at the Beta palette. The whole site
+       inherits the new look with no other edits.
+
+       New CSS should use the Beta tokens above directly.
+       ======================================================================== */
+    --color-parchment: var(--ivory-50);
+    --color-parchment-light: var(--surface-white);
+    --color-parchment-dark: var(--ivory-200);
+
+    --color-ink: var(--ink-950);
+    --color-ink-light: var(--ink-800);
+    --color-ink-muted: var(--ink-600);
+
+    --color-gold: var(--gold-500);
+    --color-gold-light: var(--gold-300);
+    --color-gold-muted: rgba(201, 150, 44, 0.15);
+
+    --color-threshold: var(--threshold);
+    --color-threshold-light: var(--orange-400);
+    --color-palimpsest: var(--palimpsest);
+    --color-palimpsest-light: var(--blue-400);
+    --color-collision: var(--collision);
+    --color-collision-light: var(--teal-500);
+
+    /* Resonance and Currents are surfaces, not engines. The spec assigns no
+       colors for them; these are judgment calls kept in the Beta family. */
+    --color-resonance: var(--gold-500);
+    --color-resonance-light: var(--gold-300);
+    --color-currents: var(--navy-900);
+    --color-currents-light: var(--navy-850);
+
+    --color-border: var(--border-light);
+    --color-border-strong: var(--border-medium);
+    --color-shadow: rgba(12, 32, 54, 0.06);
+    --color-shadow-strong: rgba(12, 32, 54, 0.13);
+
+    --engine-color: var(--threshold); /* Fallback default; .engine-card:nth-child(n) overrides this per card (styles.css ~L381-383) */
 }
 
 /* Base Body Styles */
 body {
     font-family: var(--font-body);
-    font-size: 18px;
-    line-height: 1.7;
+    font-size: 15px;
+    line-height: 1.5;
     color: var(--color-ink);
     background-color: var(--color-parchment);
-    background-image:
-        url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
     min-height: 100vh;
-}
-
-/* Subtle page texture overlay */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(ellipse at top, transparent 0%, var(--color-parchment) 70%),
-        radial-gradient(ellipse at bottom, rgba(184, 134, 11, 0.03) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: -1;
 }
 
 /* Container */
@@ -101,6 +161,121 @@ body::before {
     margin: 0 auto;
     padding: 0 var(--space-lg);
 }
+
+/* ============================================================================
+   App Shell
+   ============================================================================ */
+
+.app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    min-height: 100vh;
+}
+
+.main-content {
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 28px 36px 64px;
+}
+
+/* ============================================================================
+   Sidebar
+   ============================================================================ */
+
+.sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #06182E 0%, #082445 55%, #061A31 100%);
+    color: rgba(255, 255, 255, 0.86);
+    padding: 28px 16px;
+}
+
+.brand {
+    display: block;
+    text-decoration: none;
+    margin-bottom: 34px;
+}
+
+.brand-mark {
+    display: block;
+    color: var(--orange-400);
+    font-family: var(--font-editorial);
+    font-size: 2.8rem;
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.brand-name {
+    display: block;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.62);
+    font-family: var(--font-ui);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1.5;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--radius-sm);
+    color: rgba(255, 255, 255, 0.88);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
+}
+
+/* The inset blue rail is what makes this read as software rather than a
+   styled ecclesiastical website. */
+.sidebar-link.active {
+    background: rgba(35, 105, 185, 0.25);
+    box-shadow: inset 3px 0 0 var(--blue-400);
+    color: #fff;
+}
+
+.sidebar-link--button {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.sidebar-divider {
+    height: 1px;
+    margin: 14px 12px;
+    background: rgba(255, 255, 255, 0.10);
+}
+
+.sidebar-signout {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+/* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
+   markup these rules targeted no longer exists in base.html. Kept
+   temporarily; safe to delete once Tier 1b settles the layout. */
 
 /* ============================================================================
    Header and Navigation
@@ -264,35 +439,39 @@ main {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-xs);
-    padding: 0.85rem 2rem;
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-decoration: none;
+    gap: 8px;
+    padding: 9px 14px;
     border-radius: var(--radius-sm);
-    border: none;
+    border: 1px solid var(--border-medium);
+    background: var(--surface-white);
+    color: var(--ink-950);
+    font-family: var(--font-ui);
+    font-size: 0.9rem;
+    font-weight: 550;
+    text-decoration: none;
     cursor: pointer;
-    transition: all var(--transition-medium);
-    letter-spacing: 0.02em;
+    transition: all var(--transition-fast);
+}
+
+.btn:hover {
+    background: var(--ivory-100);
+    transform: translateY(-1px);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--color-ink) 0%, var(--color-ink-light) 100%);
-    color: var(--color-parchment);
-    box-shadow: 0 4px 15px var(--color-shadow-strong);
+    background: var(--navy-900);
+    color: #fff;
+    border-color: var(--navy-900);
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px var(--color-shadow-strong);
-    background: linear-gradient(135deg, var(--color-ink-light) 0%, var(--color-ink) 100%);
+    background: var(--navy-850);
 }
 
 .btn-secondary {
-    background: transparent;
-    color: var(--color-ink);
-    border: 2px solid var(--color-border-strong);
+    background: var(--surface-white);
+    color: var(--ink-950);
+    border-color: var(--border-medium);
 }
 
 .btn-secondary:hover {
@@ -344,11 +523,18 @@ main {
     gap: var(--space-lg);
 }
 
+.engines-directory-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+}
+
 .engine-card {
-    background: var(--color-parchment-light);
+    background: rgba(255, 255, 255, 0.58);
     padding: var(--space-xl);
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
     transition: all var(--transition-medium);
@@ -367,9 +553,7 @@ main {
 }
 
 .engine-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px var(--color-shadow-strong);
-    border-color: var(--color-gold);
+    border-color: var(--border-medium);
 }
 
 .engine-card:hover::before {
@@ -429,20 +613,93 @@ main {
 }
 
 /* ============================================================================
+   Today Homepage - This Week / Choose Your Engine / Quick Actions
+   ============================================================================ */
+
+.this-week-section,
+.choose-engine-section,
+.quick-actions-section {
+    margin-bottom: var(--space-2xl);
+}
+
+.this-week-section h2,
+.choose-engine-section h2,
+.quick-actions-section h2 {
+    font-family: var(--font-display);
+    text-align: center;
+    margin-bottom: var(--space-xl);
+    font-size: 1.8rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+}
+
+.this-week-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+}
+
+.reading-card {
+    background: rgba(255, 255, 255, 0.58);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+}
+
+.reading-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-ink-muted);
+    margin-bottom: var(--space-xs);
+}
+
+.reading-reference {
+    font-family: var(--font-editorial);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
+.quick-actions-list {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+/* .engine-card is normally a <div>; Today's cards are <a> so they're
+   clickable to /engines. Additive override, doesn't touch the existing
+   .engine-card rule used elsewhere (e.g. web/templates/engines.html). */
+a.engine-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ============================================================================
    Engine Badges
    ============================================================================ */
 
 .engine-badge {
     display: inline-flex;
     align-items: center;
-    padding: 0.3rem 0.9rem;
-    font-family: var(--font-display);
-    font-size: 0.7rem;
-    font-weight: 600;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    border-radius: var(--radius-sm);
-    color: var(--color-parchment);
+    letter-spacing: 0.07em;
+    color: #fff;
 }
 
 .engine-threshold { background: var(--color-threshold); }
@@ -969,6 +1226,17 @@ main {
     color: var(--color-gold);
 }
 
+/* The reading surface keeps the editorial voice and reading size, even
+   though the surrounding interface is Inter at 15px. */
+.study-content,
+.currents-content,
+.workshop-content,
+.resonance-content {
+    font-family: var(--font-editorial) !important;
+    font-size: 18px !important;
+    line-height: 1.7 !important;
+}
+
 /* Study Content - Manuscript Reading Experience */
 .study-content {
     font-family: var(--font-body);
@@ -1080,18 +1348,21 @@ main {
 
 .search-bar input[type="text"] {
     flex: 1;
-    padding: var(--space-sm) var(--space-md);
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--color-ink);
-    background: var(--color-parchment-light);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+    height: 42px;
+    padding: 0 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--ink-950);
+    font-family: var(--font-ui);
+    font-size: 0.95rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .search-bar input[type="text"]:focus {
     outline: none;
-    border-color: var(--color-gold);
+    border-color: var(--blue-400);
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.10), var(--shadow-sm);
 }
 
 .search-clear {
@@ -1179,17 +1450,16 @@ main {
 }
 
 .study-card {
-    background: var(--color-parchment-light);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     padding: var(--space-lg);
     transition: all var(--transition-medium);
 }
 
 .study-card:hover {
-    border-color: var(--color-gold);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px var(--color-shadow-strong);
+    border-color: var(--border-medium);
 }
 
 .study-card-link {
@@ -1258,6 +1528,10 @@ main {
     margin-bottom: var(--space-sm);
     color: var(--color-ink-muted);
 }
+
+/* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
+   markup these rules targeted no longer exists in base.html. Kept
+   temporarily; safe to delete once Tier 1b settles the layout. */
 
 /* ============================================================================
    Footer
@@ -1545,7 +1819,7 @@ footer p {
 }
 
 .validation-badge.approve {
-    background: rgba(30, 86, 49, 0.15);
+    background: rgba(21, 101, 181, 0.15);
     color: var(--color-palimpsest);
 }
 
@@ -1555,7 +1829,7 @@ footer p {
 }
 
 .validation-badge.revise {
-    background: rgba(139, 37, 0, 0.15);
+    background: rgba(0, 125, 138, 0.15);
     color: var(--color-collision);
 }
 
@@ -1631,7 +1905,7 @@ footer p {
 }
 
 .validation-flag.critical {
-    background: rgba(139, 37, 0, 0.1);
+    background: rgba(0, 125, 138, 0.1);
     border-left: 3px solid var(--color-collision);
 }
 
@@ -1641,7 +1915,7 @@ footer p {
 }
 
 .validation-flag.minor {
-    background: rgba(30, 86, 49, 0.1);
+    background: rgba(21, 101, 181, 0.1);
     border-left: 3px solid var(--color-palimpsest);
 }
 
@@ -1895,17 +2169,16 @@ footer p {
 .workshop-card {
     display: block;
     text-decoration: none;
-    background: var(--color-parchment-light);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     padding: var(--space-lg);
     transition: all var(--transition-medium);
 }
 
 .workshop-card:hover {
-    border-color: var(--color-gold);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px var(--color-shadow-strong);
+    border-color: var(--border-medium);
 }
 
 .workshop-card-header {
@@ -2052,7 +2325,7 @@ footer p {
     padding: 0.2rem 0.6rem;
     font-family: var(--font-heading);
     font-size: 0.8rem;
-    background: rgba(30, 86, 49, 0.1);
+    background: rgba(21, 101, 181, 0.1);
     border-radius: var(--radius-sm);
     color: var(--color-palimpsest);
 }
@@ -2072,7 +2345,7 @@ footer p {
     margin-bottom: var(--space-md);
     color: var(--color-resonance);
     padding-bottom: var(--space-xs);
-    border-bottom: 1px solid rgba(139, 69, 19, 0.2);
+    border-bottom: 1px solid rgba(201, 150, 44, 0.2);
 }
 
 .resonance-content p {
@@ -2085,7 +2358,7 @@ footer p {
     margin: var(--space-lg) 0;
     font-style: italic;
     color: var(--color-ink-light);
-    background: rgba(139, 69, 19, 0.08);
+    background: rgba(201, 150, 44, 0.08);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
@@ -2165,18 +2438,16 @@ footer p {
 
 .headline-card {
     padding: var(--space-md);
-    background: var(--color-parchment);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
 }
 
 .headline-card:hover {
-    border-color: var(--color-currents);
-    background: rgba(44, 62, 80, 0.05);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px var(--color-shadow);
+    border-color: var(--border-medium);
 }
 
 .headline-card.selected {
@@ -2291,16 +2562,15 @@ footer p {
 }
 
 .currents-card {
-    background: var(--color-parchment-light);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
     transition: all var(--transition-medium);
 }
 
 .currents-card:hover {
-    border-color: var(--color-currents);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px var(--color-shadow-strong);
+    border-color: var(--border-medium);
 }
 
 .currents-card-link {
@@ -2352,6 +2622,10 @@ footer p {
 
 @media (max-width: 900px) {
     .engines-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .this-week-grid {
         grid-template-columns: 1fr;
     }
 
@@ -2521,8 +2795,12 @@ footer p {
         animation: none !important;
     }
 
-    header, footer, .btn, .form-actions {
+    header, footer, .sidebar, .btn, .form-actions {
         display: none;
+    }
+
+    .app-shell {
+        display: block;
     }
 
     .currents-actions-bar {
@@ -2530,8 +2808,8 @@ footer p {
     }
 
     .study-content, .workshop-content, .resonance-content, .currents-content {
-        font-size: 11pt;
-        line-height: 1.6;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
     }
 
     .study-content h1,

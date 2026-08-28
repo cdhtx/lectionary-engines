@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 
 from .database import init_db, close_db, get_db
-from .routes import studies, profiles, workshop, resonance, currents
+from .routes import studies, profiles, workshop, resonance, currents, engines
 from .routes import auth as auth_routes
 from .models import Study
 from .config import WebConfig
@@ -95,6 +95,7 @@ app.include_router(profiles.router, tags=["profiles"])
 app.include_router(workshop.router, tags=["workshop"])
 app.include_router(resonance.router, tags=["resonance"])
 app.include_router(currents.router, tags=["currents"])
+app.include_router(engines.router, tags=["engines"])
 
 
 # ============================================================================
@@ -102,16 +103,22 @@ app.include_router(currents.router, tags=["currents"])
 # ============================================================================
 
 @app.get("/", response_class=HTMLResponse)
-async def home(request: Request, db: Session = Depends(get_db)):
+def home(request: Request, db: Session = Depends(get_db)):
     """
-    Home page - shows welcome message and recent studies
+    Today homepage - This Week in the Lectionary, engine cards, quick
+    actions, and recent studies
     """
+    from .services.lectionary_widget_service import get_this_week_readings
+
     # Get recent studies (last 5)
     recent_studies = db.query(Study).order_by(Study.created_at.desc()).limit(5).all()
+
+    this_week = get_this_week_readings(db)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "recent_studies": recent_studies,
+        "this_week": this_week,
         "config": config
     })
 

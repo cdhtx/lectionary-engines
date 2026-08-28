@@ -8,37 +8,39 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <header>
-        <nav class="navbar">
-            <div class="container">
-                <div class="nav-brand">
-                    <a href="/">Lectionary Engines</a>
-                </div>
-                <div class="nav-menu">
-                    <a href="/" class="nav-link">Home</a>
-                    <a href="/generate" class="nav-link">Generate</a>
-                    <a href="/workshop" class="nav-link">Workshop</a>
-                    <a href="/currents" class="nav-link">Currents</a>
-                    <a href="/resonance" class="nav-link">Resonance</a>
-                    <a href="/browse" class="nav-link">Browse</a>
-                    <a href="/profiles" class="nav-link">Profiles</a>
-                    <form action="/logout" method="POST" style="display:inline;margin:0;">
-                        <button type="submit" class="nav-link nav-link--logout">Sign out</button>
-                    </form>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a href="/" class="brand">
+                <span class="brand-mark">LE</span>
+                <span class="brand-name">Lectionary<br>Engines</span>
+            </a>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
+            <nav class="sidebar-nav">
+                <a href="/" class="sidebar-link {% if request.url.path == '/' %}active{% endif %}">Today</a>
+                <a href="/generate" class="sidebar-link {% if request.url.path.startswith('/generate') %}active{% endif %}">Workbench</a>
+                <a href="/browse" class="sidebar-link {% if request.url.path.startswith('/browse') or request.url.path.startswith('/study') %}active{% endif %}">Library</a>
+                <a href="/engines" class="sidebar-link {% if request.url.path.startswith('/engines') %}active{% endif %}">Engines</a>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2026 Lectionary Engines | Biblical interpretation through three hermeneutical frameworks</p>
-        </div>
-    </footer>
+                <div class="sidebar-divider"></div>
+
+                <a href="/workshop" class="sidebar-link {% if request.url.path.startswith('/workshop') %}active{% endif %}">Workshop</a>
+                <a href="/currents" class="sidebar-link {% if request.url.path.startswith('/currents') %}active{% endif %}">Currents</a>
+                <a href="/resonance" class="sidebar-link {% if request.url.path.startswith('/resonance') %}active{% endif %}">Resonance</a>
+
+                <div class="sidebar-divider"></div>
+
+                <a href="/profiles" class="sidebar-link {% if request.url.path.startswith('/profiles') %}active{% endif %}">Profiles</a>
+            </nav>
+
+            <form action="/logout" method="POST" class="sidebar-signout">
+                <button type="submit" class="sidebar-link sidebar-link--button">Sign out</button>
+            </form>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
 
     {% block extra_scripts %}{% endblock %}
 </body>
