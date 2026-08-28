@@ -246,64 +246,33 @@ async def download_study_pdf(request: Request, study_id: int, db: Session = Depe
 async def browse_studies(
     request: Request,
     page: int = 1,
-    engine: str = None,
-    source: str = None,
+    type: str = None,
     q: str = None,
     db: Session = Depends(get_db)
 ):
     """
-    Browse studies page - lists all studies with filtering and search
+    Library page - unified browse across studies, workshop preps,
+    currents analyses, and resonance results
     """
-    # Calculate pagination
-    per_page = config.studies_per_page
-    skip = (page - 1) * per_page
+    from .services.library_service import search_library
 
-    # Build query
-    query = db.query(Study)
-
-    # Apply filters
-    if engine:
-        query = query.filter(Study.engine == engine)
-    if source:
-        query = query.filter(Study.source == source)
-    if q and q.strip():
-        # .ilike() is case-insensitive on both SQLite and Postgres via
-        # SQLAlchemy's dialect handling. Searches the raw reference column
-        # (not reference_normalized) since older rows predating that
-        # column's migration may have it NULL.
-        search_term = f"%{q.strip()}%"
-        query = query.filter(
-            or_(
-                Study.reference.ilike(search_term),
-                Study.content.ilike(search_term),
-            )
-        )
-
-    # Order by most recent first
-    query = query.order_by(Study.created_at.desc())
-
-    # Get total count before pagination
-    total = query.count()
-
-    # Get studies for this page
-    studies_list = query.offset(skip).limit(per_page).all()
-
-    # Calculate pagination info
-    total_pages = (total + per_page - 1) // per_page
-    has_prev = page > 1
-    has_next = page < total_pages
+    search_term = q.strip() if q and q.strip() else None
+    # search_library() divides by per_page with no guard of its own; a
+    # non-positive value (only reachable via a misconfigured STUDIES_PER_PAGE
+    # env var) would raise ZeroDivisionError, so fall back to a sane default.
+    per_page = config.studies_per_page if config.studies_per_page > 0 else 20
+    result = search_library(db, content_type=type, q=search_term, page=page, per_page=per_page)
 
     return templates.TemplateResponse("browse.html", {
         "request": request,
-        "studies": studies_list,
-        "page": page,
-        "total_pages": total_pages,
-        "has_prev": has_prev,
-        "has_next": has_next,
-        "total": total,
-        "engine_filter": engine,
-        "source_filter": source,
-        "search_query": q or ""
+        "results": result["results"],
+        "page": result["page"],
+        "total_pages": result["total_pages"],
+        "has_prev": result["has_prev"],
+        "has_next": result["has_next"],
+        "total": result["total"],
+        "type_filter": type,
+        "search_query": search_term or ""
     })
 
 

@@ -2403,6 +2403,21 @@ footer p {
     color: var(--color-parchment);
 }
 
+.workshop-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 0.3rem 0.9rem;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: var(--radius-sm);
+    background: var(--color-ink);
+    color: var(--color-parchment);
+}
+
 /* Headlines Fetch Bar */
 .headlines-fetch-bar {
     display: flex;

@@ -124,6 +124,16 @@ def test_engines_page_lists_all_three_engines(client):
     assert "Collision" in body
 
 
+def test_library_page_shows_all_content_types(client):
+    response = client.get("/browse")
+    assert response.status_code == 200
+
+
+def test_library_page_type_filter(client):
+    response = client.get("/browse?type=workshop")
+    assert response.status_code == 200
+
+
 @patch("web.services.lectionary_widget_service.TextFetcher")
 def test_sidebar_links_to_engines(mock_fetcher_class, isolated_client):
     mock_fetcher = mock_fetcher_class.return_value
