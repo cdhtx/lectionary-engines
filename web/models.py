@@ -3,7 +3,7 @@ Database ORM models for Lectionary Engines web app
 """
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Index, Date, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -391,3 +391,27 @@ class CollisionVectorState(Base):
 
     def __repr__(self):
         return f"<CollisionVectorState(category='{self.category}')>"
+
+
+class LectionaryReadingCache(Base):
+    """
+    Caches one day's RCL readings so the Today homepage doesn't re-fetch
+    from Vanderbilt's site on every page load. fetch_rcl() has no caching
+    of its own - this table adds a day-granularity cache in front of it.
+    """
+
+    __tablename__ = "lectionary_reading_cache"
+
+    id = Column(Integer, primary_key=True)
+    reading_date = Column(Date, nullable=False, index=True)
+    reading_type = Column(String(20), nullable=False)  # "gospel", "ot", "psalm", "epistle"
+    reference = Column(String(500), nullable=False)
+    text = Column(Text, nullable=False)
+    fetched_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("reading_date", "reading_type", name="uq_reading_date_type"),
+    )
+
+    def __repr__(self):
+        return f"<LectionaryReadingCache(reading_date='{self.reading_date}', reading_type='{self.reading_type}')>"
