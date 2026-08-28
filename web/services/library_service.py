@@ -137,7 +137,15 @@ def search_library(
     `content_type`: one of "study"/"workshop"/"currents"/"resonance", or
     any other value (including None/"") treated as "no filter" - all four
     types are included.
+
+    `page` and `per_page` are clamped to a minimum of 1 here (not left to
+    the caller) - a non-positive `page` would emit a negative SQL OFFSET,
+    which Postgres rejects outright, and a non-positive `per_page` would
+    divide by zero below.
     """
+    page = max(1, page)
+    per_page = max(1, per_page)
+
     types_to_query = [content_type] if content_type in _SELECT_BUILDERS else list(_SELECT_BUILDERS.keys())
 
     selects = [_SELECT_BUILDERS[t](q) for t in types_to_query]
@@ -148,7 +156,7 @@ def search_library(
 
     ordered = (
         select(subquery)
-        .order_by(subquery.c.created_at.desc())
+        .order_by(subquery.c.created_at.desc(), subquery.c.content_type, subquery.c.id)
         .offset((page - 1) * per_page)
         .limit(per_page)
     )

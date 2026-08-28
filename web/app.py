@@ -257,11 +257,7 @@ async def browse_studies(
     from .services.library_service import search_library
 
     search_term = q.strip() if q and q.strip() else None
-    # search_library() divides by per_page with no guard of its own; a
-    # non-positive value (only reachable via a misconfigured STUDIES_PER_PAGE
-    # env var) would raise ZeroDivisionError, so fall back to a sane default.
-    per_page = config.studies_per_page if config.studies_per_page > 0 else 20
-    result = search_library(db, content_type=type, q=search_term, page=page, per_page=per_page)
+    result = search_library(db, content_type=type, q=search_term, page=page, per_page=config.studies_per_page)
 
     return templates.TemplateResponse("browse.html", {
         "request": request,
