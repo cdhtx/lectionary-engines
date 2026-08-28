@@ -116,7 +116,7 @@ def _format_title(content_type: str, raw_title: str) -> str:
     try:
         themes = json.loads(raw_title)
         return ", ".join(t.title() for t in themes) if themes else raw_title
-    except (json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, AttributeError):
         return raw_title
 
 

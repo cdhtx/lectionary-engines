@@ -121,6 +121,24 @@ def test_urls_are_correct_per_type(db):
     assert by_type["resonance"]["url"].startswith("/resonance/")
 
 
+def test_resonance_title_falls_back_gracefully_when_themes_elements_are_not_strings(db):
+    # themes is valid JSON but its elements don't support .title() (e.g.
+    # non-string values from malformed/legacy data) - search_library must
+    # not raise, and should fall back to the raw themes string.
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    db.add(CulturalResonance(
+        themes="[1, 2, 3]", reference=None,
+        content="Resonance content with malformed themes",
+        created_at=base_time,
+    ))
+    db.commit()
+
+    result = search_library(db, content_type="resonance")
+
+    assert result["total"] == 1
+    assert result["results"][0]["title"] == "[1, 2, 3]"
+
+
 def test_pagination_is_correct_across_types_on_the_same_page(db):
     base_time = datetime(2026, 8, 28, 12, 0, 0)
     _seed_one_of_each(db, base_time)
