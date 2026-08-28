@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Engines | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Engines</h1>
+        <p>Three hermeneutical frameworks, each a different way of reading the same text.</p>
+    </div>
+
+    <section class="engines-directory-list">
+        <div class="engine-card">
+            <h3>Threshold</h3>
+            <p>Four progressive thresholds of engagement, culminating in a tech touchpoint. One core insight develops across all movements.</p>
+            <ul>
+                <li>Archaeological Dive</li>
+                <li>Theological Combustion</li>
+                <li>Present Friction</li>
+                <li>Embodied Practice</li>
+            </ul>
+            <p class="meta">2,500-3,500 words | 20-30 min read</p>
+            <a href="/generate" class="btn btn-primary">Start a Threshold study</a>
+        </div>
+
+        <div class="engine-card">
+            <h3>Palimpsest</h3>
+            <p>Five hermeneutical layers using the PaRDeS framework. Each layer visible through the others like a manuscript palimpsest.</p>
+            <ul>
+                <li>Peshat (Literal)</li>
+                <li>Remez (Allegory)</li>
+                <li>Derash (Tradition)</li>
+                <li>Sod (Mystery)</li>
+                <li>Incarnation (Contemporary)</li>
+            </ul>
+            <p class="meta">3,000-4,000 words | 25-35 min read</p>
+            <a href="/generate" class="btn btn-primary">Start a Palimpsest study</a>
+        </div>
+
+        <div class="engine-card">
+            <h3>Collision</h3>
+            <p>Five-step collision process forcing unprecedented connections through randomized vectors from science, culture, philosophy, technology, and personal life.</p>
+            <ul>
+                <li>Anchor in Antiquity</li>
+                <li>Collide with Now</li>
+                <li>Navigate Rupture</li>
+                <li>Crystallize Insight</li>
+                <li>Release into Future</li>
+            </ul>
+            <p class="meta">3,000-5,000 words | Maximum intensity</p>
+            <a href="/generate" class="btn btn-primary">Start a Collision study</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

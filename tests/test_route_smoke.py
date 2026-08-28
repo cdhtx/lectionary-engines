@@ -24,6 +24,7 @@ PAGES = [
     "/currents/browse",
     "/resonance",
     "/profiles",
+    "/engines",
 ]
 
 
@@ -69,3 +70,12 @@ def test_missing_currents_renders_404_not_500(client):
 def test_missing_workshop_prep_renders_404_not_500(client):
     response = client.get("/workshop/99999999")
     assert response.status_code == 404
+
+
+def test_engines_page_lists_all_three_engines(client):
+    response = client.get("/engines")
+    assert response.status_code == 200
+    body = response.text
+    assert "Threshold" in body
+    assert "Palimpsest" in body
+    assert "Collision" in body

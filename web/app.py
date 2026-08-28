@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 
 from .database import init_db, close_db, get_db
-from .routes import studies, profiles, workshop, resonance, currents
+from .routes import studies, profiles, workshop, resonance, currents, engines
 from .routes import auth as auth_routes
 from .models import Study
 from .config import WebConfig
@@ -95,6 +95,7 @@ app.include_router(profiles.router, tags=["profiles"])
 app.include_router(workshop.router, tags=["workshop"])
 app.include_router(resonance.router, tags=["resonance"])
 app.include_router(currents.router, tags=["currents"])
+app.include_router(engines.router, tags=["engines"])
 
 
 # ============================================================================
