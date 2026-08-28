@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Signals | Lectionary Engines{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>Signals</h1>
+        <p>Thematic connections detected among this week's four lectionary readings.</p>
+    </div>
+
+    {% if connections %}
+    <div class="signals-list">
+        {% for connection in connections %}
+        <div class="signal-card">
+            <div class="signal-pair">
+                <span class="signal-reading">{{ connection.reading_a_label }}: {{ connection.reading_a_reference }}</span>
+                <span class="signal-arrow">↔</span>
+                <span class="signal-reading">{{ connection.reading_b_label }}: {{ connection.reading_b_reference }}</span>
+            </div>
+            <div class="signal-themes">
+                {% for theme in connection.shared_themes %}
+                <span class="theme-tag">{{ theme }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <h2>No connections detected this week</h2>
+        <p>Check back next week, or explore the readings directly in the <a href="/">Today dashboard</a>.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

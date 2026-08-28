@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 
 from .database import init_db, close_db, get_db
-from .routes import studies, profiles, workshop, resonance, currents, engines
+from .routes import studies, profiles, workshop, resonance, currents, engines, signals
 from .routes import auth as auth_routes
 from .models import Study
 from .config import WebConfig
@@ -96,6 +96,7 @@ app.include_router(workshop.router, tags=["workshop"])
 app.include_router(resonance.router, tags=["resonance"])
 app.include_router(currents.router, tags=["currents"])
 app.include_router(engines.router, tags=["engines"])
+app.include_router(signals.router, tags=["signals"])
 
 
 # ============================================================================
@@ -105,20 +106,26 @@ app.include_router(engines.router, tags=["engines"])
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     """
-    Today homepage - This Week in the Lectionary, engine cards, quick
-    actions, and recent studies
+    Today homepage - This Week in the Lectionary, Signals, engine cards,
+    quick actions, and recent studies
     """
+    from lectionary_engines.claude_client import ClaudeClient
     from .services.lectionary_widget_service import get_this_week_readings
+    from .services.signals_service import get_this_week_signals
 
     # Get recent studies (last 5)
     recent_studies = db.query(Study).order_by(Study.created_at.desc()).limit(5).all()
 
     this_week = get_this_week_readings(db)
 
+    claude = ClaudeClient(config.anthropic_api_key)
+    signals = get_this_week_signals(db, claude)[:3]  # top 3 for the compact widget; full list on /signals
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "recent_studies": recent_studies,
         "this_week": this_week,
+        "signals": signals,
         "config": config
     })
 

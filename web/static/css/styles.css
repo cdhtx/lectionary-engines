@@ -617,12 +617,14 @@ main {
    ============================================================================ */
 
 .this-week-section,
+.signals-section,
 .choose-engine-section,
 .quick-actions-section {
     margin-bottom: var(--space-2xl);
 }
 
 .this-week-section h2,
+.signals-section h2,
 .choose-engine-section h2,
 .quick-actions-section h2 {
     font-family: var(--font-display);
@@ -2307,6 +2309,40 @@ footer p {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
     color: var(--color-ink-light);
+}
+
+.signals-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.signal-card {
+    background: rgba(255, 255, 255, 0.58);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-lg);
+}
+
+.signal-pair {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-editorial);
+    font-size: 1.1rem;
+    margin-bottom: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.signal-arrow {
+    color: var(--color-ink-muted);
+}
+
+.signal-themes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
 }
 
 .sources-used {
