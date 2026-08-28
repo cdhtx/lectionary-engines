@@ -106,20 +106,26 @@ app.include_router(signals.router, tags=["signals"])
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     """
-    Today homepage - This Week in the Lectionary, engine cards, quick
-    actions, and recent studies
+    Today homepage - This Week in the Lectionary, Signals, engine cards,
+    quick actions, and recent studies
     """
+    from lectionary_engines.claude_client import ClaudeClient
     from .services.lectionary_widget_service import get_this_week_readings
+    from .services.signals_service import get_this_week_signals
 
     # Get recent studies (last 5)
     recent_studies = db.query(Study).order_by(Study.created_at.desc()).limit(5).all()
 
     this_week = get_this_week_readings(db)
 
+    claude = ClaudeClient(config.anthropic_api_key)
+    signals = get_this_week_signals(db, claude)[:3]  # top 3 for the compact widget; full list on /signals
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "recent_studies": recent_studies,
         "this_week": this_week,
+        "signals": signals,
         "config": config
     })
 
