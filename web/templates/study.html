@@ -161,4 +161,7 @@
 
 {% block extra_scripts %}
 <script src="/static/js/content-actions.js" defer></script>
+{% if palimpsest_rail %}
+<script src="/static/js/palimpsest-rail.js" defer></script>
+{% endif %}
 {% endblock %}
