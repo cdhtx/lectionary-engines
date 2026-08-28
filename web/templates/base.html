@@ -19,6 +19,7 @@
                 <a href="/" class="sidebar-link {% if request.url.path == '/' %}active{% endif %}">Today</a>
                 <a href="/generate" class="sidebar-link {% if request.url.path.startswith('/generate') %}active{% endif %}">Workbench</a>
                 <a href="/browse" class="sidebar-link {% if request.url.path.startswith('/browse') or request.url.path.startswith('/study') %}active{% endif %}">Library</a>
+                <a href="/engines" class="sidebar-link {% if request.url.path.startswith('/engines') %}active{% endif %}">Engines</a>
 
                 <div class="sidebar-divider"></div>
 

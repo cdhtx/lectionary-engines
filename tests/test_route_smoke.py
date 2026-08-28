@@ -79,3 +79,9 @@ def test_engines_page_lists_all_three_engines(client):
     assert "Threshold" in body
     assert "Palimpsest" in body
     assert "Collision" in body
+
+
+def test_sidebar_links_to_engines(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert 'href="/engines"' in response.text
