@@ -196,3 +196,28 @@ def test_workbench_reflow_orders_sections_correctly(client):
         "Sections are not in the expected Workbench order: "
         "What are you exploring? -> Choose an Engine -> Select Your Profile -> News Integration"
     )
+
+
+@patch("web.services.lectionary_widget_service.TextFetcher")
+@patch("web.services.signals_service.TextFetcher")
+@patch("web.services.signals_service.extract_themes")
+def test_signals_page_renders(mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, isolated_client):
+    mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {
+        "gospel": "Luke 14:1-14",
+        "epistle": "Hebrews 13:1-8, 15-16",
+        "ot": "Jeremiah 2:4-13",
+        "psalm": "Psalm 81:1, 10-16",
+    }
+    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
+    mock_extract_themes.side_effect = lambda claude, reference, text: ["hospitality"]
+
+    response = isolated_client.get("/signals")
+
+    assert response.status_code == 200
+    assert "Signals" in response.text
+
+
+def test_sidebar_links_to_signals(isolated_client):
+    response = isolated_client.get("/engines")
+    assert response.status_code == 200
+    assert 'href="/signals"' in response.text
