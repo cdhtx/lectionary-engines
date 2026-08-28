@@ -105,14 +105,20 @@ app.include_router(engines.router, tags=["engines"])
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, db: Session = Depends(get_db)):
     """
-    Home page - shows welcome message and recent studies
+    Today homepage - This Week in the Lectionary, engine cards, quick
+    actions, and recent studies
     """
+    from .services.lectionary_widget_service import get_this_week_readings
+
     # Get recent studies (last 5)
     recent_studies = db.query(Study).order_by(Study.created_at.desc()).limit(5).all()
+
+    this_week = get_this_week_readings(db)
 
     return templates.TemplateResponse("index.html", {
         "request": request,
         "recent_studies": recent_studies,
+        "this_week": this_week,
         "config": config
     })
 

@@ -613,6 +613,78 @@ main {
 }
 
 /* ============================================================================
+   Today Homepage - This Week / Choose Your Engine / Quick Actions
+   ============================================================================ */
+
+.this-week-section,
+.choose-engine-section,
+.quick-actions-section {
+    margin-bottom: var(--space-2xl);
+}
+
+.this-week-section h2,
+.choose-engine-section h2,
+.quick-actions-section h2 {
+    font-family: var(--font-display);
+    text-align: center;
+    margin-bottom: var(--space-xl);
+    font-size: 1.8rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+}
+
+.this-week-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+}
+
+.reading-card {
+    background: rgba(255, 255, 255, 0.58);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+}
+
+.reading-label {
+    display: block;
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--color-ink-muted);
+    margin-bottom: var(--space-xs);
+}
+
+.reading-reference {
+    font-family: var(--font-editorial);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--color-ink);
+}
+
+.quick-actions-list {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+}
+
+/* .engine-card is normally a <div>; Today's cards are <a> so they're
+   clickable to /engines. Additive override, doesn't touch the existing
+   .engine-card rule used elsewhere (e.g. web/templates/engines.html). */
+a.engine-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ============================================================================
    Engine Badges
    ============================================================================ */
 

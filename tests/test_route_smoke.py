@@ -8,6 +8,8 @@ Auth note: AuthMiddleware only checks that the session cookie decodes -
 it does not verify the user exists - so a signed cookie is sufficient.
 """
 
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -85,3 +87,18 @@ def test_sidebar_links_to_engines(client):
     response = client.get("/")
     assert response.status_code == 200
     assert 'href="/engines"' in response.text
+
+
+@patch("web.services.lectionary_widget_service.TextFetcher")
+def test_today_homepage_shows_this_week_readings(mock_fetcher_class, client):
+    mock_fetcher = mock_fetcher_class.return_value
+    mock_fetcher.fetch_rcl.side_effect = lambda reading_type: (f"{reading_type}-ref", f"{reading_type}-text")
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    body = response.text
+    assert "Gospel" in body
+    assert "Epistle" in body
+    assert "Hebrew Scripture" in body
+    assert "Psalm" in body

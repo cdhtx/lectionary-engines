@@ -4,61 +4,71 @@
 
 {% block content %}
 <div class="container">
-    <section class="hero">
-        <h1>Lectionary Engines</h1>
-        <p class="lead">Biblical interpretation through three hermeneutical frameworks</p>
-        <div class="hero-actions">
-            <a href="/generate" class="btn btn-primary">Generate Study</a>
-            <a href="/browse" class="btn btn-secondary">Browse Studies</a>
+    <div class="page-header">
+        <h1>Today</h1>
+        <p>Biblical interpretation through three hermeneutical frameworks</p>
+    </div>
+
+    <section class="this-week-section">
+        <h2>This Week in the Lectionary</h2>
+        <div class="this-week-grid">
+            {% if this_week.gospel %}
+            <div class="reading-card">
+                <span class="reading-label">Gospel</span>
+                <p class="reading-reference">{{ this_week.gospel.reference }}</p>
+            </div>
+            {% endif %}
+            {% if this_week.epistle %}
+            <div class="reading-card">
+                <span class="reading-label">Epistle</span>
+                <p class="reading-reference">{{ this_week.epistle.reference }}</p>
+            </div>
+            {% endif %}
+            {% if this_week.ot %}
+            <div class="reading-card">
+                <span class="reading-label">Hebrew Scripture</span>
+                <p class="reading-reference">{{ this_week.ot.reference }}</p>
+            </div>
+            {% endif %}
+            {% if this_week.psalm %}
+            <div class="reading-card">
+                <span class="reading-label">Psalm</span>
+                <p class="reading-reference">{{ this_week.psalm.reference }}</p>
+            </div>
+            {% endif %}
         </div>
     </section>
 
-    <section class="engines-info">
-        <h2>Three Interpretation Engines</h2>
-        <div class="engines-grid">
-            <div class="engine-card">
+    <section class="choose-engine-section">
+        <h2>Choose Your Engine</h2>
+        <div class="engines-directory-list">
+            <a href="/engines" class="engine-card">
                 <h3>Threshold</h3>
-                <p>Four progressive thresholds of engagement, culminating in a tech touchpoint. One core insight develops across all movements.</p>
-                <ul>
-                    <li>Archaeological Dive</li>
-                    <li>Theological Combustion</li>
-                    <li>Present Friction</li>
-                    <li>Embodied Practice + Tech</li>
-                </ul>
-                <p class="meta">2,500-3,500 words | 20-30 min read</p>
-            </div>
-
-            <div class="engine-card">
+                <p>Four progressive thresholds of engagement, culminating in a tech touchpoint.</p>
+            </a>
+            <a href="/engines" class="engine-card">
                 <h3>Palimpsest</h3>
-                <p>Five hermeneutical layers using the PaRDeS framework. Each layer visible through the others like a manuscript palimpsest.</p>
-                <ul>
-                    <li>Peshat (Literal)</li>
-                    <li>Remez (Allegory)</li>
-                    <li>Derash (Tradition)</li>
-                    <li>Sod (Mystery)</li>
-                    <li>Incarnation (Contemporary)</li>
-                </ul>
-                <p class="meta">3,000-4,000 words | 25-35 min read</p>
-            </div>
-
-            <div class="engine-card">
+                <p>Five hermeneutical layers using the PaRDeS framework.</p>
+            </a>
+            <a href="/engines" class="engine-card">
                 <h3>Collision</h3>
-                <p>Five-step collision process forcing unprecedented connections through randomized vectors from science, culture, philosophy, technology, and personal life.</p>
-                <ul>
-                    <li>Anchor in Antiquity</li>
-                    <li>Collide with Now</li>
-                    <li>Navigate Rupture</li>
-                    <li>Crystallize Insight</li>
-                    <li>Release into Future</li>
-                </ul>
-                <p class="meta">3,000-5,000 words | Maximum intensity</p>
-            </div>
+                <p>Five-step collision process forcing unprecedented connections.</p>
+            </a>
+        </div>
+    </section>
+
+    <section class="quick-actions-section">
+        <h2>Quick Actions</h2>
+        <div class="quick-actions-list">
+            <a href="/generate" class="btn btn-secondary">Start a New Study</a>
+            <a href="/browse" class="btn btn-secondary">View Library</a>
+            <a href="/currents" class="btn btn-secondary">Explore Currents</a>
         </div>
     </section>
 
     {% if recent_studies %}
     <section class="recent-studies">
-        <h2>Recent Studies</h2>
+        <h2>Continue Your Studies</h2>
         <div class="studies-list">
             {% for study in recent_studies %}
             <div class="study-item">
