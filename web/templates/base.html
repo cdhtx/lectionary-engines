@@ -24,14 +24,25 @@
 
                 <div class="sidebar-divider"></div>
 
-                <a href="/workshop" class="sidebar-link {% if request.url.path.startswith('/workshop') %}active{% endif %}">Workshop</a>
-                <a href="/currents" class="sidebar-link {% if request.url.path.startswith('/currents') %}active{% endif %}">Currents</a>
-                <a href="/resonance" class="sidebar-link {% if request.url.path.startswith('/resonance') %}active{% endif %}">Resonance</a>
+                <a href="/workshop" class="sidebar-link sidebar-link--secondary {% if request.url.path.startswith('/workshop') %}active{% endif %}">Workshop</a>
+                <a href="/currents" class="sidebar-link sidebar-link--secondary {% if request.url.path.startswith('/currents') %}active{% endif %}">Currents</a>
+                <a href="/resonance" class="sidebar-link sidebar-link--secondary {% if request.url.path.startswith('/resonance') %}active{% endif %}">Resonance</a>
 
                 <div class="sidebar-divider"></div>
 
                 <a href="/profiles" class="sidebar-link {% if request.url.path.startswith('/profiles') %}active{% endif %}">Profiles</a>
             </nav>
+
+            {% if request.state.current_read %}
+            <div class="sidebar-progress-widget">
+                <span class="sidebar-progress-badge">{{ request.state.current_read.content_type | title }}</span>
+                <p class="sidebar-progress-title">{{ request.state.current_read.title }}</p>
+                <div class="sidebar-progress-bar">
+                    <div class="sidebar-progress-fill" style="width: {{ request.state.current_read.percent }}%;"></div>
+                </div>
+                <a href="{{ request.state.current_read.url }}" class="sidebar-progress-link">{{ request.state.current_read.percent }}% complete →</a>
+            </div>
+            {% endif %}
 
             <form action="/logout" method="POST" class="sidebar-signout">
                 <button type="submit" class="sidebar-link sidebar-link--button">Sign out</button>

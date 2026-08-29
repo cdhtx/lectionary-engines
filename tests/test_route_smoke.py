@@ -540,3 +540,37 @@ def test_header_has_no_notification_markup(client):
     body = response.text.lower()
 
     assert "notification" not in body
+
+
+def test_secondary_sidebar_links_are_marked(client):
+    response = client.get("/engines")
+    body = response.text
+
+    assert 'href="/workshop" class="sidebar-link sidebar-link--secondary' in body
+    assert 'href="/currents" class="sidebar-link sidebar-link--secondary' in body
+    assert 'href="/resonance" class="sidebar-link sidebar-link--secondary' in body
+
+
+def test_sidebar_progress_widget_shows_current_read(study_client):
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    study = Study(engine="palimpsest", reference="John 3:16-21", content="content", word_count=10)
+    session.add(study)
+    session.commit()
+    study_id = study.id
+    session.close()
+
+    session = SessionLocal()
+    save_progress(session, user_id=1, content_type="study", content_id=study_id, percent=40)
+    session.close()
+
+    response = client.get("/engines")
+    body = response.text
+
+    assert "John 3:16-21" in body
+    assert "40%" in body or "40 %" in body
+
+
+def test_sidebar_progress_widget_absent_when_no_progress(client):
+    response = client.get("/engines")
+    assert "sidebar-progress-widget" not in response.text

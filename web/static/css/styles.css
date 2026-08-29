@@ -396,6 +396,64 @@ body {
     padding-top: 20px;
 }
 
+.sidebar-link--secondary {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.sidebar-link--secondary:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.sidebar-progress-widget {
+    margin: var(--space-md) 12px;
+    padding: var(--space-sm);
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-md);
+}
+
+.sidebar-progress-badge {
+    display: inline-block;
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--blue-400);
+    margin-bottom: 4px;
+}
+
+.sidebar-progress-title {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    color: #fff;
+    margin: 0 0 8px 0;
+}
+
+.sidebar-progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.sidebar-progress-fill {
+    height: 100%;
+    background: var(--orange-400);
+    border-radius: 2px;
+}
+
+.sidebar-progress-link {
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+}
+
+.sidebar-progress-link:hover {
+    color: #fff;
+}
+
 /* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
    markup these rules targeted no longer exists in base.html. Kept
    temporarily; safe to delete once Tier 1b settles the layout. */

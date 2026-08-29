@@ -11,6 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.concurrency import run_in_threadpool
 from contextlib import asynccontextmanager
 from datetime import datetime
+from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 import markdown
@@ -25,7 +26,8 @@ from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 from .services.pdf_service import render_pdf, slugify
 from .services.palimpsest_layers import parse_palimpsest_layers, RAIL_LABELS
-from .services.reading_progress_service import save_progress
+from .services.reading_progress_service import save_progress, get_current_read
+from .services.library_service import DETAIL_URL_PREFIXES
 from lectionary_engines.scripture_linker import link_scripture_references
 
 # Load configuration
@@ -83,6 +85,31 @@ def _middleware_db():
             pass
 
 
+def _title_for_content(db: Session, content_type: str, content_id: int) -> Optional[str]:
+    """
+    Looks up a display title for a (content_type, content_id) pair - used
+    by the sidebar's current-read widget. Returns None if the row no
+    longer exists (e.g. deleted after progress was recorded), so the
+    widget can skip rendering rather than showing a broken link.
+    """
+    if content_type == "study":
+        row = db.query(Study).filter(Study.id == content_id).first()
+        return row.reference if row else None
+    if content_type == "workshop":
+        from .models import WorkshopPrep
+        row = db.query(WorkshopPrep).filter(WorkshopPrep.id == content_id).first()
+        return row.reference if row else None
+    if content_type == "currents":
+        from .models import CurrentsAnalysis
+        row = db.query(CurrentsAnalysis).filter(CurrentsAnalysis.id == content_id).first()
+        return (row.headline_summary or "Theological News Analysis") if row else None
+    if content_type == "resonance":
+        from .models import CulturalResonance
+        row = db.query(CulturalResonance).filter(CulturalResonance.id == content_id).first()
+        return row.reference if row else None
+    return None
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -110,6 +137,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
         with _middleware_db() as db:
             request.state.user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
             request.state.today_display = datetime.now().strftime('%A, %B %d, %Y')
+
+            current_read_data = get_current_read(db, user_id)
+            if current_read_data:
+                title = _title_for_content(db, current_read_data["content_type"], current_read_data["content_id"])
+                request.state.current_read = {
+                    "content_type": current_read_data["content_type"],
+                    "title": title,
+                    "percent": current_read_data["percent"],
+                    "url": f"{DETAIL_URL_PREFIXES[current_read_data['content_type']]}{current_read_data['content_id']}",
+                } if title else None
+            else:
+                request.state.current_read = None
 
         return await call_next(request)
 
