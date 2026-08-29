@@ -9,129 +9,164 @@
         <p>Biblical interpretation through three hermeneutical frameworks</p>
     </div>
 
-    <section class="this-week-section">
-        <h2>This Week in the Lectionary</h2>
-        {% if this_week %}
-        <div class="this-week-grid">
-            {% if this_week.gospel %}
-            <div class="reading-card">
-                <span class="reading-label">Gospel</span>
-                <p class="reading-reference">{{ this_week.gospel.reference }}</p>
-            </div>
-            {% endif %}
-            {% if this_week.epistle %}
-            <div class="reading-card">
-                <span class="reading-label">Epistle</span>
-                <p class="reading-reference">{{ this_week.epistle.reference }}</p>
-            </div>
-            {% endif %}
-            {% if this_week.ot %}
-            <div class="reading-card">
-                <span class="reading-label">Hebrew Scripture</span>
-                <p class="reading-reference">{{ this_week.ot.reference }}</p>
-            </div>
-            {% endif %}
-            {% if this_week.psalm %}
-            <div class="reading-card">
-                <span class="reading-label">Psalm</span>
-                <p class="reading-reference">{{ this_week.psalm.reference }}</p>
-            </div>
-            {% endif %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>Readings unavailable right now. Check back soon.</p>
-        </div>
-        {% endif %}
-    </section>
-
-    <section class="signals-section">
-        <h2>Signals</h2>
-        {% if signals %}
-        <div class="signals-list">
-            {% for connection in signals %}
-            <div class="signal-card">
-                <div class="signal-pair">
-                    <span class="signal-reading">{{ connection.reading_a_label }}: {{ connection.reading_a_reference }}</span>
-                    <span class="signal-arrow">↔</span>
-                    <span class="signal-reading">{{ connection.reading_b_label }}: {{ connection.reading_b_reference }}</span>
+    <div class="today-grid">
+        <div class="today-main">
+            <section class="this-week-section dashboard-panel">
+                <h2>This Week in the Lectionary</h2>
+                {% if this_week %}
+                <div class="this-week-grid">
+                    {% if this_week.gospel %}
+                    <div class="reading-card">
+                        <span class="reading-label"><svg class="reading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 2v20M7.5 8h9"/></svg>Gospel</span>
+                        <p class="reading-reference">{{ this_week.gospel.reference }}</p>
+                    </div>
+                    {% endif %}
+                    {% if this_week.epistle %}
+                    <div class="reading-card">
+                        <span class="reading-label"><svg class="reading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5c2.7-1.3 5.3-1.3 8 0v13c-2.7-1.3-5.3-1.3-8 0v-13zM20 5.5c-2.7-1.3-5.3-1.3-8 0v13c2.7-1.3 5.3-1.3 8 0v-13z"/></svg>Epistle</span>
+                        <p class="reading-reference">{{ this_week.epistle.reference }}</p>
+                    </div>
+                    {% endif %}
+                    {% if this_week.ot %}
+                    <div class="reading-card">
+                        <span class="reading-label"><svg class="reading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16l-1-8.5-4 3.2-3-5.7-3 5.7-4-3.2L4 18z"/></svg>Hebrew Scripture</span>
+                        <p class="reading-reference">{{ this_week.ot.reference }}</p>
+                    </div>
+                    {% endif %}
+                    {% if this_week.psalm %}
+                    <div class="reading-card">
+                        <span class="reading-label"><svg class="reading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V8.5a6 6 0 0112 0V20M9 10.5V20M12 10.5V20M15 10.5V20"/></svg>Psalm</span>
+                        <p class="reading-reference">{{ this_week.psalm.reference }}</p>
+                    </div>
+                    {% endif %}
                 </div>
-                <div class="signal-themes">
-                    {% for theme in connection.shared_themes %}
-                    <span class="theme-tag">{{ theme }}</span>
+                {% else %}
+                <div class="empty-state">
+                    <p>Readings unavailable right now. Check back soon.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="signals-section dashboard-panel">
+                <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l1.8 7.2L21 11l-7.2 1.8L12 20l-1.8-7.2L3 11l7.2-1.8L12 2z"/></svg>Signals</h2>
+                {% if signals %}
+                <p class="section-subtitle">{{ signals|length }} unexpected connection{{ "s" if signals|length != 1 else "" }} detected</p>
+                <div class="signals-list">
+                    {% for connection in signals %}
+                    <div class="signal-card">
+                        <div class="signal-pair">
+                            <span class="signal-reading">{{ connection.reading_a_label }}: {{ connection.reading_a_reference }}</span>
+                            <span class="signal-arrow">↔</span>
+                            <span class="signal-reading">{{ connection.reading_b_label }}: {{ connection.reading_b_reference }}</span>
+                        </div>
+                        <div class="signal-themes">
+                            {% for theme in connection.shared_themes %}
+                            <span class="theme-tag">{{ theme }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
-        <div class="section-footer">
-            <a href="/signals" class="btn btn-link">View all signals →</a>
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <p>No connections detected this week.</p>
-        </div>
-        {% endif %}
-    </section>
-
-    <section class="choose-engine-section">
-        <h2>Choose Your Engine</h2>
-        <div class="engines-directory-list">
-            <a href="/engines" class="engine-card">
-                <h3>Threshold</h3>
-                <p>Four progressive thresholds of engagement, culminating in a tech touchpoint.</p>
-            </a>
-            <a href="/engines" class="engine-card">
-                <h3>Palimpsest</h3>
-                <p>Five hermeneutical layers using the PaRDeS framework.</p>
-            </a>
-            <a href="/engines" class="engine-card">
-                <h3>Collision</h3>
-                <p>Five-step collision process forcing unprecedented connections.</p>
-            </a>
-        </div>
-    </section>
-
-    <section class="quick-actions-section">
-        <h2>Quick Actions</h2>
-        <div class="quick-actions-list">
-            <a href="/generate" class="btn btn-secondary">Start a New Study</a>
-            <a href="/browse" class="btn btn-secondary">View Library</a>
-            <a href="/currents" class="btn btn-secondary">Explore Currents</a>
-        </div>
-    </section>
-
-    {% if recent_studies %}
-    <section class="recent-studies">
-        <h2>Continue Your Studies</h2>
-        <div class="studies-list">
-            {% for study in recent_studies %}
-            <div class="study-item">
-                <a href="/study/{{ study.id }}" class="study-link">
-                    <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
-                    <span class="study-reference">{{ study.reference }}</span>
-                    <span class="study-meta">
-                        {{ study.word_count }} words | {{ study.created_at.strftime('%B %d, %Y') }}
-                    </span>
-                </a>
-                {% if study.id in progress_by_study_id %}
-                <div class="study-progress-bar">
-                    <div class="study-progress-fill" style="width: {{ progress_by_study_id[study.id] }}%;"></div>
+                <div class="section-footer">
+                    <a href="/signals" class="btn btn-link">View all signals →</a>
                 </div>
-                <span class="study-progress-label">{{ progress_by_study_id[study.id] }}% complete</span>
+                {% else %}
+                <div class="empty-state">
+                    <p>No connections detected this week.</p>
+                </div>
                 {% endif %}
-            </div>
-            {% endfor %}
+            </section>
+
+            {% if recent_studies %}
+            <section class="recent-studies dashboard-panel">
+                <h2>Continue Your Studies</h2>
+                <div class="studies-list">
+                    {% for study in recent_studies %}
+                    <div class="study-item">
+                        <a href="/study/{{ study.id }}" class="study-link">
+                            <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
+                            <span class="study-reference">{{ study.reference }}</span>
+                            <span class="study-meta">
+                                {{ study.word_count }} words | {{ study.created_at.strftime('%B %d, %Y') }}
+                            </span>
+                        </a>
+                        {% if study.id in progress_by_study_id %}
+                        <div class="study-progress-bar">
+                            <div class="study-progress-fill" style="width: {{ progress_by_study_id[study.id] }}%;"></div>
+                        </div>
+                        <span class="study-progress-label">{{ progress_by_study_id[study.id] }}% complete</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="section-footer">
+                    <a href="/browse" class="btn btn-link">View all studies →</a>
+                </div>
+            </section>
+            {% endif %}
         </div>
-        <div class="section-footer">
-            <a href="/browse" class="btn btn-link">View all studies →</a>
-        </div>
-    </section>
-    {% endif %}
+
+        <aside class="today-sidebar">
+            <section class="choose-engine-section dashboard-panel">
+                <h2>Choose Your Engine</h2>
+                <div class="engines-directory-list">
+                    <a href="/engines" class="engine-row engine-row--threshold">
+                        <span class="engine-row-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V10a5 5 0 0110 0v11M7 21h10M12 13v3"/></svg>
+                        </span>
+                        <span class="engine-row-body">
+                            <h3>Threshold</h3>
+                            <p>Four progressive thresholds of engagement, culminating in a tech touchpoint.</p>
+                        </span>
+                        <svg class="engine-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="/engines" class="engine-row engine-row--palimpsest">
+                        <span class="engine-row-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 4l8 4.5-8 4.5-8-4.5L12 4z"/><path d="M4 13.5l8 4.5 8-4.5"/></svg>
+                        </span>
+                        <span class="engine-row-body">
+                            <h3>Palimpsest</h3>
+                            <p>Five hermeneutical layers using the PaRDeS framework.</p>
+                        </span>
+                        <svg class="engine-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href="/engines" class="engine-row engine-row--collision">
+                        <span class="engine-row-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></svg>
+                        </span>
+                        <span class="engine-row-body">
+                            <h3>Collision</h3>
+                            <p>Five-step collision process forcing unprecedented connections.</p>
+                        </span>
+                        <svg class="engine-row-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </section>
+
+            <section class="quick-actions-section dashboard-panel">
+                <h2>Quick Actions</h2>
+                <div class="quick-actions-list">
+                    <a href="/generate" class="quick-action-link">
+                        <svg class="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        Start a New Study
+                    </a>
+                    <a href="/browse" class="quick-action-link">
+                        <svg class="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h16v15H4z"/><path d="M8.5 4.5v15M13.5 4.5v15"/></svg>
+                        View Library
+                    </a>
+                    <a href="/currents" class="quick-action-link">
+                        <svg class="quick-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M15 9l-2 6-6 2 2-6 6-2z"/></svg>
+                        Explore Currents
+                    </a>
+                </div>
+            </section>
+        </aside>
+    </div>
 
     <section class="today-quote" id="today-quote">
+        <span class="today-quote-mark" aria-hidden="true">&ldquo;</span>
         <blockquote>
-            <p>"{{ quote_text }}"</p>
+            <p>{{ quote_text }}</p>
             <cite>— {{ quote_author }}</cite>
         </blockquote>
     </section>
