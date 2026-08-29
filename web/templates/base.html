@@ -54,7 +54,7 @@
                 <div class="topbar-date">
                     <span class="topbar-date-text">{{ request.state.today_display }}</span>
                     {% if request.state.user %}
-                    <h1 class="topbar-greeting">Welcome back, {{ request.state.user.name.split(' ')[0] }}.</h1>
+                    <p class="topbar-greeting">Welcome back, {{ request.state.user.name.split(' ')[0] }}.</p>
                     {% endif %}
                 </div>
 
