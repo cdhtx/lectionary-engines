@@ -120,24 +120,28 @@ def main():
             resonance_count = backfill_resonance(db)
             print(f"Resonance: backfilled {resonance_count} rows (no Claude calls)")
         except Exception as exc:
+            db.rollback()
             print(f"Resonance: phase failed, skipping ({exc})")
 
         try:
             study_count = backfill_study(db, claude)
             print(f"Study: backfilled {study_count} rows")
         except Exception as exc:
+            db.rollback()
             print(f"Study: phase failed, skipping ({exc})")
 
         try:
             workshop_count = backfill_workshop(db, claude)
             print(f"WorkshopPrep: backfilled {workshop_count} rows")
         except Exception as exc:
+            db.rollback()
             print(f"WorkshopPrep: phase failed, skipping ({exc})")
 
         try:
             currents_count = backfill_currents(db, claude)
             print(f"CurrentsAnalysis: backfilled {currents_count} rows")
         except Exception as exc:
+            db.rollback()
             print(f"CurrentsAnalysis: phase failed, skipping ({exc})")
     finally:
         db.close()
