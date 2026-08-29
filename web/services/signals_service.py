@@ -14,7 +14,7 @@ matching).
 
 import json
 import logging
-from datetime import date, timedelta
+from datetime import date
 from itertools import combinations
 from typing import List
 
@@ -22,6 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from lectionary_engines.claude_client import ClaudeClient
+from lectionary_engines.liturgical_calendar import upcoming_sunday
 from lectionary_engines.text_fetcher import TextFetcher
 from lectionary_engines.theme_extractor import extract_themes
 from web.models import LectionaryThemeCache
@@ -35,11 +36,6 @@ READING_LABELS = {
     "ot": "Hebrew Scripture",
     "psalm": "Psalm",
 }
-
-
-def _upcoming_sunday(today: date) -> date:
-    days_until_sunday = (6 - today.weekday()) % 7  # Monday=0 ... Sunday=6
-    return today + timedelta(days=days_until_sunday)
 
 
 def _get_themes_for_reading(
@@ -102,7 +98,7 @@ def get_this_week_signals(db: Session, claude: ClaudeClient) -> list:
     with a non-empty theme list, or no pair shares a theme.
     """
     this_week = get_this_week_readings(db)
-    sunday = _upcoming_sunday(date.today())
+    sunday = upcoming_sunday(date.today())
 
     themes_by_type = {}
     for reading_type in READING_LABELS:

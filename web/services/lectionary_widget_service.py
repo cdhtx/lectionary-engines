@@ -22,21 +22,17 @@ parse returns whatever readings were found.
 """
 
 import logging
-from datetime import date, timedelta
+from datetime import date
 from typing import Dict
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from lectionary_engines.liturgical_calendar import upcoming_sunday
 from lectionary_engines.text_fetcher import TextFetcher
 from web.models import LectionaryReadingCache
 
 logger = logging.getLogger(__name__)
-
-
-def _upcoming_sunday(today: date) -> date:
-    days_until_sunday = (6 - today.weekday()) % 7  # Monday=0 ... Sunday=6
-    return today + timedelta(days=days_until_sunday)
 
 
 def get_this_week_readings(db: Session) -> Dict[str, dict]:
@@ -47,7 +43,7 @@ def get_this_week_readings(db: Session) -> Dict[str, dict]:
     page, or if the entire fetch failed and nothing was cached yet for
     this Sunday.
     """
-    sunday = _upcoming_sunday(date.today())
+    sunday = upcoming_sunday(date.today())
 
     cached_rows = (
         db.query(LectionaryReadingCache)
