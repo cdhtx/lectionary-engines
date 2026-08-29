@@ -16,6 +16,7 @@ import markdown
 from ..database import get_db
 from ..models import CulturalResonance, Study, WorkshopPrep
 from ..config import WebConfig
+from ..services.library_service import record_content_themes
 from ..services.pdf_service import render_pdf, slugify
 
 import sys
@@ -152,6 +153,10 @@ async def find_resonances(
         db.add(resonance)
         db.commit()
         db.refresh(resonance)
+
+        # theme_list is already in hand - no new Claude call needed.
+        record_content_themes(db, "resonance", resonance.id, theme_list)
+        db.commit()
 
         return RedirectResponse(url=f"/resonance/{resonance.id}", status_code=303)
 
@@ -293,6 +298,10 @@ Return only the comma-separated themes, nothing else."""
     db.add(resonance)
     db.commit()
     db.refresh(resonance)
+
+    # theme_list is already in hand - no new Claude call needed.
+    record_content_themes(db, "resonance", resonance.id, theme_list)
+    db.commit()
 
     return RedirectResponse(url=f"/resonance/{resonance.id}", status_code=303)
 

@@ -162,3 +162,25 @@ def test_currents_analysis_gets_content_theme_rows(mock_get_service, mock_extrac
     themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "currents").all()}
     assert themes == {"justice", "community"}
     db.close()
+
+
+@patch("web.routes.resonance.get_resonance_engine")
+def test_resonance_find_gets_content_theme_rows(mock_get_engine, study_client):
+    client, SessionLocal = study_client
+
+    mock_engine = MagicMock()
+    mock_engine.claude = MagicMock()  # truthy, so the "claude" mining_mode branch is taken
+    mock_engine.mine_artifacts.return_value = "resonance content"
+    mock_get_engine.return_value = mock_engine
+
+    response = client.post("/resonance/find", data={
+        "themes": "Hospitality, Empire",
+        "mining_mode": "claude",
+    }, follow_redirects=False)
+
+    assert response.status_code == 303
+
+    db = SessionLocal()
+    themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "resonance").all()}
+    assert themes == {"hospitality", "empire"}
+    db.close()
