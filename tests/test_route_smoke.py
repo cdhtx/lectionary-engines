@@ -586,6 +586,18 @@ def test_continue_your_studies_shows_progress_bar(
     mock_extract_themes.return_value = []
 
     client, SessionLocal = study_client
+
+    # The / route's progress_by_study_id computation is gated on
+    # request.state.user, which (unlike the sidebar's current-read widget)
+    # requires an actual User row matching the session cookie's user_id -
+    # see the "Auth note" at the top of this file and the same pattern used
+    # by test_post_progress_creates_a_row / test_header_shows_greeting_and_search.
+    session = SessionLocal()
+    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
+    session.add(user)
+    session.commit()
+    session.close()
+
     session = SessionLocal()
     study = Study(engine="threshold", reference="Mark 5:1-5", content="content", word_count=10)
     session.add(study)
@@ -600,7 +612,12 @@ def test_continue_your_studies_shows_progress_bar(
     response = client.get("/")
     body = response.text
 
-    assert "66%" in body
+    # Scoped to the Continue Your Studies progress bar markup itself, not
+    # just "66%" anywhere in the page - the sidebar's separate "current
+    # read" widget (added in Task 6) also renders "66% complete" for the
+    # same underlying ReadingProgress row, so a bare "66%" substring check
+    # would pass even if this task's progress bar were removed entirely.
+    assert 'class="study-progress-fill" style="width: 66%;"' in body
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
