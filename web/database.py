@@ -68,6 +68,9 @@ def _migrate_missing_columns():
     a new model column only ever reaches a fresh SQLite file; an existing
     Railway/Postgres database would keep the old schema forever and error
     the first time the app touched the new column.
+
+    Also creates indexes for newly-indexed columns on existing databases,
+    since ALTER TABLE ADD COLUMN does not automatically create indexes.
     """
     if DATABASE_URL.startswith("sqlite"):
         import sqlite3
@@ -86,6 +89,17 @@ def _migrate_missing_columns():
                 cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {sqlite_type}")
                 print(f"  Migrated: added {table}.{column}")
 
+        # Create indexes for newly-indexed columns on existing databases
+        # (ALTER TABLE ADD COLUMN does not create indexes automatically)
+        index_migrations = [
+            ("idx_studies_reading_date", "studies", "reading_date"),
+            ("idx_studies_season", "studies", "season"),
+            ("idx_workshop_preps_reading_date", "workshop_preps", "reading_date"),
+            ("idx_workshop_preps_season", "workshop_preps", "season"),
+        ]
+        for index_name, table, column in index_migrations:
+            cursor.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table}({column})")
+
         conn.commit()
         conn.close()
 
@@ -97,7 +111,21 @@ def _migrate_missing_columns():
                 conn.exec_driver_sql(
                     f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {postgres_type}"
                 )
-        print("  Migrated: verified Postgres columns are up to date")
+
+            # Create indexes for newly-indexed columns on existing databases
+            # (ALTER TABLE ADD COLUMN does not create indexes automatically)
+            index_migrations = [
+                ("idx_studies_reading_date", "studies", "reading_date"),
+                ("idx_studies_season", "studies", "season"),
+                ("idx_workshop_preps_reading_date", "workshop_preps", "reading_date"),
+                ("idx_workshop_preps_season", "workshop_preps", "season"),
+            ]
+            for index_name, table, column in index_migrations:
+                conn.exec_driver_sql(
+                    f"CREATE INDEX IF NOT EXISTS {index_name} ON {table}({column})"
+                )
+
+        print("  Migrated: verified Postgres columns and indexes are up to date")
 
 
 def init_db():
