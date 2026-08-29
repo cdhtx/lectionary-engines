@@ -23,11 +23,19 @@ PAGES = [
     "/workshop",
     "/workshop/browse",
     "/currents",
-    "/currents/browse",
     "/resonance",
     "/profiles",
     "/engines",
 ]
+
+
+def test_currents_browse_no_longer_resolves(client):
+    # The /currents/browse route no longer exists. Requests fall through to
+    # /currents/{analysis_id:int}, where "browse" fails int validation, resulting
+    # in a 422 (Unprocessable Entity) — an honest error indicating the path segment
+    # is not a valid resource identifier.
+    response = client.get("/currents/browse")
+    assert response.status_code == 422
 
 
 @pytest.fixture

@@ -139,36 +139,6 @@ async def analyze_story(
         raise HTTPException(status_code=500, detail=f"Currents analysis failed: {str(e)}")
 
 
-@router.get("/currents/browse")
-async def browse_currents(
-    request: Request,
-    page: int = 1,
-    db: Session = Depends(get_db),
-):
-    """
-    Browse past Currents analyses
-    """
-    per_page = 12
-    skip = (page - 1) * per_page
-
-    query = db.query(CurrentsAnalysis).order_by(CurrentsAnalysis.created_at.desc())
-
-    total = query.count()
-    analyses = query.offset(skip).limit(per_page).all()
-
-    total_pages = (total + per_page - 1) // per_page
-
-    return templates.TemplateResponse("currents_browse.html", {
-        "request": request,
-        "analyses": analyses,
-        "page": page,
-        "total_pages": total_pages,
-        "has_prev": page > 1,
-        "has_next": page < total_pages,
-        "total": total,
-    })
-
-
 @router.get("/api/currents")
 async def list_currents_api(
     limit: int = 10,
