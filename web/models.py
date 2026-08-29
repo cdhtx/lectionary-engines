@@ -485,3 +485,31 @@ class ContentTheme(Base):
 
     def __repr__(self):
         return f"<ContentTheme(content_type='{self.content_type}', content_id={self.content_id}, theme='{self.theme}')>"
+
+
+class ReadingProgress(Base):
+    """
+    Scroll-based reading progress, shared across all four Library content
+    types via one table (content_type/content_id, matching Tier 4's
+    ContentTheme pattern) rather than a column bolted onto each of the
+    four unrelated content models. Percent only ever increases for a
+    given (user, content_type, content_id) - see
+    reading_progress_service.save_progress().
+    """
+
+    __tablename__ = "reading_progress"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False)
+    content_type = Column(String(20), nullable=False)  # 'study'/'workshop'/'currents'/'resonance'
+    content_id = Column(Integer, nullable=False)
+    percent = Column(Integer, nullable=False, default=0)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index('idx_reading_progress_user', 'user_id'),
+        UniqueConstraint('user_id', 'content_type', 'content_id', name='uq_reading_progress_item'),
+    )
+
+    def __repr__(self):
+        return f"<ReadingProgress(user_id={self.user_id}, content_type='{self.content_type}', content_id={self.content_id}, percent={self.percent})>"
