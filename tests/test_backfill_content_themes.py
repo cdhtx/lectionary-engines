@@ -61,6 +61,20 @@ def test_backfill_resonance_skips_non_string_theme_elements_gracefully(db):
     assert themes == {"1", "2", "3"}
 
 
+def test_backfill_resonance_skips_malformed_json_row_without_aborting_the_run(db):
+    bad = CulturalResonance(themes="not valid json{", content="bad")
+    good = CulturalResonance(themes='["hospitality"]', content="good")
+    db.add(bad)
+    db.add(good)
+    db.commit()
+
+    count = backfill_resonance(db)  # must not raise
+
+    assert count == 1
+    assert db.query(ContentTheme).filter(ContentTheme.content_id == good.id).count() == 1
+    assert db.query(ContentTheme).filter(ContentTheme.content_id == bad.id).count() == 0
+
+
 @patch("web.scripts.backfill_content_themes.extract_themes")
 def test_backfill_study_calls_extract_themes_once_per_unbackfilled_row(mock_extract_themes, db):
     db.add(Study(engine="threshold", reference="John 3:16", content="c1"))

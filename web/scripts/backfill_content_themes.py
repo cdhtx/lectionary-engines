@@ -13,6 +13,11 @@ call generation now makes automatically for new rows.
 Idempotent: skips any (content_type, content_id) that already has
 content_theme rows, so it's safe to re-run.
 
+A single bad row (e.g. malformed legacy JSON in CulturalResonance.themes)
+is logged and skipped rather than aborting the run, and each of the four
+phases below is isolated from the others the same way, so one failing
+phase doesn't prevent the rest from executing.
+
 Run: python3 web/scripts/backfill_content_themes.py
 """
 
@@ -41,17 +46,26 @@ def _already_backfilled(db, content_type: str, content_id: int) -> bool:
 
 
 def backfill_resonance(db) -> int:
-    """No Claude calls - CulturalResonance.themes already has the data."""
+    """No Claude calls - CulturalResonance.themes already has the data.
+
+    A row with malformed themes JSON (or any other per-row failure) is
+    logged and skipped, not allowed to abort the whole loop - it'll be
+    picked up again on a future re-run once the underlying data is fixed.
+    """
     count = 0
     for resonance in db.query(CulturalResonance).all():
         if _already_backfilled(db, "resonance", resonance.id):
             continue
-        raw_themes = json.loads(resonance.themes) if resonance.themes else []
-        themes = [str(t) for t in raw_themes if isinstance(t, (str, int, float))]
-        if themes:
-            record_content_themes(db, "resonance", resonance.id, themes)
-            count += 1
-    db.commit()
+        try:
+            raw_themes = json.loads(resonance.themes) if resonance.themes else []
+            themes = [str(t) for t in raw_themes if isinstance(t, (str, int, float))]
+            if themes:
+                record_content_themes(db, "resonance", resonance.id, themes)
+                db.commit()
+                count += 1
+        except Exception as exc:
+            db.rollback()
+            print(f"  [resonance] skipping id={resonance.id}: {exc}")
     return count
 
 
@@ -102,17 +116,29 @@ def main():
     db = SessionLocal()
 
     try:
-        resonance_count = backfill_resonance(db)
-        print(f"Resonance: backfilled {resonance_count} rows (no Claude calls)")
+        try:
+            resonance_count = backfill_resonance(db)
+            print(f"Resonance: backfilled {resonance_count} rows (no Claude calls)")
+        except Exception as exc:
+            print(f"Resonance: phase failed, skipping ({exc})")
 
-        study_count = backfill_study(db, claude)
-        print(f"Study: backfilled {study_count} rows")
+        try:
+            study_count = backfill_study(db, claude)
+            print(f"Study: backfilled {study_count} rows")
+        except Exception as exc:
+            print(f"Study: phase failed, skipping ({exc})")
 
-        workshop_count = backfill_workshop(db, claude)
-        print(f"WorkshopPrep: backfilled {workshop_count} rows")
+        try:
+            workshop_count = backfill_workshop(db, claude)
+            print(f"WorkshopPrep: backfilled {workshop_count} rows")
+        except Exception as exc:
+            print(f"WorkshopPrep: phase failed, skipping ({exc})")
 
-        currents_count = backfill_currents(db, claude)
-        print(f"CurrentsAnalysis: backfilled {currents_count} rows")
+        try:
+            currents_count = backfill_currents(db, claude)
+            print(f"CurrentsAnalysis: backfilled {currents_count} rows")
+        except Exception as exc:
+            print(f"CurrentsAnalysis: phase failed, skipping ({exc})")
     finally:
         db.close()
 
