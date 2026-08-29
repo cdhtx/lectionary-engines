@@ -57,7 +57,7 @@
                 </div>
             </div>
 
-            {% if facets.seasons %}
+            {% if facets.seasons and (not type_filter or type_filter in ['study', 'workshop']) %}
             <div class="filter-group">
                 <h4>Season</h4>
                 <div class="filter-options">
@@ -73,7 +73,7 @@
             </div>
             {% endif %}
 
-            {% if facets.sources %}
+            {% if facets.sources and (not type_filter or type_filter in ['study', 'workshop']) %}
             <div class="filter-group">
                 <h4>Source</h4>
                 <div class="filter-options">
@@ -96,7 +96,22 @@
                     <a href="{{ filter_url(type=type_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if not theme_filter %}active{% endif %}">
                         All
                     </a>
-                    {% for t in facets.themes %}
+                    {% set top_themes = facets.themes[:25] %}
+                    {% set top_theme_names = [] %}
+                    {% for t in top_themes %}{% set _ = top_theme_names.append(t.theme) %}{% endfor %}
+                    {% if theme_filter and theme_filter not in top_theme_names %}
+                        {# Selected theme fell outside the top-25 cut (e.g. a deep link to a
+                           low-count theme) - pin it so the active filter doesn't silently
+                           disappear from the sidebar, using its real count from the full list. #}
+                        {% for t in facets.themes %}
+                        {% if t.theme == theme_filter %}
+                    <a href="{{ filter_url(type=type_filter, theme=t.theme, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link active">
+                        {{ t.theme|title }} ({{ t.count }})
+                    </a>
+                        {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% for t in top_themes %}
                     <a href="{{ filter_url(type=type_filter, theme=t.theme, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if theme_filter == t.theme %}active{% endif %}">
                         {{ t.theme|title }} ({{ t.count }})
                     </a>

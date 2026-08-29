@@ -288,6 +288,15 @@ async def browse_studies(
     from .services.library_service import search_library, get_library_facets
 
     search_term = q.strip() if q and q.strip() else None
+    # search_library() matches theme/season/source with an exact,
+    # case-sensitive comparison against lowercase-stored values (see its
+    # docstring) - normalize here so a hand-typed or shared URL like
+    # ?theme=Hospitality still matches instead of silently returning zero
+    # results. Stored season/source values (season_for_date(), Study.source)
+    # are already lowercase, so lowercasing here is safe and matches.
+    theme = theme.strip().lower() if theme else None
+    season = season.strip().lower() if season else None
+    source = source.strip().lower() if source else None
     result = search_library(
         db, content_type=type, q=search_term, theme=theme, season=season, source=source,
         page=page, per_page=config.studies_per_page,
