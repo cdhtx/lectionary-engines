@@ -50,7 +50,7 @@ def test_backfill_resonance_skips_rows_already_backfilled(db):
     assert db.query(ContentTheme).count() == 1
 
 
-def test_backfill_resonance_skips_non_string_theme_elements_gracefully(db):
+def test_backfill_resonance_coerces_non_string_theme_elements_to_strings(db):
     db.add(CulturalResonance(themes="[1, 2, 3]", content="c"))
     db.commit()
 

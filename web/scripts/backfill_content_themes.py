@@ -13,10 +13,17 @@ call generation now makes automatically for new rows.
 Idempotent: skips any (content_type, content_id) that already has
 content_theme rows, so it's safe to re-run.
 
-A single bad row (e.g. malformed legacy JSON in CulturalResonance.themes)
-is logged and skipped rather than aborting the run, and each of the four
-phases below is isolated from the others the same way, so one failing
-phase doesn't prevent the rest from executing.
+backfill_resonance() additionally isolates failures per-row: a single bad
+row (e.g. malformed legacy JSON in CulturalResonance.themes) is logged and
+skipped rather than aborting that phase, since parsing untrusted legacy
+JSON is the one place a single row is realistically expected to fail on
+its own. backfill_study()/backfill_workshop()/backfill_currents() don't
+have that per-row guard - their only realistic failure mode is a DB
+commit error, a different risk profile that doesn't warrant one. All four
+phases are isolated from *each other* at the phase level (main() below),
+so one failing phase doesn't prevent the rest from running; and the
+script's idempotency (re-running skips already-backfilled rows) makes a
+full phase-level retry - not a per-row one - cheap and safe.
 
 Run: python3 web/scripts/backfill_content_themes.py
 """

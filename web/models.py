@@ -458,6 +458,16 @@ class ContentTheme(Base):
     Library content types. Powers theme faceting/filtering uniformly
     across Study/WorkshopPrep/CurrentsAnalysis/CulturalResonance without
     requiring a shared base model between them.
+
+    Not foreign-key-constrained to the content it describes (content_type,
+    content_id) - there is no FK to Study/WorkshopPrep/CurrentsAnalysis/
+    CulturalResonance, since content_id can point at any of four different
+    tables depending on content_type. No delete functionality exists for
+    any of those four content types today, but any future feature that
+    deletes one of their rows must also clean up its content_theme rows
+    itself, or they'll be silently orphaned - and could even be
+    misattributed to an unrelated new row later if a database ever reuses
+    the deleted primary key.
     """
 
     __tablename__ = "content_theme"
