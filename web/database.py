@@ -91,11 +91,22 @@ def _migrate_missing_columns():
 
         # Create indexes for newly-indexed columns on existing databases
         # (ALTER TABLE ADD COLUMN does not create indexes automatically)
+        # Named to match SQLAlchemy's own auto-generated convention for
+        # Column(..., index=True) (`ix_<table>_<column>`, not this file's
+        # usual `idx_` prefix) - Base.metadata.create_all() already
+        # creates an index under that name on a fresh DB (since these
+        # columns are declared index=True in models.py), so matching it
+        # here makes this migration's CREATE INDEX IF NOT EXISTS a no-op
+        # there instead of creating a second, differently-named duplicate
+        # index. On an existing DB (where create_all() never ran for
+        # these columns), this creates exactly one index, under the same
+        # name create_all() would have used had the column existed from
+        # the start.
         index_migrations = [
-            ("idx_studies_reading_date", "studies", "reading_date"),
-            ("idx_studies_season", "studies", "season"),
-            ("idx_workshop_preps_reading_date", "workshop_preps", "reading_date"),
-            ("idx_workshop_preps_season", "workshop_preps", "season"),
+            ("ix_studies_reading_date", "studies", "reading_date"),
+            ("ix_studies_season", "studies", "season"),
+            ("ix_workshop_preps_reading_date", "workshop_preps", "reading_date"),
+            ("ix_workshop_preps_season", "workshop_preps", "season"),
         ]
         for index_name, table, column in index_migrations:
             cursor.execute(f"CREATE INDEX IF NOT EXISTS {index_name} ON {table}({column})")
@@ -113,12 +124,15 @@ def _migrate_missing_columns():
                 )
 
             # Create indexes for newly-indexed columns on existing databases
-            # (ALTER TABLE ADD COLUMN does not create indexes automatically)
+            # (ALTER TABLE ADD COLUMN does not create indexes automatically).
+            # Named to match SQLAlchemy's own auto-generated convention for
+            # Column(..., index=True) (`ix_<table>_<column>`) - see the
+            # matching comment in the SQLite branch above for why.
             index_migrations = [
-                ("idx_studies_reading_date", "studies", "reading_date"),
-                ("idx_studies_season", "studies", "season"),
-                ("idx_workshop_preps_reading_date", "workshop_preps", "reading_date"),
-                ("idx_workshop_preps_season", "workshop_preps", "season"),
+                ("ix_studies_reading_date", "studies", "reading_date"),
+                ("ix_studies_season", "studies", "season"),
+                ("ix_workshop_preps_reading_date", "workshop_preps", "reading_date"),
+                ("ix_workshop_preps_season", "workshop_preps", "season"),
             ]
             for index_name, table, column in index_migrations:
                 conn.exec_driver_sql(
