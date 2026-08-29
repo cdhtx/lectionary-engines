@@ -136,6 +136,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # way that later tasks can't extend.
         with _middleware_db() as db:
             request.state.user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+            if not request.state.user:
+                # Cookie decoded to a user_id with no matching active User
+                # row (e.g. deactivated after the cookie was issued). Treat
+                # this the same as a decode failure rather than letting the
+                # request through with a None user and stale sidebar state.
+                return RedirectResponse(url=f"/login?next={path}", status_code=303)
             request.state.today_display = datetime.now().strftime('%A, %B %d, %Y')
 
             current_read_data = get_current_read(db, user_id)

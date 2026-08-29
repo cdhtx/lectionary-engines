@@ -4,8 +4,11 @@ Smoke tests: every parameter-free page renders.
 base.html is shared by every page in the app, so a mistake there breaks
 everything at once. These tests make that immediate and obvious.
 
-Auth note: AuthMiddleware only checks that the session cookie decodes -
-it does not verify the user exists - so a signed cookie is sufficient.
+Auth note: AuthMiddleware requires the session cookie's user_id to match
+an active User row, redirecting to /login otherwise. The plain `client`
+fixture (real local lectionary.db) seeds and cleans up a User(id=1) row
+around each test; the isolated_client/study_client fixtures (in-memory
+DB via conftest.py) seed a User(id=1) row as part of fixture setup.
 """
 
 from unittest.mock import patch
@@ -15,7 +18,9 @@ from fastapi.testclient import TestClient
 
 from web.app import app
 from web.auth import create_session_cookie, COOKIE_NAME
-from web.models import Study
+from web.database import SessionLocal
+from web.models import CulturalResonance, CurrentsAnalysis, Study, User, WorkshopPrep
+from web.services.library_service import DETAIL_URL_PREFIXES
 
 PAGES = [
     "/generate",
@@ -40,9 +45,31 @@ def test_currents_browse_no_longer_resolves(client):
 
 @pytest.fixture
 def client():
+    """
+    An authenticated TestClient against the real local lectionary.db.
+
+    AuthMiddleware requires the session cookie's user_id to match an
+    active User row (redirecting to /login otherwise), so this seeds a
+    User(id=1) row directly in the real DB if one isn't already there,
+    and removes it again afterward so nothing leaks between test runs.
+    """
+    session = SessionLocal()
+    existing = session.query(User).filter(User.id == 1).first()
+    created = existing is None
+    if created:
+        session.add(User(id=1, email="route-smoke-client@example.com", name="Route Smoke Client", password_hash="", is_active=True))
+        session.commit()
+    session.close()
+
     c = TestClient(app)
     c.cookies.set(COOKIE_NAME, create_session_cookie(1))
-    return c
+    yield c
+
+    if created:
+        session = SessionLocal()
+        session.query(User).filter(User.id == 1).delete()
+        session.commit()
+        session.close()
 
 
 @pytest.mark.parametrize("path", PAGES)
@@ -445,19 +472,14 @@ def test_public_path_does_not_require_user_lookup(client):
     assert response.status_code == 200
 
 
-from web.models import ReadingProgress, User
+from web.models import ReadingProgress
 from web.services.reading_progress_service import save_progress
 
 
 def test_post_progress_creates_a_row(study_client):
+    # study_client seeds a User(id=1) row automatically, matching the
+    # session cookie set on it - see the fixture's docstring in conftest.py.
     client, SessionLocal = study_client
-
-    # Seed user with id=1 (matches the cookie created in the fixture)
-    session = SessionLocal()
-    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
-    session.add(user)
-    session.commit()
-    session.close()
 
     response = client.post("/api/progress", json={
         "content_type": "study",
@@ -475,14 +497,11 @@ def test_post_progress_creates_a_row(study_client):
 
 
 def test_post_progress_does_not_decrease_existing_percent(study_client):
+    # study_client seeds a User(id=1) row automatically, matching the
+    # session cookie set on it - see the fixture's docstring in conftest.py.
     client, SessionLocal = study_client
 
-    # Seed user with id=1 (matches the cookie created in the fixture)
     session = SessionLocal()
-    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
-    session.add(user)
-    session.commit()
-
     save_progress(session, user_id=1, content_type="study", content_id=42, percent=80)
     session.close()
 
@@ -509,23 +528,39 @@ def test_post_progress_requires_authentication():
     assert response.status_code in (303, 401)
 
 
-def test_header_shows_greeting_and_search(study_client):
-    # Uses study_client (not the plain `client` fixture) because the
-    # greeting requires an actual User row: the plain `client` fixture
-    # points at the real, unseeded local lectionary.db (see the
-    # "Auth note" at the top of this file - AuthMiddleware only checks
-    # that the session cookie decodes, it doesn't require the user to
-    # exist), so request.state.user would be None there and the
-    # "Welcome back," block would never render. study_client's in-memory
-    # db lets us seed the id=1 user the session cookie points at, the
-    # same pattern already used by test_post_progress_creates_a_row above.
-    client, SessionLocal = study_client
+def test_stale_session_redirects_to_login_instead_of_500_or_broken_chrome():
+    """
+    A signed cookie that decodes successfully to a user_id with no
+    matching active User row (e.g. an admin deactivated the user after
+    the browser already had a cookie) must be treated like a decode
+    failure - redirect to /login - rather than letting the request
+    through with request.state.user set to None. Before this fix, that
+    let POST /api/progress crash with a 500 (request.state.user.id on
+    None) and let GET pages render with inconsistent chrome (no greeting,
+    but a sidebar "current read" widget that still queried by the raw,
+    now-invalid user_id with no join to User at all).
+    """
+    stale_user_id = 999999999  # guaranteed not to exist in the real DB
+    c = TestClient(app)
+    c.cookies.set(COOKIE_NAME, create_session_cookie(stale_user_id))
 
-    session = SessionLocal()
-    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
-    session.add(user)
-    session.commit()
-    session.close()
+    page_response = c.get("/engines", follow_redirects=False)
+    assert page_response.status_code == 303
+    assert page_response.headers["location"].startswith("/login")
+
+    progress_response = c.post("/api/progress", json={
+        "content_type": "study",
+        "content_id": 1,
+        "percent": 10,
+    }, follow_redirects=False)
+    assert progress_response.status_code == 303
+    assert progress_response.headers["location"].startswith("/login")
+
+
+def test_header_shows_greeting_and_search(study_client):
+    # study_client seeds a User(id=1) row automatically, matching the
+    # session cookie set on it - see the fixture's docstring in conftest.py.
+    client, SessionLocal = study_client
 
     response = client.get("/engines")
     body = response.text
@@ -571,6 +606,56 @@ def test_sidebar_progress_widget_shows_current_read(study_client):
     assert "40%" in body or "40 %" in body
 
 
+def _make_workshop_row():
+    return WorkshopPrep(
+        lens="apostolic_journalist", lens_name="The Apostolic Journalist",
+        reference="Mark 5:1-5", content="content", word_count=10,
+    )
+
+
+def _make_currents_row():
+    return CurrentsAnalysis(
+        analysis_date="2026-08-01", headline_summary="Theological News Analysis Test",
+        content="content", word_count=10,
+    )
+
+
+def _make_resonance_row():
+    return CulturalResonance(themes="[]", reference="Luke 1:1-4", content="content")
+
+
+@pytest.mark.parametrize("content_type,make_row,expected_title", [
+    ("workshop", _make_workshop_row, "Mark 5:1-5"),
+    ("currents", _make_currents_row, "Theological News Analysis Test"),
+    ("resonance", _make_resonance_row, "Luke 1:1-4"),
+])
+def test_sidebar_current_read_widget_renders_for_each_content_type(
+    study_client, content_type, make_row, expected_title
+):
+    # _title_for_content (web/app.py) has a branch per content type; only
+    # "study" had coverage before this test. Runs on every authenticated
+    # page load via AuthMiddleware, so a bug in an untested branch would
+    # break every page for any user whose current in-progress item happens
+    # to be a workshop/currents/resonance row.
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    row = make_row()
+    session.add(row)
+    session.commit()
+    content_id = row.id
+    session.close()
+
+    session = SessionLocal()
+    save_progress(session, user_id=1, content_type=content_type, content_id=content_id, percent=40)
+    session.close()
+
+    response = client.get("/engines")
+    body = response.text
+
+    assert expected_title in body
+    assert f'{DETAIL_URL_PREFIXES[content_type]}{content_id}' in body
+
+
 def test_sidebar_progress_widget_absent_when_no_progress(client):
     response = client.get("/engines")
     assert "sidebar-progress-widget" not in response.text
@@ -585,18 +670,12 @@ def test_continue_your_studies_shows_progress_bar(
     mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {}
     mock_extract_themes.return_value = []
 
+    # study_client seeds a User(id=1) row automatically, matching the
+    # session cookie set on it - see the fixture's docstring in
+    # conftest.py. The / route's progress_by_study_id computation is
+    # gated on request.state.user, which (unlike the sidebar's current-read
+    # widget) requires that seeded row to exist.
     client, SessionLocal = study_client
-
-    # The / route's progress_by_study_id computation is gated on
-    # request.state.user, which (unlike the sidebar's current-read widget)
-    # requires an actual User row matching the session cookie's user_id -
-    # see the "Auth note" at the top of this file and the same pattern used
-    # by test_post_progress_creates_a_row / test_header_shows_greeting_and_search.
-    session = SessionLocal()
-    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
-    session.add(user)
-    session.commit()
-    session.close()
 
     session = SessionLocal()
     study = Study(engine="threshold", reference="Mark 5:1-5", content="content", word_count=10)
