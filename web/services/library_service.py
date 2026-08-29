@@ -12,7 +12,7 @@ incorrect page boundaries whenever results span more than one type.
 import json
 from typing import List, Optional
 
-from sqlalchemy import String, cast, func, literal, or_, select, union_all
+from sqlalchemy import String, cast, func, literal, null, or_, select, union_all
 from sqlalchemy.orm import Session
 
 from web.models import ContentTheme, CulturalResonance, CurrentsAnalysis, Study, WorkshopPrep
@@ -32,6 +32,8 @@ def _study_select(q: Optional[str]):
         cast(Study.reference, String).label("title"),
         cast(Study.engine, String).label("badge_label"),
         Study.created_at.label("created_at"),
+        cast(Study.source, String).label("source"),
+        cast(Study.season, String).label("season"),
     )
     if q:
         like = f"%{q}%"
@@ -46,6 +48,8 @@ def _workshop_select(q: Optional[str]):
         cast(WorkshopPrep.reference, String).label("title"),
         cast(literal("Workshop"), String).label("badge_label"),
         WorkshopPrep.created_at.label("created_at"),
+        cast(WorkshopPrep.source, String).label("source"),
+        cast(WorkshopPrep.season, String).label("season"),
     )
     if q:
         like = f"%{q}%"
@@ -61,6 +65,8 @@ def _currents_select(q: Optional[str]):
         cast(title_expr, String).label("title"),
         cast(literal("Currents"), String).label("badge_label"),
         CurrentsAnalysis.created_at.label("created_at"),
+        cast(null(), String).label("source"),
+        cast(null(), String).label("season"),
     )
     if q:
         like = f"%{q}%"
@@ -84,6 +90,8 @@ def _resonance_select(q: Optional[str]):
         cast(title_expr, String).label("title"),
         cast(literal("Resonance"), String).label("badge_label"),
         CulturalResonance.created_at.label("created_at"),
+        cast(null(), String).label("source"),
+        cast(null(), String).label("season"),
     )
     if q:
         like = f"%{q}%"
@@ -124,6 +132,9 @@ def search_library(
     db: Session,
     content_type: Optional[str] = None,
     q: Optional[str] = None,
+    theme: Optional[str] = None,
+    season: Optional[str] = None,
+    source: Optional[str] = None,
     page: int = 1,
     per_page: int = 12,
 ) -> dict:
@@ -137,6 +148,13 @@ def search_library(
     `content_type`: one of "study"/"workshop"/"currents"/"resonance", or
     any other value (including None/"") treated as "no filter" - all four
     types are included.
+
+    `theme`: exact match against content_theme (case-sensitive - callers
+    should pass an already-lowercased value, since that's how themes are
+    stored). `season`/`source`: exact match against the study/workshop
+    columns; always return zero rows for currents/resonance, which have
+    no season/source concept (see _currents_select/_resonance_select).
+    All active filters combine with AND.
 
     `page` and `per_page` are clamped to a minimum of 1 here (not left to
     the caller) - a non-positive `page` would emit a negative SQL OFFSET,
@@ -152,10 +170,27 @@ def search_library(
     combined = selects[0] if len(selects) == 1 else union_all(*selects)
     subquery = combined.subquery()
 
-    total = db.execute(select(func.count()).select_from(subquery)).scalar()
+    filtered = select(subquery)
+    if season:
+        filtered = filtered.where(subquery.c.season == season)
+    if source:
+        filtered = filtered.where(subquery.c.source == source)
+    if theme:
+        theme_exists = (
+            select(ContentTheme.id)
+            .where(
+                ContentTheme.content_type == subquery.c.content_type,
+                ContentTheme.content_id == subquery.c.id,
+                ContentTheme.theme == theme,
+            )
+            .exists()
+        )
+        filtered = filtered.where(theme_exists)
+
+    total = db.execute(select(func.count()).select_from(filtered.subquery())).scalar()
 
     ordered = (
-        select(subquery)
+        filtered
         .order_by(subquery.c.created_at.desc(), subquery.c.content_type, subquery.c.id)
         .offset((page - 1) * per_page)
         .limit(per_page)
@@ -199,3 +234,55 @@ def record_content_themes(db: Session, content_type: str, content_id: int, theme
             continue
         seen.add(theme)
         db.add(ContentTheme(content_type=content_type, content_id=content_id, theme=theme))
+
+
+SEASON_LABELS = {
+    "advent": "Advent",
+    "christmas": "Christmas",
+    "epiphany": "Epiphany",
+    "lent": "Lent",
+    "holy_week": "Holy Week",
+    "easter": "Easter",
+    "pentecost": "Pentecost",
+    "ordinary_time": "Ordinary Time",
+}
+
+
+def get_library_facets(db: Session) -> dict:
+    """
+    Returns {"seasons": [{"value": str, "label": str}, ...],
+    "sources": [str, ...], "themes": [{"theme": str, "count": int}, ...]}.
+
+    Seasons are ordered by the liturgical calendar (SEASON_LABELS'
+    insertion order), not alphabetically. Sources are every distinct
+    non-null Study/WorkshopPrep.source value, alphabetical. Themes are
+    every distinct content_theme value, most-used first. Facet counts
+    are not re-scoped to the currently-active filter selection - see the
+    design spec's "not a fully faceted-search experience" note.
+    """
+    present_seasons = {
+        row[0] for row in db.execute(select(Study.season).where(Study.season.isnot(None)).distinct()).all()
+    } | {
+        row[0] for row in db.execute(select(WorkshopPrep.season).where(WorkshopPrep.season.isnot(None)).distinct()).all()
+    }
+    seasons = [
+        {"value": s, "label": SEASON_LABELS[s]}
+        for s in SEASON_LABELS
+        if s in present_seasons
+    ]
+
+    present_sources = {
+        row[0] for row in db.execute(select(Study.source).where(Study.source.isnot(None)).distinct()).all()
+    } | {
+        row[0] for row in db.execute(select(WorkshopPrep.source).where(WorkshopPrep.source.isnot(None)).distinct()).all()
+    }
+    sources = sorted(present_sources)
+
+    theme_rows = db.execute(
+        select(ContentTheme.theme, func.count().label("count"))
+        .group_by(ContentTheme.theme)
+        .order_by(func.count().desc())
+    ).all()
+    themes = [{"theme": row.theme, "count": row.count} for row in theme_rows]
+
+    return {"seasons": seasons, "sources": sources, "themes": themes}

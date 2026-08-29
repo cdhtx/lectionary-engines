@@ -237,3 +237,81 @@ def test_reading_date_and_season_columns_exist_on_study_and_workshop(db):
 
     assert db.query(Study).one().season == "advent"
     assert db.query(WorkshopPrep).one().season == "advent"
+
+
+from web.services.library_service import get_library_facets
+
+
+def test_theme_filter_returns_only_matching_content(db):
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    _seed_one_of_each(db, base_time)
+    record_content_themes(db, "study", 1, ["hospitality"])
+    db.commit()
+
+    result = search_library(db, theme="hospitality")
+
+    assert result["total"] == 1
+    assert result["results"][0]["content_type"] == "study"
+
+
+def test_season_filter_returns_only_matching_study(db):
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    db.add(Study(engine="threshold", reference="A", content="a", season="advent", created_at=base_time))
+    db.add(Study(engine="threshold", reference="B", content="b", season="lent", created_at=base_time))
+    db.commit()
+
+    result = search_library(db, season="advent")
+
+    assert result["total"] == 1
+    assert result["results"][0]["title"] == "A"
+
+
+def test_source_filter_only_applies_to_study_and_workshop(db):
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    _seed_one_of_each(db, base_time)  # none of the seeded rows have source set
+
+    result = search_library(db, source="rcl")
+
+    assert result["total"] == 0
+
+
+def test_season_and_theme_filters_combine_with_and_semantics(db):
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    db.add(Study(engine="threshold", reference="A", content="a", season="advent", created_at=base_time))
+    db.add(Study(engine="threshold", reference="B", content="b", season="lent", created_at=base_time))
+    db.commit()
+    record_content_themes(db, "study", 1, ["hospitality"])
+    record_content_themes(db, "study", 2, ["hospitality"])
+    db.commit()
+
+    # Both studies have the theme, but only one is in the right season -
+    # AND semantics means only that one should come back.
+    result = search_library(db, season="advent", theme="hospitality")
+
+    assert result["total"] == 1
+    assert result["results"][0]["title"] == "A"
+
+
+def test_season_filter_combined_with_content_type_currents_returns_nothing_without_erroring(db):
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    _seed_one_of_each(db, base_time)
+
+    result = search_library(db, content_type="currents", season="lent")
+
+    assert result["total"] == 0
+
+
+def test_get_library_facets_returns_distinct_values_with_counts(db):
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+    db.add(Study(engine="threshold", reference="A", content="a", source="rcl", season="advent", created_at=base_time))
+    db.add(Study(engine="threshold", reference="B", content="b", source="paste", season="lent", created_at=base_time))
+    db.commit()
+    record_content_themes(db, "study", 1, ["hospitality", "grace"])
+    record_content_themes(db, "study", 2, ["hospitality"])
+    db.commit()
+
+    facets = get_library_facets(db)
+
+    assert facets["seasons"] == [{"value": "advent", "label": "Advent"}, {"value": "lent", "label": "Lent"}]
+    assert facets["sources"] == ["paste", "rcl"]
+    assert facets["themes"][0] == {"theme": "hospitality", "count": 2}
