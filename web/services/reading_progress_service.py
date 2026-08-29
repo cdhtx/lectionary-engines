@@ -18,7 +18,17 @@ def save_progress(db: Session, user_id: int, content_type: str, content_id: int,
     value than what's already stored is silently ignored, not an error
     (the caller is a debounced client-side scroll tracker that can post
     out of order, e.g. after scrolling back up).
+
+    Clamps/coerces percent to an int in [0, 100] first: this is the one
+    place every caller's percent passes through, and Tasks 6/7 now
+    interpolate the stored value directly into inline
+    `style="width: {{ percent }}%"` HTML on two display surfaces, so an
+    out-of-range or non-int value here has a bigger blast radius than it
+    used to (see comparison/percent<100-filter issues a bad stored value
+    can cause downstream).
     """
+    percent = max(0, min(100, int(percent)))
+
     row = (
         db.query(ReadingProgress)
         .filter(

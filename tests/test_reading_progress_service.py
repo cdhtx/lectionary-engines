@@ -54,6 +54,20 @@ def test_save_progress_does_not_decrease_percent_on_lower_value(db):
     assert row.percent == 60
 
 
+def test_save_progress_clamps_percent_above_100(db):
+    save_progress(db, user_id=1, content_type="study", content_id=10, percent=150)
+
+    row = db.query(ReadingProgress).filter(ReadingProgress.content_id == 10).first()
+    assert row.percent == 100
+
+
+def test_save_progress_clamps_negative_percent(db):
+    save_progress(db, user_id=1, content_type="study", content_id=10, percent=-20)
+
+    row = db.query(ReadingProgress).filter(ReadingProgress.content_id == 10).first()
+    assert row.percent == 0
+
+
 def test_save_progress_is_scoped_per_user_and_content_type(db):
     save_progress(db, user_id=1, content_type="study", content_id=10, percent=50)
     save_progress(db, user_id=2, content_type="study", content_id=10, percent=15)
