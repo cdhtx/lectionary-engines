@@ -24,6 +24,7 @@ from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 from .services.pdf_service import render_pdf, slugify
 from .services.palimpsest_layers import parse_palimpsest_layers, RAIL_LABELS
+from .services.reading_progress_service import save_progress
 from lectionary_engines.scripture_linker import link_scripture_references
 
 # Load configuration
@@ -171,6 +172,23 @@ def home(request: Request, db: Session = Depends(get_db)):
         "signals": signals,
         "config": config
     })
+
+
+@app.post("/api/progress", status_code=204)
+async def save_reading_progress(request: Request, db: Session = Depends(get_db)):
+    """
+    Saves scroll-based reading progress for the current user. Called by
+    web/static/js/reading-progress.js on content-detail pages.
+    """
+    body = await request.json()
+    save_progress(
+        db,
+        user_id=request.state.user.id,
+        content_type=body["content_type"],
+        content_id=body["content_id"],
+        percent=body["percent"],
+    )
+    return Response(status_code=204)
 
 
 @app.get("/profiles", response_class=HTMLResponse)

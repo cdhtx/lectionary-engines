@@ -443,3 +443,67 @@ def test_authenticated_request_populates_request_state_user(client):
 def test_public_path_does_not_require_user_lookup(client):
     response = TestClient(app).get("/health")
     assert response.status_code == 200
+
+
+from web.models import ReadingProgress, User
+from web.services.reading_progress_service import save_progress
+
+
+def test_post_progress_creates_a_row(study_client):
+    client, SessionLocal = study_client
+
+    # Seed user with id=1 (matches the cookie created in the fixture)
+    session = SessionLocal()
+    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
+    session.add(user)
+    session.commit()
+    session.close()
+
+    response = client.post("/api/progress", json={
+        "content_type": "study",
+        "content_id": 42,
+        "percent": 35,
+    })
+
+    assert response.status_code == 204
+
+    session = SessionLocal()
+    row = session.query(ReadingProgress).filter(ReadingProgress.content_id == 42).first()
+    assert row is not None
+    assert row.percent == 35
+    session.close()
+
+
+def test_post_progress_does_not_decrease_existing_percent(study_client):
+    client, SessionLocal = study_client
+
+    # Seed user with id=1 (matches the cookie created in the fixture)
+    session = SessionLocal()
+    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
+    session.add(user)
+    session.commit()
+
+    save_progress(session, user_id=1, content_type="study", content_id=42, percent=80)
+    session.close()
+
+    response = client.post("/api/progress", json={
+        "content_type": "study",
+        "content_id": 42,
+        "percent": 20,
+    })
+
+    assert response.status_code == 204
+
+    session = SessionLocal()
+    row = session.query(ReadingProgress).filter(ReadingProgress.content_id == 42).first()
+    assert row.percent == 80
+    session.close()
+
+
+def test_post_progress_requires_authentication():
+    response = TestClient(app).post("/api/progress", json={
+        "content_type": "study",
+        "content_id": 1,
+        "percent": 10,
+    }, follow_redirects=False)
+    assert response.status_code in (303, 401)
