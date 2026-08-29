@@ -2,6 +2,7 @@
 Study routes - API endpoints for study generation and retrieval
 """
 
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
@@ -18,9 +19,11 @@ from ..models import Study, UserProfile
 from ..services.study_generator import StudyGeneratorService
 from ..services.currents_service import CurrentsService
 from ..services.cultural_grounding_service import build_grounding_for_passage
+from ..services.library_service import record_content_themes
 from ..config import WebConfig
 from lectionary_engines.preferences import StudyPreferences
 from lectionary_engines.theme_extractor import extract_themes
+from lectionary_engines.liturgical_calendar import season_for_date, upcoming_sunday
 import json
 
 router = APIRouter()
@@ -184,16 +187,16 @@ async def generate_study(
                 resolved_news_context = news_context.strip()
                 resolved_news_date = news_date or ""
 
-        # Shared theme extraction - one cheap call feeds both auto news
-        # integration and cultural grounding below, if either is needed.
-        passage_themes = None
+        # Theme extraction now runs unconditionally (previously gated on
+        # needs_auto_news/needs_grounding) - Tier 4 needs themes persisted
+        # on every study, not just ones that needed them for another
+        # feature. extract_themes() is a blocking Claude call - run off
+        # the event loop.
         needs_auto_news = (
             not resolved_news_context and profile is not None and profile.auto_news_integration
         )
         needs_grounding = preferences is not None and preferences.cultural_artifacts_level > 0
-        if needs_auto_news or needs_grounding:
-            # extract_themes() is a blocking Claude call - run off the event loop.
-            passage_themes = await run_in_threadpool(extract_themes, generator.claude, reference, text)
+        passage_themes = await run_in_threadpool(extract_themes, generator.claude, reference, text)
 
         # Auto news integration: pick a real, currently-fetched headline
         # instead of requiring the user to browse and paste one manually.
@@ -263,6 +266,15 @@ async def generate_study(
                 print(f"Validation failed (non-critical): {validation_error}")
                 validation_recommendation = "skipped"
 
+        # Lectionary season - only meaningful for RCL-sourced content; a
+        # pasted or Bible-Gateway-fetched passage has no inherent
+        # liturgical date.
+        reading_date = None
+        season = None
+        if source == "rcl":
+            reading_date = upcoming_sunday(date.today())
+            season = season_for_date(reading_date)
+
         # Create database record
         study = Study(
             engine=study_data['engine'],
@@ -280,13 +292,19 @@ async def generate_study(
             news_date=resolved_news_date,
             validation_score=validation_score,
             validation_recommendation=validation_recommendation,
-            validation_data=validation_data_json
+            validation_data=validation_data_json,
+            reading_date=reading_date,
+            season=season,
         )
 
         # Save to database
         db.add(study)
         db.commit()
         db.refresh(study)
+
+        # Persist extracted themes for Library theme faceting.
+        record_content_themes(db, "study", study.id, passage_themes)
+        db.commit()
 
         # Redirect to study view page
         return RedirectResponse(url=f"/study/{study.id}", status_code=303)

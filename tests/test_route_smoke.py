@@ -12,14 +12,10 @@ from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from web.app import app
 from web.auth import create_session_cookie, COOKIE_NAME
-from web.database import get_db
-from web.models import Base, Study
+from web.models import Study
 
 PAGES = [
     "/generate",
@@ -39,74 +35,6 @@ def client():
     c = TestClient(app)
     c.cookies.set(COOKIE_NAME, create_session_cookie(1))
     return c
-
-
-@pytest.fixture
-def isolated_client():
-    """
-    Like `client`, but backed by an in-memory SQLite DB via a get_db
-    override instead of the real local lectionary.db.
-
-    Every test that hits / needs this: that route has a write side effect
-    - it caches the mocked Sunday readings via LectionaryReadingCache.
-    Using the shared `client` fixture would leak those fake rows into the
-    real local DB file with no cleanup. This fixture isolates that write
-    and clears the override on teardown so it can't leak into other tests
-    running in the same session.
-    """
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(bind=engine)
-
-    def override_get_db():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    c = TestClient(app)
-    c.cookies.set(COOKIE_NAME, create_session_cookie(1))
-    yield c
-
-    app.dependency_overrides.pop(get_db, None)
-
-
-@pytest.fixture
-def study_client():
-    """
-    Like isolated_client, but also yields the session factory so tests
-    can seed a Study row into the same in-memory DB before hitting the
-    route under test.
-    """
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(bind=engine)
-
-    def override_get_db():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    c = TestClient(app)
-    c.cookies.set(COOKIE_NAME, create_session_cookie(1))
-    yield c, SessionLocal
-
-    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.mark.parametrize("path", PAGES)
