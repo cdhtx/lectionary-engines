@@ -302,7 +302,81 @@ def test_malformed_palimpsest_study_falls_back_to_flat_rendering(study_client):
     assert "Only one layer here" in response.text
 
 
-def test_browse_page_with_facet_filters_renders(client):
+def test_browse_page_with_facet_filters_renders_and_filters_work(study_client):
+    """
+    Verify that theme/season/source facet filters actually narrow results,
+    preserve filters across pagination links, and allow clearing individual
+    filters while preserving others.
+    """
+    from datetime import datetime, timedelta
+    from web.services.library_service import record_content_themes
+
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    base_time = datetime(2026, 8, 28, 12, 0, 0)
+
+    # Seed data: one study matching all three filters, one that doesn't
+    study1 = Study(
+        engine="threshold",
+        reference="John 3:16-21",
+        content="Test study content",
+        season="lent",
+        source="rcl",
+        created_at=base_time,
+    )
+    study2 = Study(
+        engine="threshold",
+        reference="Matthew 5:1-12",
+        content="Different study content",
+        season="advent",
+        source="paste",
+        created_at=base_time - timedelta(days=1),
+    )
+    session.add(study1)
+    session.add(study2)
+    session.commit()
+
+    # Add themes to the studies
+    record_content_themes(session, "study", study1.id, ["hospitality", "grace"])
+    record_content_themes(session, "study", study2.id, ["resurrection"])
+    session.commit()
+    session.close()
+
+    # ===== Test 1: Filter values actually narrow results =====
+    # Query with all three filters: should only get study1
     response = client.get("/browse?season=lent&source=rcl&theme=hospitality")
     assert response.status_code == 200
-    assert "<html" in response.text.lower()
+    body = response.text
+    # Matching study should appear
+    assert "John 3:16-21" in body
+    # Non-matching study should not appear
+    assert "Matthew 5:1-12" not in body
+
+    # ===== Test 2: Removing one filter changes results =====
+    # Query with just season=lent
+    response = client.get("/browse?season=lent")
+    assert response.status_code == 200
+    body = response.text
+    assert "John 3:16-21" in body
+    assert "Matthew 5:1-12" not in body
+
+    # ===== Test 3: Clearing all filters shows all content =====
+    response = client.get("/browse")
+    assert response.status_code == 200
+    body = response.text
+    assert "John 3:16-21" in body
+    assert "Matthew 5:1-12" in body
+
+    # ===== Test 4: Pagination and filter links preserve active filters =====
+    response = client.get("/browse?season=lent&source=rcl&theme=hospitality")
+    body = response.text
+
+    # Verify that season and source appear in the response (in filter links)
+    assert "season=lent" in body
+    assert "source=rcl" in body
+
+    # Verify that clearing theme preserves season and source
+    # The "All" link under Theme filter should drop theme but keep season/source
+    assert "/browse?season=lent&amp;source=rcl" in body or (
+        "/browse?season=lent&source=rcl" in body
+    )
