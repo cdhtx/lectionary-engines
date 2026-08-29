@@ -3,7 +3,7 @@
 {% block title %}Currents Analysis | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container currents-result-container" data-share-title="{{ analysis.headline_summary or 'Theological News Analysis' }}">
+<div class="container currents-result-container" data-share-title="{{ analysis.headline_summary or 'Theological News Analysis' }}" data-content-type="currents" data-content-id="{{ analysis.id }}">
     <div class="currents-result-header">
         <div class="currents-meta">
             <span class="currents-badge">The Currents</span>
@@ -41,6 +41,7 @@
 
 {% block extra_scripts %}
 <script src="/static/js/content-actions.js" defer></script>
+<script src="/static/js/reading-progress.js" defer></script>
 <script>
 function expandAll() {
     document.querySelectorAll('.currents-content details').forEach(function(d) {

@@ -3,7 +3,7 @@
 {% block title %}{{ prep.reference }} | {{ prep.lens_name }} | Pastor's Workshop{% endblock %}
 
 {% block content %}
-<div class="container workshop-result-container" data-share-title="{{ prep.reference }} — {{ prep.lens_name }}">
+<div class="container workshop-result-container" data-share-title="{{ prep.reference }} — {{ prep.lens_name }}" data-content-type="workshop" data-content-id="{{ prep.id }}">
     <div class="workshop-result-header">
         <div class="workshop-meta">
             <span class="lens-badge lens-{{ prep.lens }}">{{ prep.lens_name }}</span>
@@ -42,4 +42,5 @@
 
 {% block extra_scripts %}
 <script src="/static/js/content-actions.js" defer></script>
+<script src="/static/js/reading-progress.js" defer></script>
 {% endblock %}

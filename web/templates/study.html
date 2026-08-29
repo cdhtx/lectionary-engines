@@ -3,7 +3,7 @@
 {% block title %}{{ study.reference }} | {{ study.engine | title }} | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container study-container{% if palimpsest_rail %} study-container--with-rail{% endif %}" data-share-title="{{ study.reference }} — {{ study.engine | title }}">
+<div class="container study-container{% if palimpsest_rail %} study-container--with-rail{% endif %}" data-share-title="{{ study.reference }} — {{ study.engine | title }}" data-content-type="study" data-content-id="{{ study.id }}">
     <div class="study-header">
         <div class="study-meta">
             <span class="engine-badge engine-{{ study.engine }}">{{ study.engine }}</span>
@@ -164,4 +164,5 @@
 {% if palimpsest_rail %}
 <script src="/static/js/palimpsest-rail.js" defer></script>
 {% endif %}
+<script src="/static/js/reading-progress.js" defer></script>
 {% endblock %}

@@ -3,7 +3,7 @@
 {% block title %}Cultural Resonances | Lectionary Engines{% endblock %}
 
 {% block content %}
-<div class="container resonance-result-container" data-share-title="{{ resonance.reference or 'Cultural Connections' }}">
+<div class="container resonance-result-container" data-share-title="{{ resonance.reference or 'Cultural Connections' }}" data-content-type="resonance" data-content-id="{{ resonance.id }}">
     <div class="resonance-result-header">
         <div class="resonance-meta">
             <span class="resonance-badge">Cultural Resonance</span>
@@ -51,4 +51,5 @@
 
 {% block extra_scripts %}
 <script src="/static/js/content-actions.js" defer></script>
+<script src="/static/js/reading-progress.js" defer></script>
 {% endblock %}
