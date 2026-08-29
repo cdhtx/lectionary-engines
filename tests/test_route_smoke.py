@@ -507,3 +507,36 @@ def test_post_progress_requires_authentication():
         "percent": 10,
     }, follow_redirects=False)
     assert response.status_code in (303, 401)
+
+
+def test_header_shows_greeting_and_search(study_client):
+    # Uses study_client (not the plain `client` fixture) because the
+    # greeting requires an actual User row: the plain `client` fixture
+    # points at the real, unseeded local lectionary.db (see the
+    # "Auth note" at the top of this file - AuthMiddleware only checks
+    # that the session cookie decodes, it doesn't require the user to
+    # exist), so request.state.user would be None there and the
+    # "Welcome back," block would never render. study_client's in-memory
+    # db lets us seed the id=1 user the session cookie points at, the
+    # same pattern already used by test_post_progress_creates_a_row above.
+    client, SessionLocal = study_client
+
+    session = SessionLocal()
+    user = User(id=1, email="test@example.com", name="Test User", password_hash="", is_active=True)
+    session.add(user)
+    session.commit()
+    session.close()
+
+    response = client.get("/engines")
+    body = response.text
+
+    assert "Welcome back," in body
+    assert 'action="/browse"' in body
+    assert 'name="q"' in body
+
+
+def test_header_has_no_notification_markup(client):
+    response = client.get("/engines")
+    body = response.text.lower()
+
+    assert "notification" not in body

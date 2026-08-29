@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.concurrency import run_in_threadpool
 from contextlib import asynccontextmanager
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 import markdown
@@ -108,6 +109,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # way that later tasks can't extend.
         with _middleware_db() as db:
             request.state.user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
+            request.state.today_display = datetime.now().strftime('%A, %B %d, %Y')
 
         return await call_next(request)
 
@@ -131,6 +133,38 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="stati
 
 # Set up Jinja2 templates
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+
+
+def _avatar_initials(name: str) -> str:
+    parts = name.split()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[-1][0]).upper()
+    return name[:2].upper() if name else "?"
+
+
+def _avatar_color(name: str) -> str:
+    # Deterministic hue from the name so the same person always gets the
+    # same color and different people get visually distinct ones.
+    hue = sum(ord(c) for c in name) % 360
+    return f"hsl({hue}, 45%, 45%)"
+
+
+templates.env.globals["avatar_initials"] = _avatar_initials
+templates.env.globals["avatar_color"] = _avatar_color
+
+# base.html's header (added in Task 5) calls avatar_initials()/avatar_color()
+# on every page, but engines/workshop/currents/resonance/signals each
+# instantiate their own separate Jinja2Templates object (see their route
+# modules) rather than importing this one - each has its own independent
+# Environment, so registering the globals only on `templates` above leaves
+# those five modules' environments without them, which raises
+# jinja2.exceptions.UndefinedError as soon as their templates (which also
+# extend base.html) try to call avatar_color()/avatar_initials(). Propagate
+# the same globals to each of those already-imported route modules' template
+# environments so the header renders everywhere it's included.
+for _routes_module in (engines, workshop, currents, resonance, signals):
+    _routes_module.templates.env.globals["avatar_initials"] = _avatar_initials
+    _routes_module.templates.env.globals["avatar_color"] = _avatar_color
 
 # Include API routers
 app.include_router(auth_routes.router, tags=["auth"])

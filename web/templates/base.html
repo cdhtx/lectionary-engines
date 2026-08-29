@@ -39,10 +39,39 @@
         </aside>
 
         <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-date">
+                    <span class="topbar-date-text">{{ request.state.today_display }}</span>
+                    {% if request.state.user %}
+                    <h1 class="topbar-greeting">Welcome back, {{ request.state.user.name.split(' ')[0] }}.</h1>
+                    {% endif %}
+                </div>
+
+                <form action="/browse" method="get" class="topbar-search">
+                    <input type="text" name="q" placeholder="Search passages, studies, themes, authors...">
+                    <kbd class="topbar-search-hint">⌘K</kbd>
+                </form>
+
+                {% if request.state.user %}
+                <div class="topbar-avatar-wrap">
+                    <button type="button" class="topbar-avatar" style="background: {{ avatar_color(request.state.user.name) }};">
+                        {{ avatar_initials(request.state.user.name) }}
+                    </button>
+                    <div class="topbar-avatar-menu">
+                        <a href="/profiles">Profiles</a>
+                        <form action="/logout" method="POST">
+                            <button type="submit">Sign out</button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+            </header>
+
             {% block content %}{% endblock %}
         </main>
     </div>
 
+    <script src="/static/js/header-search.js" defer></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
