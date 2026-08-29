@@ -300,3 +300,9 @@ def test_malformed_palimpsest_study_falls_back_to_flat_rendering(study_client):
     assert response.status_code == 200
     assert 'class="palimpsest-rail"' not in response.text
     assert "Only one layer here" in response.text
+
+
+def test_browse_page_with_facet_filters_renders(client):
+    response = client.get("/browse?season=lent&source=rcl&theme=hospitality")
+    assert response.status_code == 200
+    assert "<html" in response.text.lower()

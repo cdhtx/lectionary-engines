@@ -3,6 +3,17 @@
 {% block title %}Library | Lectionary Engines{% endblock %}
 
 {% block content %}
+{% macro filter_url(type=None, theme=None, season=None, source=None, q=None, page=None) %}
+{%- set parts = [] -%}
+{%- if type %}{% set _ = parts.append('type=' ~ type|urlencode) %}{% endif -%}
+{%- if theme %}{% set _ = parts.append('theme=' ~ theme|urlencode) %}{% endif -%}
+{%- if season %}{% set _ = parts.append('season=' ~ season|urlencode) %}{% endif -%}
+{%- if source %}{% set _ = parts.append('source=' ~ source|urlencode) %}{% endif -%}
+{%- if q %}{% set _ = parts.append('q=' ~ q|urlencode) %}{% endif -%}
+{%- if page %}{% set _ = parts.append('page=' ~ page|string) %}{% endif -%}
+{%- if parts -%}/browse?{{ parts|join('&') }}{%- else -%}/browse{%- endif -%}
+{% endmacro %}
+
 <div class="container">
     <div class="page-header">
         <h1>Library</h1>
@@ -11,10 +22,13 @@
 
     <form class="search-bar" action="/browse" method="get">
         {% if type_filter %}<input type="hidden" name="type" value="{{ type_filter }}">{% endif %}
+        {% if theme_filter %}<input type="hidden" name="theme" value="{{ theme_filter }}">{% endif %}
+        {% if season_filter %}<input type="hidden" name="season" value="{{ season_filter }}">{% endif %}
+        {% if source_filter %}<input type="hidden" name="source" value="{{ source_filter }}">{% endif %}
         <input type="text" name="q" value="{{ search_query }}" placeholder="Search reference or content...">
         <button type="submit" class="btn btn-secondary">Search</button>
         {% if search_query %}
-        <a href="/browse{% if type_filter %}?type={{ type_filter }}{% endif %}" class="search-clear">Clear</a>
+        <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=season_filter, source=source_filter) }}" class="search-clear">Clear</a>
         {% endif %}
     </form>
 
@@ -25,23 +39,71 @@
             <div class="filter-group">
                 <h4>Type</h4>
                 <div class="filter-options">
-                    <a href="/browse{% if search_query %}?q={{ search_query }}{% endif %}" class="filter-link {% if not type_filter %}active{% endif %}">
+                    <a href="{{ filter_url(theme=theme_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if not type_filter %}active{% endif %}">
                         All
                     </a>
-                    <a href="/browse?type=study{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if type_filter == 'study' %}active{% endif %}">
+                    <a href="{{ filter_url(type='study', theme=theme_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if type_filter == 'study' %}active{% endif %}">
                         Studies
                     </a>
-                    <a href="/browse?type=workshop{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if type_filter == 'workshop' %}active{% endif %}">
+                    <a href="{{ filter_url(type='workshop', theme=theme_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if type_filter == 'workshop' %}active{% endif %}">
                         Workshop
                     </a>
-                    <a href="/browse?type=currents{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if type_filter == 'currents' %}active{% endif %}">
+                    <a href="{{ filter_url(type='currents', theme=theme_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if type_filter == 'currents' %}active{% endif %}">
                         Currents
                     </a>
-                    <a href="/browse?type=resonance{% if search_query %}&q={{ search_query }}{% endif %}" class="filter-link {% if type_filter == 'resonance' %}active{% endif %}">
+                    <a href="{{ filter_url(type='resonance', theme=theme_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if type_filter == 'resonance' %}active{% endif %}">
                         Resonance
                     </a>
                 </div>
             </div>
+
+            {% if facets.seasons %}
+            <div class="filter-group">
+                <h4>Season</h4>
+                <div class="filter-options">
+                    <a href="{{ filter_url(type=type_filter, theme=theme_filter, source=source_filter, q=search_query) }}" class="filter-link {% if not season_filter %}active{% endif %}">
+                        All
+                    </a>
+                    {% for s in facets.seasons %}
+                    <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=s.value, source=source_filter, q=search_query) }}" class="filter-link {% if season_filter == s.value %}active{% endif %}">
+                        {{ s.label }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if facets.sources %}
+            <div class="filter-group">
+                <h4>Source</h4>
+                <div class="filter-options">
+                    <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=season_filter, q=search_query) }}" class="filter-link {% if not source_filter %}active{% endif %}">
+                        All
+                    </a>
+                    {% for src in facets.sources %}
+                    <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=season_filter, source=src, q=search_query) }}" class="filter-link {% if source_filter == src %}active{% endif %}">
+                        {{ src }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if facets.themes %}
+            <div class="filter-group">
+                <h4>Theme</h4>
+                <div class="filter-options">
+                    <a href="{{ filter_url(type=type_filter, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if not theme_filter %}active{% endif %}">
+                        All
+                    </a>
+                    {% for t in facets.themes %}
+                    <a href="{{ filter_url(type=type_filter, theme=t.theme, season=season_filter, source=source_filter, q=search_query) }}" class="filter-link {% if theme_filter == t.theme %}active{% endif %}">
+                        {{ t.theme|title }} ({{ t.count }})
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </aside>
 
         <div class="browse-main">
@@ -71,14 +133,14 @@
             {% if total_pages > 1 %}
             <div class="pagination">
                 {% if has_prev %}
-                <a href="/browse?page={{ page - 1 }}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=season_filter, source=source_filter, q=search_query, page=page - 1) }}"
                    class="btn btn-secondary">← Previous</a>
                 {% endif %}
 
                 <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
 
                 {% if has_next %}
-                <a href="/browse?page={{ page + 1 }}{% if type_filter %}&type={{ type_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=season_filter, source=source_filter, q=search_query, page=page + 1) }}"
                    class="btn btn-secondary">Next →</a>
                 {% endif %}
             </div>
@@ -88,7 +150,7 @@
             <div class="empty-state">
                 <h2>No results found</h2>
                 {% if search_query %}
-                <p>Nothing matches "{{ search_query }}". Try a different term, or <a href="/browse{% if type_filter %}?type={{ type_filter }}{% endif %}">clear the search</a>.</p>
+                <p>Nothing matches "{{ search_query }}". Try a different term, or <a href="{{ filter_url(type=type_filter, theme=theme_filter, season=season_filter, source=source_filter) }}">clear the search</a>.</p>
                 {% else %}
                 <p>Try adjusting your filters or <a href="/generate">generate a new study</a>.</p>
                 {% endif %}

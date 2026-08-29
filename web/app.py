@@ -275,16 +275,24 @@ async def browse_studies(
     page: int = 1,
     type: str = None,
     q: str = None,
+    theme: str = None,
+    season: str = None,
+    source: str = None,
     db: Session = Depends(get_db)
 ):
     """
     Library page - unified browse across studies, workshop preps,
-    currents analyses, and resonance results
+    currents analyses, and resonance results, with content_type/theme/
+    season/source faceting
     """
-    from .services.library_service import search_library
+    from .services.library_service import search_library, get_library_facets
 
     search_term = q.strip() if q and q.strip() else None
-    result = search_library(db, content_type=type, q=search_term, page=page, per_page=config.studies_per_page)
+    result = search_library(
+        db, content_type=type, q=search_term, theme=theme, season=season, source=source,
+        page=page, per_page=config.studies_per_page,
+    )
+    facets = get_library_facets(db)
 
     return templates.TemplateResponse("browse.html", {
         "request": request,
@@ -295,7 +303,11 @@ async def browse_studies(
         "has_next": result["has_next"],
         "total": result["total"],
         "type_filter": type,
-        "search_query": search_term or ""
+        "search_query": search_term or "",
+        "theme_filter": theme,
+        "season_filter": season,
+        "source_filter": source,
+        "facets": facets,
     })
 
 
