@@ -220,15 +220,28 @@ app.include_router(signals.router, tags=["signals"])
 # HTML Page Routes (Server-Rendered)
 # ============================================================================
 
+QUOTES = [
+    ("We do not read the Bible to have it confirmed; we read it to be changed.", "N.T. Wright"),
+    ("Scripture is not a quarry from which we can extract proof texts to bolster our arguments, but a river in which we swim.", "Eugene Peterson"),
+    ("The Bible is not a book which yields its treasures to the lazy.", "J.I. Packer"),
+    ("A text without a context is a pretext for a proof text.", "D.A. Carson"),
+    ("Read the Bible as if it were written yesterday, and you were meant to understand it today.", "Karl Barth"),
+    ("The Word of God is not chained.", "2 Timothy 2:9"),
+    ("Every text has a context, and every context has a story.", "N.T. Wright"),
+]
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     """
     Today homepage - This Week in the Lectionary, Signals, engine cards,
     quick actions, and recent studies
     """
+    from datetime import date
     from lectionary_engines.claude_client import ClaudeClient
     from .services.lectionary_widget_service import get_this_week_readings
     from .services.signals_service import get_this_week_signals
+    from .services.reading_progress_service import get_progress_map
 
     # Get recent studies (last 5)
     recent_studies = db.query(Study).order_by(Study.created_at.desc()).limit(5).all()
@@ -238,12 +251,23 @@ def home(request: Request, db: Session = Depends(get_db)):
     claude = ClaudeClient(config.anthropic_api_key)
     signals = get_this_week_signals(db, claude)[:3]  # top 3 for the compact widget; full list on /signals
 
+    progress_by_study_id = {}
+    if request.state.user:
+        progress_by_study_id = get_progress_map(
+            db, request.state.user.id, "study", [s.id for s in recent_studies]
+        )
+
+    quote_text, quote_author = QUOTES[date.today().timetuple().tm_yday % len(QUOTES)]
+
     return templates.TemplateResponse("index.html", {
         "request": request,
         "recent_studies": recent_studies,
         "this_week": this_week,
         "signals": signals,
-        "config": config
+        "config": config,
+        "progress_by_study_id": progress_by_study_id,
+        "quote_text": quote_text,
+        "quote_author": quote_author,
     })
 
 

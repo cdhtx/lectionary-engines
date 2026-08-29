@@ -114,6 +114,12 @@
                         {{ study.word_count }} words | {{ study.created_at.strftime('%B %d, %Y') }}
                     </span>
                 </a>
+                {% if study.id in progress_by_study_id %}
+                <div class="study-progress-bar">
+                    <div class="study-progress-fill" style="width: {{ progress_by_study_id[study.id] }}%;"></div>
+                </div>
+                <span class="study-progress-label">{{ progress_by_study_id[study.id] }}% complete</span>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -122,5 +128,12 @@
         </div>
     </section>
     {% endif %}
+
+    <section class="today-quote" id="today-quote">
+        <blockquote>
+            <p>"{{ quote_text }}"</p>
+            <cite>— {{ quote_author }}</cite>
+        </blockquote>
+    </section>
 </div>
 {% endblock %}

@@ -574,3 +574,43 @@ def test_sidebar_progress_widget_shows_current_read(study_client):
 def test_sidebar_progress_widget_absent_when_no_progress(client):
     response = client.get("/engines")
     assert "sidebar-progress-widget" not in response.text
+
+
+@patch("web.services.lectionary_widget_service.TextFetcher")
+@patch("web.services.signals_service.TextFetcher")
+@patch("web.services.signals_service.extract_themes")
+def test_continue_your_studies_shows_progress_bar(
+    mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, study_client
+):
+    mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {}
+    mock_extract_themes.return_value = []
+
+    client, SessionLocal = study_client
+    session = SessionLocal()
+    study = Study(engine="threshold", reference="Mark 5:1-5", content="content", word_count=10)
+    session.add(study)
+    session.commit()
+    study_id = study.id
+    session.close()
+
+    session = SessionLocal()
+    save_progress(session, user_id=1, content_type="study", content_id=study_id, percent=66)
+    session.close()
+
+    response = client.get("/")
+    body = response.text
+
+    assert "66%" in body
+
+
+@patch("web.services.lectionary_widget_service.TextFetcher")
+@patch("web.services.signals_service.TextFetcher")
+@patch("web.services.signals_service.extract_themes")
+def test_today_page_shows_quote_banner(
+    mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, isolated_client
+):
+    mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {}
+    mock_extract_themes.return_value = []
+
+    response = isolated_client.get("/")
+    assert "today-quote" in response.text

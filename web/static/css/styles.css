@@ -952,6 +952,73 @@ a.engine-card {
     text-align: center;
 }
 
+.study-progress-bar {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-muted);
+    overflow: hidden;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.study-progress-fill {
+    height: 100%;
+    background: var(--orange-400);
+    border-radius: 2px;
+}
+
+.study-progress-label {
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
+    color: var(--ink-600);
+}
+
+/* ============================================================================
+   Today quote banner
+   ============================================================================ */
+
+.today-quote {
+    position: relative;
+    margin-top: var(--space-2xl);
+    padding: var(--space-xl) var(--space-lg);
+    border-radius: var(--radius-lg);
+    background-image: url('/static/images/today-illustration.png');
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+.today-quote::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ivory-50);
+    opacity: 0.87;
+    mix-blend-mode: normal;
+}
+
+.today-quote blockquote {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    max-width: 620px;
+}
+
+.today-quote p {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 1.3rem;
+    color: var(--ink-950);
+    margin: 0 0 var(--space-sm) 0;
+}
+
+.today-quote cite {
+    font-family: var(--font-ui);
+    font-style: normal;
+    font-size: 0.9rem;
+    color: var(--ink-600);
+}
+
 /* ============================================================================
    Page Header
    ============================================================================ */
