@@ -310,44 +310,52 @@ def test_browse_page_with_facet_filters_renders_and_filters_work(study_client):
     """
     from datetime import datetime, timedelta
     from web.services.library_service import record_content_themes
+    import re
 
     client, SessionLocal = study_client
     session = SessionLocal()
     base_time = datetime(2026, 8, 28, 12, 0, 0)
 
-    # Seed data: one study matching all three filters, one that doesn't
-    study1 = Study(
-        engine="threshold",
-        reference="John 3:16-21",
-        content="Test study content",
-        season="lent",
-        source="rcl",
-        created_at=base_time,
-    )
+    # Seed data: 22 studies matching all three filters to trigger pagination (per_page=20),
+    # plus one that doesn't match
+    for i in range(22):
+        study = Study(
+            engine="threshold",
+            reference=f"John 3:{16+i}-{21+i}",
+            content="Test study content",
+            season="lent",
+            source="rcl",
+            created_at=base_time - timedelta(days=i),
+        )
+        session.add(study)
+    session.commit()
+
+    # Seed the non-matching study
     study2 = Study(
         engine="threshold",
         reference="Matthew 5:1-12",
         content="Different study content",
         season="advent",
         source="paste",
-        created_at=base_time - timedelta(days=1),
+        created_at=base_time - timedelta(days=30),
     )
-    session.add(study1)
     session.add(study2)
     session.commit()
 
-    # Add themes to the studies
-    record_content_themes(session, "study", study1.id, ["hospitality", "grace"])
-    record_content_themes(session, "study", study2.id, ["resurrection"])
+    # Add themes to the matching studies (study id 1-22)
+    for i in range(1, 23):
+        record_content_themes(session, "study", i, ["hospitality", "grace"])
+    # Add theme to non-matching study
+    record_content_themes(session, "study", 23, ["resurrection"])
     session.commit()
     session.close()
 
     # ===== Test 1: Filter values actually narrow results =====
-    # Query with all three filters: should only get study1
+    # Query with all three filters: should only get the lent/rcl/hospitality studies
     response = client.get("/browse?season=lent&source=rcl&theme=hospitality")
     assert response.status_code == 200
     body = response.text
-    # Matching study should appear
+    # One of the matching studies should appear
     assert "John 3:16-21" in body
     # Non-matching study should not appear
     assert "Matthew 5:1-12" not in body
@@ -360,23 +368,56 @@ def test_browse_page_with_facet_filters_renders_and_filters_work(study_client):
     assert "John 3:16-21" in body
     assert "Matthew 5:1-12" not in body
 
-    # ===== Test 3: Clearing all filters shows all content =====
+    # ===== Test 3: Clearing all filters shows content (on page 1) =====
     response = client.get("/browse")
     assert response.status_code == 200
     body = response.text
-    assert "John 3:16-21" in body
-    assert "Matthew 5:1-12" in body
+    # First 20 studies are shown (most recent John studies)
+    assert "John 3:" in body
+    # Note: Matthew study (study 23, oldest) is on page 2, not shown on page 1
 
-    # ===== Test 4: Pagination and filter links preserve active filters =====
+    # ===== Test 4: Pagination links actually exist and preserve all filters =====
+    # With 22 matching results and per_page=20, we should have 2 pages
     response = client.get("/browse?season=lent&source=rcl&theme=hospitality")
     body = response.text
 
-    # Verify that season and source appear in the response (in filter links)
-    assert "season=lent" in body
-    assert "source=rcl" in body
+    # Verify pagination markup exists (total_pages > 1)
+    assert "Next →" in body, "Pagination should exist with 22 filtered results and per_page=20"
 
-    # Verify that clearing theme preserves season and source
+    # Extract the "Next" link href and verify it contains all three filter params
+    # Look for href="/browse?...page=2..." pattern
+    next_link_match = re.search(r'href="([^"]*page=2[^"]*)"', body)
+    assert next_link_match, "Could not find 'Next' pagination link with page=2"
+    next_href = next_link_match.group(1)
+
+    # Decode HTML entities (&amp; -> &) and verify all three filters are present in the link
+    next_href_decoded = next_href.replace("&amp;", "&")
+    assert "season=lent" in next_href_decoded, f"season filter missing from Next link: {next_href_decoded}"
+    assert "source=rcl" in next_href_decoded, f"source filter missing from Next link: {next_href_decoded}"
+    assert "theme=hospitality" in next_href_decoded, f"theme filter missing from Next link: {next_href_decoded}"
+
+    # ===== Test 5: Removing one filter while preserving others =====
     # The "All" link under Theme filter should drop theme but keep season/source
-    assert "/browse?season=lent&amp;source=rcl" in body or (
-        "/browse?season=lent&source=rcl" in body
+    response = client.get("/browse?season=lent&source=rcl&theme=hospitality")
+    body = response.text
+
+    # Find the Theme filter group's "All" link (which should clear theme but preserve season/source)
+    # Pattern: /browse?season=lent&source=rcl (in some order, with or without amp; encoding)
+    theme_clear_match = re.search(
+        r'href="([^"]*(?:season=lent|source=rcl)[^"]*(?:season=lent|source=rcl)[^"]*)"(?:[^<]*?All)?</a>.*?Theme',
+        body,
+        re.DOTALL
+    )
+    # Simpler check: just verify a link exists with season=lent&source=rcl but NOT theme=
+    theme_clear_pattern = re.compile(r'href="([^"]*season=lent[^"]*source=rcl[^"]*)"')
+    theme_clear_matches = theme_clear_pattern.findall(body)
+    theme_clear_href = None
+    for href in theme_clear_matches:
+        decoded = href.replace("&amp;", "&")
+        if "theme=" not in decoded and "season=lent" in decoded and "source=rcl" in decoded:
+            theme_clear_href = href
+            break
+    assert theme_clear_href is not None, (
+        "Could not find a link with season=lent and source=rcl but without theme= parameter. "
+        "This should be the Theme filter's 'All' link."
     )
