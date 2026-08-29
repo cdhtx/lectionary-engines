@@ -86,3 +86,48 @@ def test_pasted_study_has_no_reading_date_or_season_but_still_gets_themes(
     themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "study").all()}
     assert themes == {"hospitality"}
     db.close()
+
+
+from web.models import WorkshopPrep
+
+
+@patch("web.routes.workshop.extract_themes")
+@patch("web.routes.workshop.get_workshop_engine")
+@patch("web.routes.workshop.get_text_fetcher")
+def test_rcl_sourced_workshop_gets_reading_date_and_season(
+    mock_get_text_fetcher, mock_get_workshop_engine, mock_extract_themes, study_client
+):
+    client, SessionLocal = study_client
+
+    mock_fetcher = MagicMock()
+    mock_fetcher.fetch_rcl.return_value = ("Luke 14:1-14", "Sabbath hospitality text")
+    mock_get_text_fetcher.return_value = mock_fetcher
+
+    mock_engine = MagicMock()
+    mock_engine.claude = MagicMock()
+    mock_engine.generate.return_value = {
+        "lens": "apostolic_journalist",
+        "lens_name": "The Apostolic Journalist",
+        "reference": "Luke 14:1-14",
+        "content": "workshop content",
+        "metadata": {"word_count": 30},
+    }
+    mock_get_workshop_engine.return_value = mock_engine
+    mock_extract_themes.return_value = ["hospitality"]
+
+    response = client.post("/workshop/generate", data={
+        "lens": "apostolic_journalist",
+        "source": "rcl",
+        "rcl_reading": "gospel",
+        "translation": "NRSVue",
+    }, follow_redirects=False)
+
+    assert response.status_code == 303
+
+    db = SessionLocal()
+    prep = db.query(WorkshopPrep).one()
+    assert prep.reading_date is not None
+    assert prep.season is not None
+    themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "workshop").all()}
+    assert themes == {"hospitality"}
+    db.close()

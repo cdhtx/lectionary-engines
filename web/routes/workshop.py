@@ -2,6 +2,7 @@
 Workshop routes - API endpoints for Pastor's Workshop sermon prep tool
 """
 
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -13,6 +14,7 @@ from pathlib import Path
 from ..database import get_db
 from ..models import WorkshopPrep
 from ..config import WebConfig
+from ..services.library_service import record_content_themes
 from ..services.pdf_service import render_pdf, slugify
 
 import sys
@@ -20,8 +22,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from lectionary_engines.claude_client import ClaudeClient
 from lectionary_engines.engines.workshop import WorkshopEngine
+from lectionary_engines.liturgical_calendar import season_for_date, upcoming_sunday
 from lectionary_engines.scripture_linker import link_scripture_references
 from lectionary_engines.text_fetcher import TextFetcher
+from lectionary_engines.theme_extractor import extract_themes
 from lectionary_engines.protocols import workshop_protocol
 
 router = APIRouter()
@@ -133,6 +137,18 @@ async def generate_workshop(
             lens=lens
         )
 
+        # extract_themes() is a blocking Claude call - run off the event loop.
+        passage_themes = await run_in_threadpool(extract_themes, engine.claude, reference, text)
+
+        # Lectionary season - only meaningful for RCL-sourced content; a
+        # pasted or Bible-Gateway-fetched passage has no inherent
+        # liturgical date.
+        reading_date = None
+        season = None
+        if source == "rcl":
+            reading_date = upcoming_sunday(date.today())
+            season = season_for_date(reading_date)
+
         # Save to database
         prep = WorkshopPrep(
             lens=result['lens'],
@@ -142,12 +158,18 @@ async def generate_workshop(
             word_count=result['metadata']['word_count'],
             source=source,
             translation=translation,
-            biblical_text=text
+            biblical_text=text,
+            reading_date=reading_date,
+            season=season,
         )
 
         db.add(prep)
         db.commit()
         db.refresh(prep)
+
+        # Persist extracted themes for Library theme faceting.
+        record_content_themes(db, "workshop", prep.id, passage_themes)
+        db.commit()
 
         # Redirect to result view
         return RedirectResponse(url=f"/workshop/{prep.id}", status_code=303)
