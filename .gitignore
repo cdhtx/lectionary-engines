@@ -57,3 +57,5 @@ lectionary_engines/engines/.collision_vector_state.json
 !.env.example
 
 .worktrees/
+
+.superpowers/
