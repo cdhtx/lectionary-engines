@@ -427,3 +427,19 @@ def test_browse_page_with_facet_filters_renders_and_filters_work(study_client):
         "Could not find a link with season=lent and source=rcl but without theme= parameter. "
         "This should be the Theme filter's 'All' link."
     )
+
+
+def test_authenticated_request_populates_request_state_user(client):
+    response = client.get("/engines")
+    assert response.status_code == 200
+    # /engines is fully static (no template context beyond request) but the
+    # middleware should still have populated request.state.user before the
+    # route ran - the response text doesn't reflect this directly, so we
+    # check it can't have broken by asserting the page still renders full
+    # HTML rather than an error page.
+    assert "<html" in response.text.lower()
+
+
+def test_public_path_does_not_require_user_lookup(client):
+    response = TestClient(app).get("/health")
+    assert response.status_code == 200

@@ -19,7 +19,7 @@ from pathlib import Path
 from .database import init_db, close_db, get_db
 from .routes import studies, profiles, workshop, resonance, currents, engines, signals
 from .routes import auth as auth_routes
-from .models import Base, Study
+from .models import Base, Study, User
 from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 from .services.pdf_service import render_pdf, slugify
@@ -51,6 +51,36 @@ async def lifespan(app: FastAPI):
 
 
 # ── Auth middleware ───────────────────────────────────────────
+from contextlib import contextmanager
+
+
+@contextmanager
+def _middleware_db():
+    """
+    AuthMiddleware runs outside FastAPI's dependency injection (it's raw
+    ASGI middleware, not a route with Depends()), so it can't use
+    Depends(get_db) directly. Calling SessionLocal() straight from here
+    would silently bypass app.dependency_overrides[get_db] - which is
+    exactly what every test fixture in this codebase uses to point routes
+    at an in-memory test database instead of the real lectionary.db. This
+    helper looks up whatever provider is currently active for get_db
+    (the test override if one is set, the real get_db otherwise) and
+    drives its generator manually, the same way FastAPI's own dependency
+    resolution would, including running its cleanup (db.close()) when
+    this context manager exits.
+    """
+    provider = app.dependency_overrides.get(get_db, get_db)
+    db_gen = provider()
+    db = next(db_gen)
+    try:
+        yield db
+    finally:
+        try:
+            next(db_gen)
+        except StopIteration:
+            pass
+
+
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -63,8 +93,20 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         token = request.cookies.get(COOKIE_NAME)
-        if not token or not decode_session_cookie(token):
+        user_id = token and decode_session_cookie(token)
+        if not user_id:
             return RedirectResponse(url=f"/login?next={path}", status_code=303)
+
+        # Attach the current user to request.state so base.html's header
+        # (rendered on every page) can read request.state.user directly -
+        # every route already passes `request` into its template context,
+        # so no individual route handler needs to change. Tasks 5 and 6
+        # add more request.state attachments inside this same `with`
+        # block (reusing the one db session for the whole request rather
+        # than opening several) - do not close this block off here in a
+        # way that later tasks can't extend.
+        with _middleware_db() as db:
+            request.state.user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
 
         return await call_next(request)
 
