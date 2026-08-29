@@ -131,3 +131,34 @@ def test_rcl_sourced_workshop_gets_reading_date_and_season(
     themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "workshop").all()}
     assert themes == {"hospitality"}
     db.close()
+
+
+from web.models import CurrentsAnalysis
+
+
+@patch("web.routes.currents.extract_themes")
+@patch("web.routes.currents.get_currents_service")
+def test_currents_analysis_gets_content_theme_rows(mock_get_service, mock_extract_themes, study_client):
+    client, SessionLocal = study_client
+
+    mock_service = MagicMock()
+    mock_service.analyze_story.return_value = {
+        "date": "August 28, 2026",
+        "headline_summary": "A Test Headline",
+        "content": "analysis content",
+        "word_count": 50,
+    }
+    mock_get_service.return_value = mock_service
+    mock_extract_themes.return_value = ["justice", "community"]
+
+    response = client.post("/currents/analyze", data={
+        "story_context": "Some news story about justice and community.",
+    }, follow_redirects=False)
+
+    assert response.status_code == 303
+
+    db = SessionLocal()
+    assert db.query(CurrentsAnalysis).count() == 1
+    themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "currents").all()}
+    assert themes == {"justice", "community"}
+    db.close()

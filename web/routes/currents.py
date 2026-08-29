@@ -15,8 +15,10 @@ from ..database import get_db
 from ..models import CurrentsAnalysis
 from ..config import WebConfig
 from ..services.currents_service import CurrentsService
+from ..services.library_service import record_content_themes
 from ..services.pdf_service import render_pdf, slugify
 from lectionary_engines.scripture_linker import link_scripture_references
+from lectionary_engines.theme_extractor import extract_themes
 
 router = APIRouter()
 
@@ -116,6 +118,18 @@ async def analyze_story(
         db.add(analysis)
         db.commit()
         db.refresh(analysis)
+
+        # extract_themes() is a blocking Claude call - run off the event
+        # loop. CurrentsAnalysis has no scripture reference, so the
+        # headline stands in for context in the extraction prompt.
+        passage_themes = await run_in_threadpool(
+            extract_themes,
+            get_currents_service().claude,
+            analysis.headline_summary or "Current Event",
+            analysis.story_context or "",
+        )
+        record_content_themes(db, "currents", analysis.id, passage_themes)
+        db.commit()
 
         return RedirectResponse(url=f"/currents/{analysis.id}", status_code=303)
 
