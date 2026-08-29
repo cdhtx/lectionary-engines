@@ -5,8 +5,11 @@ resonance) via one table. See
 docs/superpowers/specs/2026-08-29-tier-1c-today-chrome-design.md.
 """
 
+from datetime import datetime
 from typing import Dict, List, Optional
 
+from sqlalchemy import update as sa_update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from web.models import ReadingProgress
@@ -19,17 +22,44 @@ def save_progress(db: Session, user_id: int, content_type: str, content_id: int,
     (the caller is a debounced client-side scroll tracker that can post
     out of order, e.g. after scrolling back up).
 
+    The increase check is done as a single atomic conditional UPDATE
+    (`WHERE ... AND percent < :new`), not a Python-level read-then-write.
+    Two concurrent calls for the same (user_id, content_type, content_id)
+    - e.g. two browser tabs open on the same content - can't lose an
+    update this way: the database's own WHERE clause is the only thing
+    deciding whether a write happens, so there's no window between "read
+    the current value" and "write the new one" for a second writer to
+    land in.
+
     Clamps/coerces percent to an int in [0, 100] first: this is the one
-    place every caller's percent passes through, and Tasks 6/7 now
-    interpolate the stored value directly into inline
-    `style="width: {{ percent }}%"` HTML on two display surfaces, so an
-    out-of-range or non-int value here has a bigger blast radius than it
-    used to (see comparison/percent<100-filter issues a bad stored value
-    can cause downstream).
+    place every caller's percent passes through, and Tasks 6/7 interpolate
+    the stored value directly into inline `style="width: {{ percent }}%"`
+    HTML on two display surfaces, so an out-of-range or non-int value here
+    has a bigger blast radius than it used to.
     """
     percent = max(0, min(100, int(percent)))
 
-    row = (
+    def _try_conditional_update() -> bool:
+        result = db.execute(
+            sa_update(ReadingProgress)
+            .where(
+                ReadingProgress.user_id == user_id,
+                ReadingProgress.content_type == content_type,
+                ReadingProgress.content_id == content_id,
+                ReadingProgress.percent < percent,
+            )
+            .values(percent=percent, updated_at=datetime.utcnow())
+        )
+        db.commit()
+        return result.rowcount > 0
+
+    if _try_conditional_update():
+        return
+
+    # The UPDATE matched no row - either no row exists yet for this key,
+    # or one exists but already has percent >= what we're trying to save
+    # (a correct, race-safe no-op - nothing left to do in that case).
+    existing = (
         db.query(ReadingProgress)
         .filter(
             ReadingProgress.user_id == user_id,
@@ -38,8 +68,10 @@ def save_progress(db: Session, user_id: int, content_type: str, content_id: int,
         )
         .first()
     )
+    if existing is not None:
+        return
 
-    if row is None:
+    try:
         db.add(ReadingProgress(
             user_id=user_id,
             content_type=content_type,
@@ -47,11 +79,12 @@ def save_progress(db: Session, user_id: int, content_type: str, content_id: int,
             percent=percent,
         ))
         db.commit()
-        return
-
-    if percent > row.percent:
-        row.percent = percent
-        db.commit()
+    except IntegrityError:
+        # Another concurrent request inserted the row first, in the
+        # window between our UPDATE attempt and this INSERT - back off
+        # and retry as an update against the row that now exists.
+        db.rollback()
+        _try_conditional_update()
 
 
 def get_current_read(db: Session, user_id: int) -> Optional[dict]:

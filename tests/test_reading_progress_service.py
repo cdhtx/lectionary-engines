@@ -4,8 +4,11 @@ shared across all four Library content types via one table. See
 docs/superpowers/specs/2026-08-29-tier-1c-today-chrome-design.md.
 """
 
+from unittest.mock import patch
+
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from web.models import Base, ReadingProgress
@@ -66,6 +69,39 @@ def test_save_progress_clamps_negative_percent(db):
 
     row = db.query(ReadingProgress).filter(ReadingProgress.content_id == 10).first()
     assert row.percent == 0
+
+
+def test_save_progress_handles_concurrent_insert_race(db):
+    """
+    Exercises the IntegrityError-retry path this atomic-update fix adds:
+    save_progress's own conditional UPDATE finds no row (since none
+    exists yet for this key), so it falls through to INSERT - but
+    simulates another request's row landing first, in the same window,
+    by inserting a competing row and raising IntegrityError exactly as a
+    real UniqueConstraint violation would. save_progress must recover by
+    retrying as an update against the row that now exists, rather than
+    raising or silently losing the write.
+    """
+    real_commit = db.commit
+    call_count = {"n": 0}
+
+    def racy_commit():
+        call_count["n"] += 1
+        if call_count["n"] == 2:
+            # This is save_progress's own INSERT-attempt commit. Simulate
+            # a concurrent request's row winning the race first.
+            db.rollback()
+            db.add(ReadingProgress(user_id=1, content_type="study", content_id=99, percent=70))
+            real_commit()
+            raise IntegrityError("statement", "params", "orig")
+        return real_commit()
+
+    with patch.object(db, "commit", side_effect=racy_commit):
+        save_progress(db, user_id=1, content_type="study", content_id=99, percent=40)
+
+    row = db.query(ReadingProgress).filter(ReadingProgress.content_id == 99).first()
+    assert row is not None
+    assert row.percent == 70
 
 
 def test_save_progress_is_scoped_per_user_and_content_type(db):
