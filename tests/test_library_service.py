@@ -7,14 +7,14 @@ type-specific field mapping, and pagination correctness when results span
 more than one type on the same page.
 """
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from web.models import Base, CulturalResonance, CurrentsAnalysis, Study, WorkshopPrep
-from web.services.library_service import search_library
+from web.models import Base, ContentTheme, CulturalResonance, CurrentsAnalysis, Study, WorkshopPrep
+from web.services.library_service import record_content_themes, search_library
 
 
 @pytest.fixture
@@ -205,3 +205,35 @@ def test_pagination_has_no_duplicate_or_dropped_rows_when_created_at_ties(db):
 
     ids_seen = [r["id"] for r in page1["results"]] + [r["id"] for r in page2["results"]]
     assert len(ids_seen) == len(set(ids_seen)) == 3
+
+
+def test_record_content_themes_inserts_one_row_per_theme(db):
+    record_content_themes(db, "study", 1, ["Hospitality", "Grace"])
+    db.commit()
+
+    rows = db.query(ContentTheme).filter(ContentTheme.content_type == "study", ContentTheme.content_id == 1).all()
+    assert sorted(r.theme for r in rows) == ["grace", "hospitality"]
+
+
+def test_record_content_themes_dedupes_and_skips_blank(db):
+    record_content_themes(db, "study", 1, ["Hospitality", "hospitality", "  ", ""])
+    db.commit()
+
+    rows = db.query(ContentTheme).filter(ContentTheme.content_type == "study", ContentTheme.content_id == 1).all()
+    assert len(rows) == 1
+    assert rows[0].theme == "hospitality"
+
+
+def test_reading_date_and_season_columns_exist_on_study_and_workshop(db):
+    db.add(Study(
+        engine="threshold", reference="John 3:16", content="text",
+        reading_date=date(2026, 12, 20), season="advent",
+    ))
+    db.add(WorkshopPrep(
+        lens="x", lens_name="X", reference="John 3:16", content="text",
+        reading_date=date(2026, 12, 20), season="advent",
+    ))
+    db.commit()
+
+    assert db.query(Study).one().season == "advent"
+    assert db.query(WorkshopPrep).one().season == "advent"

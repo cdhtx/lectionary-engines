@@ -47,6 +47,11 @@ class Study(Base):
     translation = Column(String(20))  # 'NRSVue', 'NIV', 'CEB', 'NLT', 'MSG'
     biblical_text = Column(Text)  # Original biblical text used
 
+    # Lectionary season - only set for source='rcl'; a pasted or
+    # Bible-Gateway-fetched passage has no inherent liturgical date
+    reading_date = Column(Date, nullable=True, index=True)
+    season = Column(String(30), nullable=True, index=True)
+
     # User preferences tracking
     profile_name = Column(String(100))  # Which profile was used (if any)
     custom_preferences = Column(Text)  # JSON blob of per-study overrides (if any)
@@ -191,6 +196,11 @@ class WorkshopPrep(Base):
     source = Column(String(50))  # 'paste', 'run', 'moravian', 'rcl'
     translation = Column(String(20))  # 'NRSVue', 'NIV', etc.
     biblical_text = Column(Text)  # Original biblical text used
+
+    # Lectionary season - only set for source='rcl'; a pasted or
+    # Bible-Gateway-fetched passage has no inherent liturgical date
+    reading_date = Column(Date, nullable=True, index=True)
+    season = Column(String(30), nullable=True, index=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -440,3 +450,28 @@ class LectionaryThemeCache(Base):
 
     def __repr__(self):
         return f"<LectionaryThemeCache(reading_date='{self.reading_date}', reading_type='{self.reading_type}')>"
+
+
+class ContentTheme(Base):
+    """
+    One row per (content item, theme keyword) pair, spanning all four
+    Library content types. Powers theme faceting/filtering uniformly
+    across Study/WorkshopPrep/CurrentsAnalysis/CulturalResonance without
+    requiring a shared base model between them.
+    """
+
+    __tablename__ = "content_theme"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    content_type = Column(String(20), nullable=False)  # 'study'/'workshop'/'currents'/'resonance'
+    content_id = Column(Integer, nullable=False)
+    theme = Column(String(100), nullable=False, index=True)  # lowercase, trimmed
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        Index('idx_content_theme_item', 'content_type', 'content_id'),
+        UniqueConstraint('content_type', 'content_id', 'theme', name='uq_content_theme_item_theme'),
+    )
+
+    def __repr__(self):
+        return f"<ContentTheme(content_type='{self.content_type}', content_id={self.content_id}, theme='{self.theme}')>"

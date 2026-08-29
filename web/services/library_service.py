@@ -10,12 +10,12 @@ incorrect page boundaries whenever results span more than one type.
 """
 
 import json
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import String, cast, func, literal, or_, select, union_all
 from sqlalchemy.orm import Session
 
-from web.models import CulturalResonance, CurrentsAnalysis, Study, WorkshopPrep
+from web.models import ContentTheme, CulturalResonance, CurrentsAnalysis, Study, WorkshopPrep
 
 DETAIL_URL_PREFIXES = {
     "study": "/study/",
@@ -183,3 +183,19 @@ def search_library(
         "has_prev": page > 1,
         "has_next": page < total_pages,
     }
+
+
+def record_content_themes(db: Session, content_type: str, content_id: int, themes: List[str]) -> None:
+    """
+    Inserts one ContentTheme row per unique (lowercased, trimmed) theme
+    keyword for the given content item. Blank and duplicate themes
+    (case-insensitively) are skipped. Callers are responsible for
+    calling db.commit().
+    """
+    seen = set()
+    for raw_theme in themes:
+        theme = raw_theme.strip().lower()
+        if not theme or theme in seen:
+            continue
+        seen.add(theme)
+        db.add(ContentTheme(content_type=content_type, content_id=content_id, theme=theme))

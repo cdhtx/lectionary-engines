@@ -52,6 +52,10 @@ COLUMN_MIGRATIONS = [
     ("user_profiles", "cultural_artifacts_level", "INTEGER DEFAULT 0", "INTEGER DEFAULT 0"),
     ("user_profiles", "auto_news_integration", "BOOLEAN DEFAULT 0", "BOOLEAN DEFAULT FALSE"),
     ("users", "is_active", "BOOLEAN DEFAULT 1", "BOOLEAN DEFAULT TRUE"),
+    ("studies", "reading_date", "DATE", "DATE"),
+    ("studies", "season", "VARCHAR(30)", "VARCHAR(30)"),
+    ("workshop_preps", "reading_date", "DATE", "DATE"),
+    ("workshop_preps", "season", "VARCHAR(30)", "VARCHAR(30)"),
 ]
 
 
