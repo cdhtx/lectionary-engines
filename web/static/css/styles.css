@@ -454,98 +454,6 @@ body {
     color: #fff;
 }
 
-/* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
-   markup these rules targeted no longer exists in base.html. Kept
-   temporarily; safe to delete once Tier 1b settles the layout. */
-
-/* ============================================================================
-   Header and Navigation
-   ============================================================================ */
-
-header {
-    background: linear-gradient(to bottom,
-        var(--color-parchment-light) 0%,
-        var(--color-parchment) 100%);
-    border-bottom: 1px solid var(--color-border-strong);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 20px var(--color-shadow);
-}
-
-.navbar {
-    padding: var(--space-md) 0;
-}
-
-.navbar .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.nav-brand a {
-    font-family: var(--font-display);
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--color-ink);
-    text-decoration: none;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    transition: color var(--transition-fast);
-}
-
-.nav-brand a:hover {
-    color: var(--color-gold);
-}
-
-.nav-menu {
-    display: flex;
-    gap: var(--space-lg);
-}
-
-.nav-link {
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--color-ink-muted);
-    text-decoration: none;
-    position: relative;
-    transition: color var(--transition-fast);
-    padding: var(--space-xs) 0;
-}
-
-.nav-link::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--color-gold);
-    transform: scaleX(0);
-    transition: transform var(--transition-medium);
-}
-
-.nav-link:hover {
-    color: var(--color-ink);
-}
-
-.nav-link:hover::after {
-    transform: scaleX(1);
-}
-
-.nav-link--logout {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: var(--font-heading);
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--color-ink-muted);
-    padding: var(--space-xs) 0;
-    opacity: 0.7;
-}
-
 /* ============================================================================
    Main Content
    ============================================================================ */
@@ -1827,30 +1735,6 @@ a.engine-card {
     font-size: 1.5rem;
     margin-bottom: var(--space-sm);
     color: var(--color-ink-muted);
-}
-
-/* NOTE: superseded by the app shell in Tier 1a. The <header>/<nav>/<footer>
-   markup these rules targeted no longer exists in base.html. Kept
-   temporarily; safe to delete once Tier 1b settles the layout. */
-
-/* ============================================================================
-   Footer
-   ============================================================================ */
-
-footer {
-    background: linear-gradient(to bottom,
-        var(--color-parchment) 0%,
-        var(--color-parchment-dark) 100%);
-    border-top: 1px solid var(--color-border);
-    padding: var(--space-xl) 0;
-    margin-top: var(--space-2xl);
-}
-
-footer p {
-    font-family: var(--font-body);
-    text-align: center;
-    color: var(--color-ink-muted);
-    font-size: 0.9rem;
 }
 
 /* ============================================================================
