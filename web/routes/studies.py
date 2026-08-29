@@ -2,9 +2,13 @@
 Study routes - API endpoints for study generation and retrieval
 """
 
+import asyncio
+import html
 from datetime import date
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
+from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -27,6 +31,27 @@ from lectionary_engines.liturgical_calendar import season_for_date, upcoming_sun
 import json
 
 router = APIRouter()
+
+WEB_DIR = Path(__file__).parent.parent
+templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+
+# Matches the estimates already shown client-side in generate.html's
+# engine-selection JS - kept in sync manually, there are only three.
+ENGINE_TIME_ESTIMATES = {
+    "threshold": "30-60 seconds",
+    "palimpsest": "60-90 seconds",
+    "collision": "90-120 seconds",
+}
+
+# How often the stream sends a keep-alive comment while generation runs.
+# Purely to keep bytes flowing so no idle-timeout along the network path
+# (Railway's edge, a corporate proxy, a home router's NAT table) decides
+# the connection is dead and resets it out from under a 90-120 second
+# Collision generation - see incident 2026-08-29: Collision requests were
+# getting ERR_CONNECTION_CLOSED because /generate held one silent HTTP
+# response open for the entire generation with no bytes sent until the
+# very end.
+GENERATE_KEEPALIVE_INTERVAL_SECONDS = 10
 
 # Load configuration
 config = WebConfig.load()
@@ -55,41 +80,38 @@ def get_currents_service() -> CurrentsService:
     return _currents_service
 
 
-@router.post("/generate")
-async def generate_study(
-    engine: str = Form(...),
-    reference: Optional[str] = Form(None),
-    text: Optional[str] = Form(None),
-    translation: Optional[str] = Form("NRSVue"),
-    source: str = Form("paste"),
-    rcl_reading: Optional[str] = Form("gospel"),
-    profile_id: Optional[int] = Form(None),
-    custom_study_length: Optional[str] = Form(None),
-    custom_tone_level: Optional[int] = Form(None),
-    custom_language_complexity: Optional[str] = Form(None),
-    custom_focus_areas: Optional[str] = Form(None),
-    custom_cultural_artifacts_level: Optional[int] = Form(None),
-    moravian_context: Optional[str] = Form(None),
-    integrate_news: Optional[str] = Form(None),
-    news_date: Optional[str] = Form(None),
-    news_context: Optional[str] = Form(None),
-    currents_id: Optional[int] = Form(None),
-    run_validation: Optional[str] = Form("true"),  # "true" or "false"
-    db: Session = Depends(get_db)
-):
+async def _run_study_generation(
+    db: Session,
+    engine: str,
+    reference: Optional[str],
+    text: Optional[str],
+    translation: Optional[str],
+    source: str,
+    rcl_reading: Optional[str],
+    profile_id: Optional[int],
+    custom_study_length: Optional[str],
+    custom_tone_level: Optional[int],
+    custom_language_complexity: Optional[str],
+    custom_focus_areas: Optional[str],
+    custom_cultural_artifacts_level: Optional[int],
+    moravian_context: Optional[str],
+    integrate_news: Optional[str],
+    news_date: Optional[str],
+    news_context: Optional[str],
+    currents_id: Optional[int],
+    run_validation: Optional[str],
+) -> str:
     """
-    Generate a new study and save to database
+    Does the actual work behind /generate: builds preferences, fetches
+    text, calls the engine, saves the Study row. Returns the redirect
+    path for the new study (e.g. "/study/42") instead of a Response, so
+    the /generate route can run this inside a StreamingResponse generator
+    (see GENERATE_KEEPALIVE_INTERVAL_SECONDS above) and turn the return
+    value into a client-side redirect once it's done.
 
-    Form fields:
-        - engine: Engine name ('threshold', 'palimpsest', 'collision')
-        - reference: Biblical reference (optional for moravian/rcl)
-        - text: Biblical text (optional, will fetch if not provided)
-        - translation: Bible translation (default: NRSVue)
-        - source: Source type ('paste', 'run', 'moravian', 'rcl')
-        - rcl_reading: RCL reading type (only for rcl source)
-
-    Returns:
-        Redirect to study view page
+    Raises HTTPException on failure - same status/detail as before this
+    was split out, the /generate route decides how to surface it since a
+    streamed response can't change its HTTP status after the fact.
     """
     try:
         # Get generator service
@@ -306,14 +328,113 @@ async def generate_study(
         record_content_themes(db, "study", study.id, passage_themes)
         db.commit()
 
-        # Redirect to study view page
-        return RedirectResponse(url=f"/study/{study.id}", status_code=303)
+        return f"/study/{study.id}"
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Study generation failed: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Study generation failed: {str(e)}")
+
+
+@router.post("/generate")
+async def generate_study(
+    request: Request,
+    engine: str = Form(...),
+    reference: Optional[str] = Form(None),
+    text: Optional[str] = Form(None),
+    translation: Optional[str] = Form("NRSVue"),
+    source: str = Form("paste"),
+    rcl_reading: Optional[str] = Form("gospel"),
+    profile_id: Optional[int] = Form(None),
+    custom_study_length: Optional[str] = Form(None),
+    custom_tone_level: Optional[int] = Form(None),
+    custom_language_complexity: Optional[str] = Form(None),
+    custom_focus_areas: Optional[str] = Form(None),
+    custom_cultural_artifacts_level: Optional[int] = Form(None),
+    moravian_context: Optional[str] = Form(None),
+    integrate_news: Optional[str] = Form(None),
+    news_date: Optional[str] = Form(None),
+    news_context: Optional[str] = Form(None),
+    currents_id: Optional[int] = Form(None),
+    run_validation: Optional[str] = Form("true"),  # "true" or "false"
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a new study and save to database.
+
+    Streams the response instead of blocking silently for the entire
+    generation (up to ~120 seconds for Collision): sends a loading page
+    immediately, then periodic keep-alive comments while
+    _run_study_generation() runs, then a client-side redirect once it's
+    done. See GENERATE_KEEPALIVE_INTERVAL_SECONDS above for why.
+
+    Form fields:
+        - engine: Engine name ('threshold', 'palimpsest', 'collision')
+        - reference: Biblical reference (optional for moravian/rcl)
+        - text: Biblical text (optional, will fetch if not provided)
+        - translation: Bible translation (default: NRSVue)
+        - source: Source type ('paste', 'run', 'moravian', 'rcl')
+        - rcl_reading: RCL reading type (only for rcl source)
+    """
+    async def stream():
+        shell = templates.get_template("generating.html").render({
+            "request": request,
+            "engine_label": engine.title() if engine else "study",
+            "time_estimate": ENGINE_TIME_ESTIMATES.get(engine, "a minute or two"),
+        })
+        yield shell
+        yield " " * 1024  # pad past any proxy's minimum-buffer-before-flush size
+
+        task = asyncio.ensure_future(_run_study_generation(
+            db=db,
+            engine=engine,
+            reference=reference,
+            text=text,
+            translation=translation,
+            source=source,
+            rcl_reading=rcl_reading,
+            profile_id=profile_id,
+            custom_study_length=custom_study_length,
+            custom_tone_level=custom_tone_level,
+            custom_language_complexity=custom_language_complexity,
+            custom_focus_areas=custom_focus_areas,
+            custom_cultural_artifacts_level=custom_cultural_artifacts_level,
+            moravian_context=moravian_context,
+            integrate_news=integrate_news,
+            news_date=news_date,
+            news_context=news_context,
+            currents_id=currents_id,
+            run_validation=run_validation,
+        ))
+
+        while not task.done():
+            # wait(timeout=...) returns as soon as the task finishes, unlike
+            # sleep(...) which would always block the full interval even if
+            # generation completes in milliseconds (e.g. in tests, or a
+            # fast Threshold study).
+            await asyncio.wait({task}, timeout=GENERATE_KEEPALIVE_INTERVAL_SECONDS)
+            if not task.done():
+                yield "<!-- keep-alive -->\n"
+
+        try:
+            redirect_path = await task
+        except HTTPException as e:
+            detail = html.escape(str(e.detail))
+            yield f"""
+<div class="loading-content">
+    <h2>Something went wrong</h2>
+    <p>{detail}</p>
+    <p><a href="/generate">&larr; Back to Workbench</a></p>
+</div>
+"""
+            return
+
+        yield f'<script>window.location.replace({json.dumps(redirect_path)});</script>'
+
+    return StreamingResponse(stream(), media_type="text/html")
 
 
 @router.get("/api/studies/{study_id}")

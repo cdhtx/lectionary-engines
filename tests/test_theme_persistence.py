@@ -39,10 +39,14 @@ def test_rcl_sourced_study_gets_reading_date_and_season(mock_get_generator, mock
         "run_validation": "false",
     }, follow_redirects=False)
 
-    assert response.status_code == 303
+    # /generate streams a loading page immediately, then a client-side
+    # redirect once _run_study_generation() finishes - not an HTTP 303,
+    # since the response has already started by the time the study exists.
+    assert response.status_code == 200
 
     db = SessionLocal()
     study = db.query(Study).one()
+    assert f"/study/{study.id}" in response.text
     assert study.reading_date is not None
     assert study.season is not None
     themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "study").all()}
@@ -77,10 +81,11 @@ def test_pasted_study_has_no_reading_date_or_season_but_still_gets_themes(
         "run_validation": "false",
     }, follow_redirects=False)
 
-    assert response.status_code == 303
+    assert response.status_code == 200
 
     db = SessionLocal()
     study = db.query(Study).one()
+    assert f"/study/{study.id}" in response.text
     assert study.reading_date is None
     assert study.season is None
     themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "study").all()}

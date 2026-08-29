@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Study | Lectionary Engines</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* This page is the first chunk of a long-lived streamed response
+           (see /generate in web/routes/studies.py) - it is intentionally
+           NOT the .loading-overlay pattern (a fixed overlay on top of the
+           generate form), since this response replaces that page
+           entirely. Same visual language, different structure: a full
+           standalone page so the connection has something real to render
+           while it stays open. */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-parchment);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <h2>Generating your {{ engine_label }} study&hellip;</h2>
+        <p>This may take {{ time_estimate }}. Please don't close this tab &mdash; it will redirect automatically when it's ready.</p>
+    </div>
+</body>
+</html>
