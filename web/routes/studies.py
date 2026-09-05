@@ -166,6 +166,14 @@ async def _run_study_generation(
 
         # Handle different text sources. These are all blocking network
         # calls - run off the event loop.
+        #
+        # Temporary diagnostic (2026-09-05): a "Reference is required" report
+        # came through with the Moravian tab reportedly selected, which
+        # should be structurally impossible via this branch - fetch_moravian()
+        # can't return a falsy reference without raising first. Logging the
+        # raw source value to catch a mismatch (whitespace/case/wrong field
+        # name) that's silently falling through to the no-op 'paste' branch.
+        logger.info(f"_run_study_generation: source={source!r} engine={engine!r} reference={reference!r}")
         if source == "moravian":
             # Fetch Moravian Daily Text
             reference, text = await run_in_threadpool(generator.fetch_moravian)
