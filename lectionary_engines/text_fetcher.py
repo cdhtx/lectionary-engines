@@ -66,9 +66,21 @@ class TextFetcher:
         # Build URL
         url = f"https://www.biblegateway.com/passage/?search={reference}&version={version}"
 
+        # Without a browser-like User-Agent, Bible Gateway serves a page
+        # with no passage-text div to requests from data-center IPs (e.g.
+        # Railway) - see incident 2026-09-05: this made every passage fetch
+        # inside fetch_moravian() fail silently (each is wrapped in a bare
+        # except: pass), surfacing as "Could not find any Moravian Daily
+        # Text readings" even though the moravian.org scrape itself
+        # succeeded. Every other request in this file already sends this
+        # header; this one was the gap.
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        }
+
         try:
             # Fetch the page
-            response = requests.get(url, timeout=30)
+            response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
 
             # Parse HTML
