@@ -169,6 +169,9 @@ def test_currents_analysis_gets_content_theme_rows(mock_get_service, mock_extrac
     db.close()
 
 
+from web.models import CulturalResonance
+
+
 @patch("web.routes.resonance.get_resonance_engine")
 def test_resonance_find_gets_content_theme_rows(mock_get_engine, study_client):
     client, SessionLocal = study_client
@@ -183,9 +186,15 @@ def test_resonance_find_gets_content_theme_rows(mock_get_engine, study_client):
         "mining_mode": "claude",
     }, follow_redirects=False)
 
-    assert response.status_code == 303
+    # /resonance/find streams a loading page immediately, then a
+    # client-side redirect once _run_resonance_generation() finishes - not
+    # an HTTP 303, since the response has already started by the time the
+    # resonance row exists (same pattern as /generate in studies.py).
+    assert response.status_code == 200
 
     db = SessionLocal()
+    resonance = db.query(CulturalResonance).one()
+    assert f"/resonance/{resonance.id}" in response.text
     themes = {t.theme for t in db.query(ContentTheme).filter(ContentTheme.content_type == "resonance").all()}
     assert themes == {"hospitality", "empire"}
     db.close()

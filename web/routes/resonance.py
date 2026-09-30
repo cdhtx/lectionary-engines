@@ -3,8 +3,11 @@ Cultural Resonance routes - API endpoints for finding cultural connections
 """
 
 import asyncio
+import html
+import logging
+import traceback
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
@@ -12,6 +15,8 @@ from typing import Optional, List
 from pathlib import Path
 import json
 import markdown
+
+logger = logging.getLogger(__name__)
 
 from ..database import get_db
 from ..models import CulturalResonance, Study, WorkshopPrep
@@ -35,6 +40,16 @@ config = WebConfig.load()
 # Set up templates
 WEB_DIR = Path(__file__).parent.parent
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+
+# How often the stream sends a keep-alive comment while mining runs. Same
+# fix as GENERATE_KEEPALIVE_INTERVAL_SECONDS in studies.py (incident
+# 2026-08-29): /resonance/find held one silent HTTP response open for the
+# entire Claude mining call (which can run well past a minute), so Railway's
+# edge proxy was resetting the connection before the response ever arrived -
+# the browser showed an error page even though the backend went on to
+# finish the call and save the row, which is why the result still showed up
+# in the Library. See incident 2026-09-05.
+RESONANCE_KEEPALIVE_INTERVAL_SECONDS = 10
 
 # Initialize resonance engine (singleton)
 _resonance_engine = None
@@ -71,28 +86,27 @@ async def resonance_page(request: Request):
     })
 
 
-@router.post("/resonance/find")
-async def find_resonances(
-    themes: str = Form(...),
-    era_start: int = Form(1977),
-    era_end: int = Form(1999),
-    categories: Optional[str] = Form("all"),
-    mining_mode: Optional[str] = Form("claude"),  # "claude" (new) or "api" (old)
-    reference: Optional[str] = Form(""),
-    context: Optional[str] = Form(""),
-    db: Session = Depends(get_db)
-):
+async def _run_resonance_generation(
+    db: Session,
+    themes: str,
+    era_start: int,
+    era_end: int,
+    categories: Optional[str],
+    mining_mode: Optional[str],
+    reference: Optional[str],
+    context: Optional[str],
+) -> str:
     """
-    Find cultural resonances for given themes.
+    Does the actual work behind /resonance/find: mines/synthesizes content,
+    saves the CulturalResonance row. Returns the redirect path for the new
+    resonance (e.g. "/resonance/42") instead of a Response, so the
+    /resonance/find route can run this inside a StreamingResponse generator
+    (see RESONANCE_KEEPALIVE_INTERVAL_SECONDS above) and turn the return
+    value into a client-side redirect once it's done.
 
-    Form fields:
-        - themes: Comma-separated list of themes
-        - era_start: Start year (default 1977)
-        - era_end: End year (default 1999)
-        - categories: Comma-separated categories or "all"
-        - mining_mode: "claude" for direct mining, "api" for old API approach
-        - reference: Optional biblical reference for context
-        - context: Optional additional context for mining
+    Raises HTTPException on failure - same status/detail as before this was
+    split out, the /resonance/find route decides how to surface it since a
+    streamed response can't change its HTTP status after the fact.
     """
     try:
         engine = get_resonance_engine()
@@ -158,12 +172,89 @@ async def find_resonances(
         record_content_themes(db, "resonance", resonance.id, theme_list)
         db.commit()
 
-        return RedirectResponse(url=f"/resonance/{resonance.id}", status_code=303)
+        return f"/resonance/{resonance.id}"
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Resonance search failed: {e}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Resonance search failed: {str(e)}")
+
+
+@router.post("/resonance/find")
+async def find_resonances(
+    request: Request,
+    themes: str = Form(...),
+    era_start: int = Form(1977),
+    era_end: int = Form(1999),
+    categories: Optional[str] = Form("all"),
+    mining_mode: Optional[str] = Form("claude"),  # "claude" (new) or "api" (old)
+    reference: Optional[str] = Form(""),
+    context: Optional[str] = Form(""),
+    db: Session = Depends(get_db)
+):
+    """
+    Find cultural resonances for given themes.
+
+    Streams the response instead of blocking silently for the entire
+    mining call (Claude mining regularly runs past a minute): sends a
+    loading page immediately, then periodic keep-alive comments while
+    _run_resonance_generation() runs, then a client-side redirect once
+    it's done. See RESONANCE_KEEPALIVE_INTERVAL_SECONDS above for why.
+
+    Form fields:
+        - themes: Comma-separated list of themes
+        - era_start: Start year (default 1977)
+        - era_end: End year (default 1999)
+        - categories: Comma-separated categories or "all"
+        - mining_mode: "claude" for direct mining, "api" for old API approach
+        - reference: Optional biblical reference for context
+        - context: Optional additional context for mining
+    """
+    async def stream():
+        shell = templates.get_template("generating_resonance.html").render({
+            "request": request,
+        })
+        yield shell
+        yield " " * 1024  # pad past any proxy's minimum-buffer-before-flush size
+
+        task = asyncio.ensure_future(_run_resonance_generation(
+            db=db,
+            themes=themes,
+            era_start=era_start,
+            era_end=era_end,
+            categories=categories,
+            mining_mode=mining_mode,
+            reference=reference,
+            context=context,
+        ))
+
+        while not task.done():
+            # wait(timeout=...) returns as soon as the task finishes, unlike
+            # sleep(...) which would always block the full interval even if
+            # generation completes in milliseconds (e.g. in tests).
+            await asyncio.wait({task}, timeout=RESONANCE_KEEPALIVE_INTERVAL_SECONDS)
+            if not task.done():
+                yield "<!-- keep-alive -->\n"
+
+        try:
+            redirect_path = await task
+        except HTTPException as e:
+            detail = html.escape(str(e.detail))
+            yield f"""
+<div class="loading-content">
+    <h2>Something went wrong</h2>
+    <p>{detail}</p>
+    <p><a href="/resonance">&larr; Back to Cultural Resonance</a></p>
+</div>
+"""
+            return
+
+        yield f'<script>window.location.replace({json.dumps(redirect_path)});</script>'
+
+    return StreamingResponse(stream(), media_type="text/html")
 
 
 @router.get("/resonance/{resonance_id}")

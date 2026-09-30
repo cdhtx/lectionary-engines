@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searching Cultural Archives | Lectionary Engines</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* This page is the first chunk of a long-lived streamed response
+           (see /resonance/find in web/routes/resonance.py) - same pattern
+           as generating.html for /generate. Intentionally NOT the
+           .loading-overlay pattern (a fixed overlay on top of the
+           resonance form), since this response replaces that page
+           entirely. */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-parchment);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <h2>Searching Cultural Archives&hellip;</h2>
+        <p>Mining 1977-1999 for sermon-ready illustrations. This may take a minute or two. Please don't close this tab &mdash; it will redirect automatically when it's ready.</p>
+    </div>
+</body>
+</html>

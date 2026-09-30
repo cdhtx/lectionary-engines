@@ -203,7 +203,7 @@ Focus on artifacts that will land with audiences who grew up in the late 70s thr
             text=user_message,
             reference=reference or "Cultural Resonance",
             system_prompt=system_prompt,
-            max_tokens=2000
+            max_tokens=8000
         )
 
         return response
@@ -260,11 +260,17 @@ Focus on artifacts that will land with audiences who grew up in the late 70s thr
             context=context or "Finding sermon illustrations"
         )
 
+        # MINING_PROMPT asks for 10-14 artifacts, each with 4 detailed
+        # fields (moment/connection/deployment/why-it-works) - a budget
+        # this size matches what Collision uses for similarly dense
+        # structured output (see study_generator.py's max_tokens=8000).
+        # 3000 was cutting the response off mid-artifact - see incident
+        # 2026-09-05.
         response = self.claude.generate_study(
             text=user_message,
             reference=reference or "Cultural Mining",
             system_prompt=resonance_protocol.SYSTEM_PROMPT,
-            max_tokens=3000
+            max_tokens=8000
         )
 
         return response
@@ -299,7 +305,7 @@ Focus on artifacts that will land with audiences who grew up in the late 70s thr
             text=user_message,
             reference=reference or "Study Mining",
             system_prompt=resonance_protocol.SYSTEM_PROMPT,
-            max_tokens=3000
+            max_tokens=8000
         )
 
         return response
