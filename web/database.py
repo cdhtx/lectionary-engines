@@ -16,6 +16,16 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./lectionary.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Pin the driver explicitly rather than let SQLAlchemy pick a default for
+# a bare "postgresql://" URL - see incident 2026-09-30: SQLAlchemy 2.1
+# switched that default from psycopg2 to psycopg (v3), which isn't
+# installed here (only psycopg2-binary is, per requirements.txt), so a
+# routine rebuild against an unpinned `sqlalchemy>=2.0.0` broke startup
+# with ModuleNotFoundError: No module named 'psycopg'. An explicit
+# +psycopg2 survives future SQLAlchemy default changes.
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # Create engine
 # For SQLite, we need check_same_thread=False to work with FastAPI
 if DATABASE_URL.startswith("sqlite"):
