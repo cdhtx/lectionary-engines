@@ -6,8 +6,37 @@ Supports multiple translations via Bible Gateway.
 
 import re
 import requests
+from datetime import date, datetime, timedelta
 from typing import Optional, Tuple
 from bs4 import BeautifulSoup
+
+MORAVIAN_DAILY_TEXTS_URL = "https://www.moravian.org/daily_texts/"
+_BROWSER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+}
+# "Sunday, October 11 — Isaiah 25:1-9; Psalm 23 ..." - the line that opens each
+# daily entry's readings. Group 1 = month name, 2 = day, 3 = the readings.
+_MORAVIAN_ENTRY_LINE = re.compile(
+    r"^\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+"
+    r"([A-Za-z]+)\s+(\d{1,2})\s+—\s+(.+)$"
+)
+
+
+class StaleMoravianEntry(Exception):
+    """
+    moravian.org has no entry for `today` yet: its newest entry is for
+    `entry_date`. Raised by TextFetcher.fetch_moravian() so callers can ask
+    the user whether to run on the older entry or wait, instead of silently
+    studying yesterday's text as if it were today's.
+    """
+
+    def __init__(self, entry_date: date, today: date):
+        self.entry_date = entry_date
+        self.today = today
+        super().__init__(
+            f"Moravian Daily Text for {today:%A, %B} {today.day} is not published yet; "
+            f"the newest entry is for {entry_date:%A, %B} {entry_date.day}"
+        )
 
 
 # Supported translations with Bible Gateway version codes
@@ -137,7 +166,65 @@ class TextFetcher:
         pattern = r"^[1-3]?\s?[A-Za-z]+\s+\d+(:\d+(-\d+)?)?$"
         return bool(re.match(pattern, reference))
 
-    def fetch_moravian(self) -> Tuple[str, str]:
+    def _get_moravian_page(self, today: date) -> BeautifulSoup:
+        """
+        Today's dated entry page if moravian.org has published it, otherwise
+        the /daily_texts/ index (whose newest entry may be an earlier day).
+        """
+        dated_url = f"{MORAVIAN_DAILY_TEXTS_URL}{today:%A}-{today:%B}-{today.day}-{today.year}/".lower()
+        try:
+            response = requests.get(dated_url, headers=_BROWSER_HEADERS, timeout=30)
+            if response.status_code == 200:
+                return BeautifulSoup(response.text, "html.parser")
+        except requests.exceptions.RequestException:
+            pass  # fall back to the index below
+
+        response = requests.get(MORAVIAN_DAILY_TEXTS_URL, headers=_BROWSER_HEADERS, timeout=30)
+        response.raise_for_status()
+        return BeautifulSoup(response.text, "html.parser")
+
+    @staticmethod
+    def _parse_moravian_entry(soup: BeautifulSoup, today: date) -> Tuple[date, list]:
+        """
+        The (date, [readings]) of the first "Weekday, Month D — readings"
+        line on the page - the entry the page is actually about. Later
+        matches (e.g. a sidebar block for next Sunday) are ignored.
+        """
+        for p in soup.find_all("p"):
+            # Readings are split by ";" and/or <br> ("Psalm 23<br>Philippians
+            # 4:1-9"), so treat a <br> as ";" - on a copy, leaving the page intact.
+            line = BeautifulSoup(str(p), "html.parser")
+            for br in line.find_all("br"):
+                br.replace_with("; ")
+            match = _MORAVIAN_ENTRY_LINE.match(line.get_text(" ", strip=True))
+            if not match:
+                continue
+            month, day, refs = match.groups()
+            try:
+                entry_date = datetime.strptime(f"{month} {day} {today.year}", "%B %d %Y").date()
+            except ValueError:
+                continue
+            # A Dec entry viewed in early Jan (or vice versa) belongs to the other year.
+            if entry_date > today + timedelta(days=7):
+                entry_date = entry_date.replace(year=today.year - 1)
+            readings = [r.strip() for r in refs.split(";") if re.search(r"\d", r)]
+            return entry_date, readings
+        raise Exception("Could not find the readings line on moravian.org/daily_texts")
+
+    def moravian_status(self, today: Optional[date] = None) -> dict:
+        """
+        Whether moravian.org has published today's entry yet. Cheap enough to
+        poll: one or two page fetches, no Bible Gateway calls.
+        """
+        today = today or date.today()
+        entry_date, _ = self._parse_moravian_entry(self._get_moravian_page(today), today)
+        return {
+            "entry_date": entry_date.isoformat(),
+            "today": today.isoformat(),
+            "is_current": entry_date == today,
+        }
+
+    def fetch_moravian(self, allow_stale: bool = False, today: Optional[date] = None) -> Tuple[str, str]:
         """
         Fetch today's complete Moravian Daily Text
 
@@ -158,27 +245,21 @@ class TextFetcher:
         Raises:
             Exception: If fetching fails
         """
-        from datetime import datetime
-
-        url = "https://www.moravian.org/daily_texts/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-        }
+        today = today or date.today()
 
         try:
-            response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
+            soup = self._get_moravian_page(today)
+            entry_date, daily_readings = self._parse_moravian_entry(soup, today)
 
-            soup = BeautifulSoup(response.text, "html.parser")
+            # moravian.org lags: its newest entry may be an earlier day. Let
+            # the caller decide whether to run on it rather than quietly
+            # studying yesterday's text as today's.
+            is_stale = entry_date != today
+            if is_stale and not allow_stale:
+                raise StaleMoravianEntry(entry_date, today)
 
-            # Find today's date section
-            today = datetime.now()
-            day_name = today.strftime("%A")  # e.g., "Tuesday"
-
-            # Find all paragraphs that might contain today's readings
             paragraphs = soup.find_all("p")
 
-            daily_readings = []
             watchword_ref = None
             watchword_text_content = None
             daily_text_ref = None
@@ -187,18 +268,6 @@ class TextFetcher:
             # Parse the page structure
             for i, p in enumerate(paragraphs):
                 text = p.get_text()
-
-                # Look for today's daily readings (Psalm, Genesis/OT, Matthew/NT pattern)
-                if day_name in text and "—" in text:
-                    # Extract the references after the em dash
-                    parts = text.split("—")
-                    if len(parts) > 1:
-                        refs = parts[1].strip()
-                        # Parse individual references (e.g., "Psalm 5; Genesis 6:1-7:10; Matthew 3")
-                        for ref in refs.split(";"):
-                            ref = ref.strip()
-                            if ref and re.search(r'\d', ref):  # Has a number (chapter/verse)
-                                daily_readings.append(ref)
 
                 # Look for Watchword link
                 if "Watchword" not in text:
@@ -260,14 +329,19 @@ class TextFetcher:
                 raise Exception("Could not find any Moravian Daily Text readings")
 
             # Combine all passages
-            combined_text = "\n\n" + "="*80 + "\n\n".join(passages)
+            entry_label = f"{entry_date:%A, %B} {entry_date.day}, {entry_date.year}"
+            combined_text = f"MORAVIAN DAILY TEXT FOR {entry_label}\n\n" + "="*80 + "\n\n".join(passages)
 
             # Create reference summary
             all_refs = daily_readings + ([f"Watchword: {watchword_ref}"] if watchword_ref else []) + ([f"Daily Text: {daily_text_ref}"] if daily_text_ref else [])
             combined_reference = " | ".join(all_refs)
+            if is_stale:
+                combined_reference += f" | (Moravian text from {entry_label})"
 
             return (combined_reference, combined_text)
 
+        except StaleMoravianEntry:
+            raise
         except Exception as e:
             raise Exception(f"Failed to fetch Moravian Daily Text: {e}")
 

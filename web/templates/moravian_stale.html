@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moravian Text Not Updated | Lectionary Engines</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* Standalone page, same visual language as generating.html: shown in
+           place of the generate form when source=moravian and moravian.org
+           hasn't published today's entry yet (see /generate in
+           web/routes/studies.py). */
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-parchment);
+        }
+        .stale-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+        .stale-status { margin-top: 1rem; min-height: 1.5em; }
+    </style>
+</head>
+<body>
+    <div class="loading-content">
+        <h2>Today&rsquo;s Moravian text isn&rsquo;t posted yet</h2>
+        <p>
+            moravian.org hasn&rsquo;t published {{ today.strftime('%A, %B') }} {{ today.day }}.
+            The newest entry is for {{ entry_date.strftime('%A, %B') }} {{ entry_date.day }}.
+        </p>
+
+        <div class="stale-actions">
+            <form method="POST" action="/generate" id="runForm">
+                {% for name, value in form_fields %}
+                <input type="hidden" name="{{ name }}" value="{{ value }}">
+                {% endfor %}
+                <input type="hidden" name="allow_stale" value="1">
+                <button type="submit" class="btn btn-primary">Run with {{ entry_date.strftime('%A') }}&rsquo;s text</button>
+            </form>
+
+            <button type="button" class="btn btn-secondary" id="waitBtn">Wait for refresh</button>
+        </div>
+
+        {# Same form without allow_stale: submitted automatically once today's entry appears. #}
+        <form method="POST" action="/generate" id="currentForm">
+            {% for name, value in form_fields %}
+            <input type="hidden" name="{{ name }}" value="{{ value }}">
+            {% endfor %}
+        </form>
+
+        <p class="stale-status" id="staleStatus" aria-live="polite"></p>
+        <p><a href="/generate">&larr; Back to Workbench</a></p>
+    </div>
+
+    <script>
+    (function () {
+        var POLL_MS = 60000;
+        var waitBtn = document.getElementById('waitBtn');
+        var statusEl = document.getElementById('staleStatus');
+        var timer = null;
+
+        function check() {
+            statusEl.textContent = 'Checking moravian.org…';
+            fetch('/api/moravian/status', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (s) {
+                    if (s.is_current) {
+                        statusEl.textContent = 'Today’s text is up. Starting your study…';
+                        document.getElementById('currentForm').submit();
+                        return;
+                    }
+                    var t = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                    statusEl.textContent = 'Still waiting (last checked ' + t + '). Checking again in a minute.';
+                })
+                .catch(function () {
+                    statusEl.textContent = 'Couldn’t reach the server. Will retry in a minute.';
+                });
+        }
+
+        waitBtn.addEventListener('click', function () {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+                waitBtn.textContent = 'Wait for refresh';
+                statusEl.textContent = '';
+                return;
+            }
+            waitBtn.textContent = 'Stop waiting';
+            check();
+            timer = setInterval(check, POLL_MS);
+        });
+    })();
+    </script>
+</body>
+</html>

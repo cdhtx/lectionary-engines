@@ -257,14 +257,21 @@ class StudyGeneratorService:
         actual_translation = translation or self.default_translation
         return self.fetcher.fetch(reference, actual_translation)
 
-    def fetch_moravian(self) -> tuple[str, str]:
+    def fetch_moravian(self, allow_stale: bool = False) -> tuple[str, str]:
         """
         Fetch today's Moravian Daily Text
+
+        Raises StaleMoravianEntry if moravian.org hasn't published today's
+        entry yet, unless allow_stale is True (then the newest entry is used).
 
         Returns:
             tuple: (reference, text)
         """
-        return self.fetcher.fetch_moravian()
+        return self.fetcher.fetch_moravian(allow_stale=allow_stale)
+
+    def moravian_status(self) -> dict:
+        """Whether moravian.org has today's entry: {entry_date, today, is_current}."""
+        return self.fetcher.moravian_status()
 
     def fetch_rcl(
         self,

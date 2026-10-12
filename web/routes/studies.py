@@ -100,6 +100,7 @@ async def _run_study_generation(
     news_context: Optional[str],
     currents_id: Optional[int],
     run_validation: Optional[str],
+    allow_stale: bool = False,
 ) -> str:
     """
     Does the actual work behind /generate: builds preferences, fetches
@@ -168,7 +169,9 @@ async def _run_study_generation(
         # calls - run off the event loop.
         if source == "moravian":
             # Fetch Moravian Daily Text
-            reference, text = await run_in_threadpool(generator.fetch_moravian)
+            reference, text = await run_in_threadpool(
+                generator.fetch_moravian, allow_stale=allow_stale
+            )
         elif source == "rcl":
             # Fetch RCL reading
             reference, text = await run_in_threadpool(
@@ -360,6 +363,7 @@ async def generate_study(
     news_context: Optional[str] = Form(None),
     currents_id: Optional[int] = Form(None),
     run_validation: Optional[str] = Form("true"),  # "true" or "false"
+    allow_stale: Optional[str] = Form(None),  # "1" = user chose to run on an older Moravian entry
     db: Session = Depends(get_db)
 ):
     """
@@ -379,6 +383,21 @@ async def generate_study(
         - source: Source type ('paste', 'run', 'moravian', 'rcl')
         - rcl_reading: RCL reading type (only for rcl source)
     """
+    if source == "moravian" and not allow_stale:
+        # moravian.org lags: if today's entry isn't up yet, let the user
+        # choose between the newest entry and waiting, rather than
+        # silently studying yesterday's text. Checked before the stream
+        # starts so this can be a normal page, not a mid-stream swap.
+        status = await run_in_threadpool(get_generator_service().moravian_status)
+        if not status["is_current"]:
+            form = await request.form()
+            return templates.TemplateResponse("moravian_stale.html", {
+                "request": request,
+                "entry_date": date.fromisoformat(status["entry_date"]),
+                "today": date.fromisoformat(status["today"]),
+                "form_fields": [(k, v) for k, v in form.multi_items() if k != "allow_stale"],
+            })
+
     async def stream():
         shell = templates.get_template("generating.html").render({
             "request": request,
@@ -408,6 +427,7 @@ async def generate_study(
             news_context=news_context,
             currents_id=currents_id,
             run_validation=run_validation,
+            allow_stale=bool(allow_stale),
         ))
 
         while not task.done():
@@ -435,6 +455,12 @@ async def generate_study(
         yield f'<script>window.location.replace({json.dumps(redirect_path)});</script>'
 
     return StreamingResponse(stream(), media_type="text/html")
+
+
+@router.get("/api/moravian/status")
+async def moravian_status():
+    """Whether moravian.org has published today's entry (polled by the stale-entry page)."""
+    return await run_in_threadpool(get_generator_service().moravian_status)
 
 
 @router.get("/api/studies/{study_id}")

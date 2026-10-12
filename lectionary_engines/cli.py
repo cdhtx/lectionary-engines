@@ -13,7 +13,7 @@ from .claude_client import ClaudeClient
 from .engines.threshold import ThresholdEngine
 from .engines.palimpsest import PalimpsestEngine
 from .engines.collision import CollisionEngine
-from .text_fetcher import TextFetcher, SUPPORTED_TRANSLATIONS
+from .text_fetcher import TextFetcher, StaleMoravianEntry, SUPPORTED_TRANSLATIONS
 from .utils.terminal import (
     console,
     display_study,
@@ -344,7 +344,13 @@ def moravian(engine: str, translation: str):
     # Fetch today's complete Moravian text (all passages)
     console.print(f"[yellow]Fetching today's Moravian Daily Text (all passages)...[/yellow]\n")
     try:
-        reference, biblical_text = fetcher.fetch_moravian()
+        try:
+            reference, biblical_text = fetcher.fetch_moravian()
+        except StaleMoravianEntry as stale:
+            # No button UI here (unlike the web /generate flow): warn, then
+            # run on the newest entry; rerun later for today's.
+            display_warning(f"{stale}. Using the newest entry.")
+            reference, biblical_text = fetcher.fetch_moravian(allow_stale=True)
     except Exception as e:
         display_error(f"Failed to fetch Moravian text: {e}")
         sys.exit(1)
