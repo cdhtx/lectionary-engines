@@ -15,6 +15,15 @@ import anthropic
 DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
+def _response_text(response) -> str:
+    """Join the text blocks of a response.
+
+    Newer models can lead with a thinking block, so content[0] isn't
+    guaranteed to be text.
+    """
+    return "".join(b.text for b in response.content if b.type == "text")
+
+
 class ClaudeClient:
     """Client for interacting with Claude API"""
 
@@ -93,7 +102,7 @@ class ClaudeClient:
             )
 
             # Extract text content from response
-            return response.content[0].text
+            return _response_text(response)
 
         except anthropic.APIError as e:
             raise Exception(f"Claude API error for {reference}: {e}")
@@ -139,7 +148,7 @@ class ClaudeClient:
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_message}],
             )
-            return response.content[0].text
+            return _response_text(response)
 
         except anthropic.APIError as e:
             raise Exception(f"Claude API error: {e}")
@@ -245,7 +254,7 @@ Generated Study:
 Evaluate this study and return your assessment as JSON."""}],
             )
 
-            return response.content[0].text
+            return _response_text(response)
 
         except anthropic.APIError as e:
             raise Exception(f"Validation API error for {reference}: {e}")
