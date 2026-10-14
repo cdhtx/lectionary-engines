@@ -8,24 +8,28 @@ Implements prompt caching for cost optimization - the system prompt is cached
 for 5 minutes, reducing input token costs by ~90% for cached portions.
 """
 
+import os
 from typing import Optional
 import anthropic
+
+DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 class ClaudeClient:
     """Client for interacting with Claude API"""
 
-    def __init__(self, api_key: str, model: str = "claude-sonnet-4-6", use_caching: bool = True):
+    def __init__(self, api_key: str, model: Optional[str] = None, use_caching: bool = True):
         """
         Initialize Claude client
 
         Args:
             api_key: Anthropic API key
-            model: Claude model to use (default: claude-sonnet-4-6)
+            model: Claude model to use (default: $GENERATION_MODEL if set, else DEFAULT_MODEL).
+                Only affects generation; validation/theme extraction keep their own Haiku models.
             use_caching: Enable prompt caching for cost optimization (default: True)
         """
         self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = model
+        self.model = model or os.getenv("GENERATION_MODEL") or DEFAULT_MODEL
         self.use_caching = use_caching
 
     def _build_system_param(self, system_prompt: str):
