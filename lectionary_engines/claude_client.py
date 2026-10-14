@@ -8,11 +8,26 @@ Implements prompt caching for cost optimization - the system prompt is cached
 for 5 minutes, reducing input token costs by ~90% for cached portions.
 """
 
+import logging
 import os
 from typing import Optional
 import anthropic
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
+
+logger = logging.getLogger(__name__)
+
+
+def _thinking_kwargs(model: str) -> dict:
+    """Keep Sonnet 5.5 from spending the max_tokens budget on thinking.
+
+    Thinking is on by default there and counts against max_tokens, so a
+    7000-token study cut off after ~1000 words. "between_tools" is its
+    way of turning thinking off ({"type": "disabled"} is a 400).
+    """
+    if model.startswith("claude-sonnet-5-5"):
+        return {"thinking": {"type": "between_tools"}}
+    return {}
 
 
 def _response_text(response) -> str:
@@ -99,7 +114,14 @@ class ClaudeClient:
                 max_tokens=max_tokens,
                 system=self._build_system_param(system_prompt),
                 messages=[{"role": "user", "content": text}],
+                **_thinking_kwargs(self.model),
             )
+
+            if response.stop_reason == "max_tokens":
+                logger.warning(
+                    "Study for %s hit max_tokens=%s and was cut off (model=%s)",
+                    reference, max_tokens, self.model,
+                )
 
             # Extract text content from response
             return _response_text(response)
@@ -186,6 +208,7 @@ class ClaudeClient:
                 max_tokens=max_tokens,
                 system=self._build_system_param(system_prompt),
                 messages=[{"role": "user", "content": text}],
+                **_thinking_kwargs(self.model),
             ) as stream:
                 for text_chunk in stream.text_stream:
                     yield text_chunk
