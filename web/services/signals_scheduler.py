@@ -1,5 +1,5 @@
 """
-Keeps the Signals feed fresh: an hourly check inside the web process asks
+Keeps the Signals feed fresh: a check every six hours inside the web process asks
 the database whether the newest signal is 48+ hours old and generates one
 if so. "Is a signal due" is answered from the database, so redeploys and
 restarts lose nothing; the next check catches up.
@@ -23,7 +23,7 @@ from web.services.signal_generator import generate_signal
 logger = logging.getLogger(__name__)
 
 SIGNAL_INTERVAL = timedelta(hours=48)
-CHECK_INTERVAL_SECONDS = 3600
+CHECK_INTERVAL_SECONDS = 6 * 3600
 
 FAILURE_BACKOFF = timedelta(hours=6)
 

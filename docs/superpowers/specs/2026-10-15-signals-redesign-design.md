@@ -108,7 +108,7 @@ matching how the other engines keep their protocols):
 
 - Started from the existing `lifespan` in `web/app.py` as an `asyncio` task
   and cancelled on shutdown.
-- Every hour it checks the newest `Signal.created_at`. If none exists or it is
+- Every six hours it checks the newest `Signal.created_at`. If none exists or it is
   more than 48 hours old, it runs `generate_signal` in a thread pool (the
   Claude call is blocking).
 - Because "is a signal due" is answered from the database, a redeploy or
@@ -144,7 +144,7 @@ matching how the other engines keep their protocols):
 ## Error handling
 
 - Search returns nothing usable, bad JSON, missing fields, or a truncated
-  response: nothing is saved, a warning is logged, and the hourly check tries
+  response: nothing is saved, a warning is logged, and the next check tries
   again.
 - API errors (rate limit, 5xx): logged, retried at the next check. The SDK
   already retries transient errors.
