@@ -88,8 +88,9 @@ Model call settings:
 - Adaptive thinking left on (Sonnet 5.5's default), and a large `max_tokens` (16000) so thinking cannot
   use up the output budget. `stop_reason == "max_tokens"` counts as a failure
   (nothing saved) and logs a warning.
-- Web search server tool: `web_search_20260209`, with a `max_uses` cap per
-  signal.
+- Web search server tool: `web_search_20250305` (the older variant; a live
+  test used about half the input tokens of `web_search_20260209`), with a
+  `max_uses` cap per signal.
 - Read only the `text` blocks of the response (as `ClaudeClient` now does).
 
 Prompt rules (kept in `lectionary_engines/protocols/signals_protocol.py`,
@@ -120,9 +121,10 @@ matching how the other engines keep their protocols):
 
 ### Display
 
-- `/signals`: signals newest first, one card per signal showing the title and
-  the five parts in order, then the Dig deeper list and source links.
-  Empty state: "The first signal is on its way."
+- `/signals`: signals newest first, three at a time. One card per signal shows
+  the title and the five parts in order, then the Dig deeper list and source
+  links. An "Explore more signals" link (`/signals?n=6`, `?n=9`, ...) reveals
+  three more each time, up to 60. Empty state: "The first signal is on its way."
 - Today widget (`index.html`): the latest three signals as compact cards
   (title, signal detected, link to the full card on `/signals`).
 - `/signals` and the widget read from the database only; no Claude call happens
@@ -170,7 +172,5 @@ matching how the other engines keep their protocols):
 
 ## Open items to settle during implementation
 
-- Confirm `web_search_20260209` runs correctly on `claude-sonnet-5-5` with this
-  SDK version (live test before relying on it).
 - Pick the `max_uses` value for web search from a trial run.
 - Recommend a monthly spend limit in the Anthropic Console as a backstop.
