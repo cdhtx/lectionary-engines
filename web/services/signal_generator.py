@@ -9,6 +9,7 @@ import json
 import logging
 import os
 from typing import List, Optional
+from urllib.parse import urlparse
 
 import anthropic
 from sqlalchemy.exc import SQLAlchemyError
@@ -30,6 +31,7 @@ MAX_ATTEMPTS = 2
 RECENT_LIMIT = 30
 SEARCH_MAX_USES = 8
 MAX_SOURCES = 12
+FALLBACK_SOURCES = 5
 
 WEB_SEARCH_TOOL = {"type": "web_search_20250305", "name": "web_search", "max_uses": SEARCH_MAX_USES}
 
@@ -49,6 +51,32 @@ def _collect_sources(response) -> List[dict]:
                 seen.add(url)
                 sources.append({"title": getattr(r, "title", "") or url, "url": url})
     return sources[:MAX_SOURCES]
+
+
+def _site(url: str) -> str:
+    host = urlparse(url).netloc.lower()
+    return host[4:] if host.startswith("www.") else host
+
+
+def _select_sources(found: List[dict], used: List[str]) -> List[dict]:
+    """
+    Keep the search results the model says it relied on (in its order). If it
+    named none that match a real result, fall back to the first few distinct sites.
+    """
+    by_url = {s["url"]: s for s in found}
+    chosen = [by_url[u] for u in dict.fromkeys(used) if u in by_url]
+    if chosen:
+        return chosen
+    seen, fallback = set(), []
+    for s in found:
+        site = _site(s["url"])
+        if site in seen:
+            continue
+        seen.add(site)
+        fallback.append(s)
+        if len(fallback) == FALLBACK_SOURCES:
+            break
+    return fallback
 
 
 def generate_signal(db: Session, client, model: Optional[str] = None) -> Optional[Signal]:
@@ -108,7 +136,7 @@ def generate_signal(db: Session, client, model: Optional[str] = None) -> Optiona
             modern_illustration=data["modern_illustration"],
             modern_illustration_category=data["modern_illustration_category"],
             dig_deeper=json.dumps(data["dig_deeper"]),
-            sources=json.dumps(sources),
+            sources=json.dumps(_select_sources(sources, data["sources_used"])),
             model=model,
             input_tokens=input_tokens,
             output_tokens=output_tokens,

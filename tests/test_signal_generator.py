@@ -177,3 +177,29 @@ def test_commit_failure_returns_none_and_session_stays_usable(db):
         assert generate_signal(db, FakeClient(_response(_valid_json()))) is None
     assert rb.call_count >= 2  # after building the prompt, and after the failed commit
     assert db.query(Signal).count() == 0
+
+
+def _resp_with_sources(sources_used, results):
+    data = json.loads(_valid_json())
+    data["sources_used"] = sources_used
+    return _response(json.dumps(data), results=results)
+
+
+def test_saved_sources_are_limited_to_sources_used(db):
+    results = [
+        NS(type="web_search_result", title="Used", url="https://a.example/1"),
+        NS(type="web_search_result", title="Unused verse page", url="https://bible.example/ex13"),
+        NS(type="web_search_result", title="Also used", url="https://b.example/2"),
+    ]
+    client = FakeClient(_resp_with_sources(["https://b.example/2", "https://a.example/1"], results))
+    generate_signal(db, client)
+    urls = [s["url"] for s in db.query(Signal).one().sources_list]
+    assert urls == ["https://b.example/2", "https://a.example/1"]
+
+
+def test_sources_used_not_in_search_results_are_ignored_with_fallback(db):
+    results = [NS(type="web_search_result", title=f"S{i}", url=f"https://site{i}.example/p") for i in range(8)]
+    client = FakeClient(_resp_with_sources(["https://invented.example/x"], results))
+    generate_signal(db, client)
+    urls = [s["url"] for s in db.query(Signal).one().sources_list]
+    assert urls == [f"https://site{i}.example/p" for i in range(5)]  # first five distinct sites

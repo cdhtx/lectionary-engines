@@ -3,6 +3,7 @@ Database ORM models for Lectionary Engines web app
 """
 
 import json
+from urllib.parse import urlparse
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Index, Date, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -470,6 +471,20 @@ class Signal(Base):
     @property
     def sources_list(self):
         return self._load_list(self.sources)
+
+    @property
+    def source_links(self):
+        """Sources for display: one link per site, labelled by domain."""
+        seen, links = set(), []
+        for s in self.sources_list:
+            url = s.get("url") or ""
+            host = urlparse(url).netloc.lower()
+            label = host[4:] if host.startswith("www.") else host
+            if not label or label in seen:
+                continue
+            seen.add(label)
+            links.append({"label": label, "url": url, "title": s.get("title") or label})
+        return links
 
     def __repr__(self):
         return f"<Signal(id={self.id}, title='{self.title}')>"

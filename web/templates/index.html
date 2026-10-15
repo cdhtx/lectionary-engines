@@ -55,8 +55,8 @@
                     {% for signal in signals %}
                     <div class="signal-card">
                         <p class="signal-meta">{{ signal.modern_illustration_category|title }}</p>
-                        <h3 class="signal-title"><a href="/signals#signal-{{ signal.id }}">{{ signal.title }}</a></h3>
-                        <p>{{ signal.signal_detected }}</p>
+                        <h3 class="signal-title"><a href="/signals#signal-{{ signal.id }}">{{ signal.title|clean }}</a></h3>
+                        <p>{{ signal.signal_detected|clean }}</p>
                     </div>
                     {% endfor %}
                 </div>

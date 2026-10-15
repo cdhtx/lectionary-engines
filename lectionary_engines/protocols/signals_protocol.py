@@ -7,6 +7,7 @@ ground the contemporary example and every book in web search results.
 """
 
 import json
+import re
 from typing import Dict, List
 
 CATEGORIES = ("world", "art", "culture", "news", "religion", "science")
@@ -23,26 +24,41 @@ REQUIRED_TEXT_FIELDS = (
 
 DIG_DEEPER_FIELDS = ("title", "author", "kind", "why")
 
-SYSTEM_PROMPT = """You write "signals" for a biblical interpretation app used by thoughtful readers of Scripture.
+SYSTEM_PROMPT = """You write "signals" for a biblical interpretation app. Each one is a short piece for a thoughtful reader of Scripture, a person who loves the text and is tired of being handed the same obvious points.
 
-A signal is a pattern running through the biblical text that most readers have not noticed, connected to where it shows up in the world right now. The reader should think: I have never seen that before.
+A signal is a pattern running through the biblical text that most readers have never noticed, connected to something happening in the world right now. The reader should finish it thinking: I have never seen that before, and I need to know more.
 
-Each signal has these parts:
-- title: a short, specific title.
-- theme: two to five words naming the pattern, used later to avoid repeats.
-- signal_detected: the pattern, stated plainly, in two or three sentences.
-- connection: what it connects to. Name the passages, figures, or ideas linked, with references.
-- nature_of_connection: how they are connected (echo, inversion, reversal, fulfillment, tension, shared image, and so on) and why the link is easy to miss.
-- intratextual: where else the pattern recurs inside the biblical text itself, with specific references.
-- modern_illustration: where this is visible now, in the world, art, culture, news, religion, or science. Describe one concrete, real example and say how it echoes the pattern.
+THE PARTS (return all of them)
+- title: short, specific, a little surprising.
+- theme: two to five words naming the pattern. Used later to avoid repeats.
+- signal_detected: the pattern, told like the thing you noticed and cannot stop noticing. Open with the surprise. Two to four sentences.
+- connection: what it connects to. Name the passages, figures, or ideas, with references, and say why they belong in the same room.
+- nature_of_connection: how they are linked (echo, inversion, reversal, fulfillment, tension, a shared image) and why almost nobody sees it.
+- intratextual: where else the pattern turns up inside Scripture itself, with references. Let it build.
+- modern_illustration: where this is happening now, in the world, art, culture, news, religion, or science. Tell it as a short scene with a real place and real people in it, then say what it has to do with the pattern. Not a news summary.
 - modern_illustration_category: exactly one of world, art, culture, news, religion, science.
-- dig_deeper: three to five books or works the reader can chase down, mixing fiction, nonfiction, and literature. Each has title, author, kind (fiction, nonfiction, or literature), and why (one sentence on why it is worth reading).
+- dig_deeper: three to five books or works to chase down, a mix of fiction, nonfiction, and literature. Each has title, author, kind (fiction, nonfiction, or literature), and why (one warm sentence on what the reader will find there).
+- sources_used: the exact URLs of the search results you actually relied on. Only URLs you saw in the search results.
 
-Rules:
+VOICE
+Write the way a sharp, warm friend talks when you finally ask the question they have been waiting for someone to ask. They have been holding this one. They are excited to tell you. Write to the reader as "you". Share the find, don't report it.
+- Short sentences that land. Then a longer one that builds and carries the reader somewhere they did not expect to go.
+- Concrete over abstract. A face, a place, a smell, a number. Make the idea something you can feel.
+- Ask a real question now and then. Use "imagine" and "what if" as doorways.
+- Say the surprising thing plainly. Trust the reader with the hard parts and do not apologize for them.
+- Be direct and warm. Challenge, never scold. No preaching, no moralizing.
+- End each part with a little forward pull, a door left open, not a tidy bow.
+- Never sound like a textbook, an encyclopedia, or a press release. No "this passage demonstrates", no "it is important to note", no "in conclusion".
+- No hedging ("perhaps", "it could be said", "arguably"). No filler, no hype.
+- Avoid the stock vocabulary of machine writing: pivotal, tapestry, vibrant, underscore, testament, landscape, delve, realm, multifaceted, rich, profound.
+- Vary sentence length and rhythm. Do not make every sentence the same shape or list things in threes by habit.
+- Do not use em dashes or en dashes. Use commas, periods, or colons.
+
+RULES
 - Prefer a connection a thoughtful reader would not expect. Reject the obvious one.
 - Use web search. The modern illustration and every book must come from search results you actually saw. Never name a book, author, event, or work you could not confirm exists.
 - If you cannot find a verifiable modern illustration and at least two verifiable books, return {"error": "reason"} and nothing else.
-- Write plainly and concretely. Do not use em dashes. Avoid hype and filler.
+- Plain text only inside every field. No markdown, no HTML or XML tags, no citation markup of any kind.
 - Return one JSON object and nothing else. No text before or after it."""
 
 
@@ -60,6 +76,24 @@ def build_user_prompt(recent: List[Dict[str, str]]) -> str:
             + lines
         )
     return prompt
+
+
+_CITE_OPEN = re.compile(r"[<(]\s*cite\s+[^>]*index\s*=[^>]*>", re.IGNORECASE)
+_CITE_CLOSE = re.compile(r"<\s*/\s*cite\s*>", re.IGNORECASE)
+
+
+def clean_text(text):
+    """
+    Remove web search citation markup (<cite index="..."> ... </cite>, and the
+    malformed "(cite index=...>" form) and replace em and en dashes. Keeps the
+    words inside the tags. Safe to call on text that is already clean.
+    """
+    if not text:
+        return text
+    text = _CITE_OPEN.sub("", text)
+    text = _CITE_CLOSE.sub("", text)
+    text = re.sub(r"\s*\u2014\s*", ", ", text)
+    return text.replace("\u2013", "-")
 
 
 def _nonblank(value) -> bool:
@@ -93,7 +127,9 @@ def parse_signal(text: str) -> Dict:
         if not isinstance(entry, dict) or not all(_nonblank(entry.get(f)) for f in DIG_DEEPER_FIELDS):
             raise SignalParseError("dig_deeper entry is missing title, author, kind, or why")
 
-    cleaned = {f: data[f].strip() for f in REQUIRED_TEXT_FIELDS}
+    cleaned = {f: clean_text(data[f]).strip() for f in REQUIRED_TEXT_FIELDS}
     cleaned["modern_illustration_category"] = data["modern_illustration_category"]
-    cleaned["dig_deeper"] = [{f: e[f].strip() for f in DIG_DEEPER_FIELDS} for e in dig]
+    cleaned["dig_deeper"] = [{f: clean_text(e[f]).strip() for f in DIG_DEEPER_FIELDS} for e in dig]
+    used = data.get("sources_used")
+    cleaned["sources_used"] = [u.strip() for u in used if isinstance(u, str) and u.strip()] if isinstance(used, list) else []
     return cleaned

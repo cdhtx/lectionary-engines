@@ -2716,6 +2716,33 @@ a.engine-card {
     font-size: 0.85rem;
     color: var(--color-ink-muted);
     margin: var(--space-md) 0 0;
+    line-height: 1.7;
+}
+
+.signal-sources-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-right: var(--space-xs);
+}
+
+.signal-sources a {
+    color: var(--color-ink-muted);
+    text-decoration: underline;
+    text-decoration-color: var(--border-light);
+}
+
+.signal-sources a:hover {
+    color: var(--color-ink);
+}
+
+.signal-sources-more {
+    display: block;
+    margin-top: var(--space-xs);
+}
+
+.signal-sources-more summary {
+    cursor: pointer;
 }
 
 .signals-more {

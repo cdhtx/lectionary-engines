@@ -127,3 +127,58 @@ def test_pages_never_call_claude(mock_fetcher_class, study_client):
     gen.assert_not_called()
     sched_gen.assert_not_called()
     anth.assert_not_called()
+
+
+def test_stored_citation_markup_is_cleaned_on_both_pages(study_client):
+    from unittest.mock import patch
+
+    client, SessionLocal = study_client
+    s = SessionLocal()
+    s.add(_signal(
+        1,
+        signal_detected='A pattern (cite index="4-1">worth seeing</cite> — really.',
+        modern_illustration='In 2026, (cite index="2-3">a family waited</cite>.',
+    ))
+    s.commit()
+    s.close()
+
+    with patch("web.services.lectionary_widget_service.TextFetcher") as fetcher:
+        fetcher.return_value.fetch_sunday_lectionary_readings.return_value = {}
+        home = client.get("/").text
+    page = client.get("/signals").text
+
+    for body in (home, page):
+        assert "cite index" not in body
+        assert 'index="' not in body
+        assert "A pattern worth seeing, really." in body
+    assert "In 2026, a family waited." in page
+
+
+def test_sources_show_five_site_links_and_fold_the_rest(study_client):
+    client, SessionLocal = study_client
+    s = SessionLocal()
+    sources = [{"title": f"A very long headline number {i} - Some Newspaper", "url": f"https://site{i}.example.org/story"} for i in range(7)]
+    s.add(_signal(1, sources=json.dumps(sources)))
+    s.commit()
+    s.close()
+
+    body = client.get("/signals").text
+
+    assert "site0.example.org" in body and "site4.example.org" in body
+    assert "More sources (2)" in body
+    assert "site6.example.org" in body  # inside the fold, still in the page
+    assert body.index("More sources (2)") < body.index("site5.example.org")
+    assert ">A very long headline" not in body  # link text is the domain, never the headline
+    assert ">site0.example.org</a>" in body
+    assert 'title="A very long headline number 0' in body  # full headline on hover
+
+
+def test_few_sources_have_no_fold(study_client):
+    client, SessionLocal = study_client
+    s = SessionLocal()
+    s.add(_signal(1, sources=json.dumps([{"title": "One", "url": "https://only.example.org/a"}])))
+    s.commit()
+    s.close()
+    body = client.get("/signals").text
+    assert "only.example.org" in body
+    assert "More sources" not in body

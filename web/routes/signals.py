@@ -11,12 +11,15 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from lectionary_engines.protocols.signals_protocol import clean_text
+
 from ..models import Signal
 
 router = APIRouter()
 
 WEB_DIR = Path(__file__).parent.parent
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+templates.env.filters["clean"] = clean_text
 
 PAGE_SIZE = 3
 MAX_SHOWN = 60

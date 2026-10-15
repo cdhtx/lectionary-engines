@@ -189,6 +189,8 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="stati
 
 # Set up Jinja2 templates
 templates = Jinja2Templates(directory=str(WEB_DIR / "templates"))
+from lectionary_engines.protocols.signals_protocol import clean_text as _clean_signal_text
+templates.env.filters["clean"] = _clean_signal_text
 
 
 def _avatar_initials(name: str) -> str:

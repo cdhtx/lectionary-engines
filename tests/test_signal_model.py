@@ -44,3 +44,18 @@ def test_signal_json_properties_tolerate_empty_or_bad_json():
                modern_illustration_category="art", dig_deeper="not json", sources=None)
     assert s.dig_deeper_list == []
     assert s.sources_list == []
+
+
+def test_source_links_use_domain_labels_dedupe_by_site_and_keep_order():
+    s = Signal(title="t", theme="x", signal_detected="s", connection="c", nature_of_connection="n",
+               intratextual="i", modern_illustration="m", modern_illustration_category="art",
+               sources=json.dumps([
+                   {"title": "Long headline one", "url": "https://www.theartnewspaper.com/a"},
+                   {"title": "Second from same site", "url": "https://www.theartnewspaper.com/b"},
+                   {"title": "Other", "url": "https://news.example.org/x"},
+                   {"title": "Bad", "url": ""},
+               ]))
+    links = s.source_links
+    assert [l["label"] for l in links] == ["theartnewspaper.com", "news.example.org"]
+    assert links[0]["url"] == "https://www.theartnewspaper.com/a"
+    assert links[0]["title"] == "Long headline one"
