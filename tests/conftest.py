@@ -14,6 +14,11 @@ from web.database import init_db, close_db, get_db
 from web.models import Base, User
 
 
+@pytest.fixture(autouse=True)
+def _signals_disabled(monkeypatch):
+    monkeypatch.setenv("SIGNALS_ENABLED", "false")
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
     """Initialize the test database before any tests run."""

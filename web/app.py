@@ -3,6 +3,9 @@ Lectionary Engines Web Application
 FastAPI-based web interface for biblical interpretation engines
 """
 
+import asyncio
+import contextlib
+
 from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -39,6 +42,8 @@ async def lifespan(app: FastAPI):
     """
     Application lifespan - startup and shutdown events
     """
+    from .services.signals_scheduler import signals_enabled, signals_loop
+
     # Startup: Initialize database
     print("Starting Lectionary Engines Web Application...")
     init_db()
@@ -47,10 +52,16 @@ async def lifespan(app: FastAPI):
     print(f"Default engine: {config.default_engine}")
     print(f"Server running at http://{config.web_host}:{config.web_port}")
 
+    signals_task = asyncio.create_task(signals_loop()) if signals_enabled() else None
+
     yield
 
-    # Shutdown: Close database connections
+    # Shutdown: stop the signals loop, then close database connections
     print("Shutting down...")
+    if signals_task:
+        signals_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await signals_task
     close_db()
 
 
