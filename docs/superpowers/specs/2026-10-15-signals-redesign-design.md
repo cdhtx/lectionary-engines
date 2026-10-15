@@ -22,9 +22,13 @@ and to leave with somewhere to dig deeper.
   nonfiction, and literature.
 - Grounding: live web search for the contemporary illustration and for every
   book. Nothing is named from model memory alone.
-- Model: the strongest model that supports web search, `claude-opus-5-5`, as
-  one setting (`SIGNALS_MODEL`) so it can be changed without a code change.
-  Cost is small at this volume (about 15 signals a month).
+- Model: `claude-sonnet-5-5` by default, as one setting (`SIGNALS_MODEL`) so
+  it can be raised to `claude-opus-5-5` (or lowered) without a code change.
+  Cost matters because the app bills to the Anthropic API key, not a Claude
+  subscription. Estimated at roughly $3-5 a month on Sonnet 5.5 (about 15
+  signals), $6-10 on Opus 5.5; these are estimates until real usage is
+  recorded. Plan: read the first five or six signals, then decide whether
+  to move up or down a model.
 - Cadence: a new signal at least every two days, generated automatically by a
   scheduled job.
 - Replaces the existing keyword-overlap signals entirely.
@@ -58,6 +62,8 @@ with author, and a one-line reason each is worth reading.
 - `dig_deeper` (JSON list of `{title, author, kind, why}`)
 - `sources` (JSON list of `{title, url}` from search results)
 - `model` (which model produced it)
+- `input_tokens`, `output_tokens`, `search_count` (from the response usage,
+  so real cost per signal can be checked)
 
 `init_db()` already runs `Base.metadata.create_all()`, so the table is created
 on the next deploy with no migration.
@@ -78,8 +84,8 @@ One function, `generate_signal(db)`:
 
 Model call settings:
 
-- `model`: `SIGNALS_MODEL` (default `claude-opus-5-5`).
-- Adaptive thinking on, and a large `max_tokens` (16000) so thinking cannot
+- `model`: `SIGNALS_MODEL` (default `claude-sonnet-5-5`).
+- Adaptive thinking left on (Sonnet 5.5's default), and a large `max_tokens` (16000) so thinking cannot
   use up the output budget. `stop_reason == "max_tokens"` counts as a failure
   (nothing saved) and logs a warning.
 - Web search server tool: `web_search_20260209`, with a `max_uses` cap per
@@ -164,6 +170,7 @@ matching how the other engines keep their protocols):
 
 ## Open items to settle during implementation
 
-- Confirm `web_search_20260209` runs correctly on `claude-opus-5-5` with this
+- Confirm `web_search_20260209` runs correctly on `claude-sonnet-5-5` with this
   SDK version (live test before relying on it).
 - Pick the `max_uses` value for web search from a trial run.
+- Recommend a monthly spend limit in the Anthropic Console as a backstop.
