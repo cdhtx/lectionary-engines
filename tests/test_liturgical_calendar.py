@@ -3,7 +3,7 @@ Tests for the shared liturgical calendar utilities: season_for_date()
 (buckets a date into one of eight liturgical seasons, for Study/
 WorkshopPrep faceting) and upcoming_sunday() (the single shared
 implementation of a calculation previously duplicated privately in
-lectionary_widget_service.py and signals_service.py).
+lectionary_widget_service.py and a former signals service, since replaced).
 """
 
 from datetime import date, timedelta

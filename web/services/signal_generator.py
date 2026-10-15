@@ -11,6 +11,7 @@ import os
 from typing import List, Optional
 
 import anthropic
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from lectionary_engines.protocols.signals_protocol import (
@@ -44,7 +45,7 @@ def _collect_sources(response) -> List[dict]:
             continue
         for r in results:
             url = getattr(r, "url", None)
-            if url and url not in seen:
+            if url and url.lower().startswith(("http://", "https://")) and url not in seen:
                 seen.add(url)
                 sources.append({"title": getattr(r, "title", "") or url, "url": url})
     return sources[:MAX_SOURCES]
@@ -59,6 +60,7 @@ def generate_signal(db: Session, client, model: Optional[str] = None) -> Optiona
     model = model or os.getenv("SIGNALS_MODEL") or DEFAULT_SIGNALS_MODEL
     recent = db.query(Signal).order_by(Signal.created_at.desc()).limit(RECENT_LIMIT).all()
     user_prompt = build_user_prompt([{"title": s.title, "theme": s.theme} for s in recent])
+    db.rollback()  # end the read transaction before the long Claude call
 
     input_tokens = output_tokens = searches = 0
     for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -112,8 +114,13 @@ def generate_signal(db: Session, client, model: Optional[str] = None) -> Optiona
             output_tokens=output_tokens,
             search_count=searches,
         )
-        db.add(signal)
-        db.commit()
+        try:
+            db.add(signal)
+            db.commit()
+        except SQLAlchemyError as e:
+            db.rollback()
+            logger.warning("Signal generation could not save the signal: %s", e)
+            return None
         return signal
 
     logger.warning("Signal generation produced nothing usable after %s attempts", MAX_ATTEMPTS)

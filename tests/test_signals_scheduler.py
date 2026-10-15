@@ -15,6 +15,13 @@ from web.services.signals_scheduler import run_if_due, signal_is_due, signals_en
 NOW = datetime(2026, 10, 15, 12, 0, 0)
 
 
+@pytest.fixture(autouse=True)
+def _reset_backoff():
+    signals_scheduler._last_failed_at = None
+    yield
+    signals_scheduler._last_failed_at = None
+
+
 @pytest.fixture
 def session_factory():
     engine = create_engine(
@@ -124,3 +131,45 @@ def test_loop_survives_a_failing_check_and_keeps_going():
 
     asyncio.run(run())
     assert len(calls) == 2
+
+
+def test_failed_generation_backs_off_immediate_retry(session_factory):
+    with patch("web.services.signals_scheduler.generate_signal", return_value=None) as gen:
+        assert run_if_due(session_factory, client_factory=lambda: "c") is False
+        assert run_if_due(session_factory, client_factory=lambda: "c") is False
+    assert gen.call_count == 1
+    assert not signals_scheduler._generation_lock.locked()
+
+
+def test_generation_retried_after_backoff_elapses(session_factory):
+    signals_scheduler._last_failed_at = (
+        datetime.utcnow() - signals_scheduler.FAILURE_BACKOFF - timedelta(minutes=1)
+    )
+    with patch("web.services.signals_scheduler.generate_signal", return_value=object()) as gen:
+        assert run_if_due(session_factory, client_factory=lambda: "c") is True
+    assert gen.call_count == 1
+
+
+def test_exception_sets_backoff_and_reraises(session_factory):
+    with patch("web.services.signals_scheduler.generate_signal", side_effect=RuntimeError("boom")):
+        with pytest.raises(RuntimeError):
+            run_if_due(session_factory, client_factory=lambda: "c")
+    assert signals_scheduler._last_failed_at is not None
+    assert not signals_scheduler._generation_lock.locked()
+
+
+def test_success_clears_backoff(session_factory):
+    signals_scheduler._last_failed_at = (
+        datetime.utcnow() - signals_scheduler.FAILURE_BACKOFF - timedelta(minutes=1)
+    )
+    with patch("web.services.signals_scheduler.generate_signal", return_value=object()):
+        run_if_due(session_factory, client_factory=lambda: "c")
+    assert signals_scheduler._last_failed_at is None
+
+
+def test_not_due_does_not_set_backoff(session_factory):
+    _add_signal(session_factory, 1)
+    with patch("web.services.signals_scheduler.generate_signal") as gen:
+        assert run_if_due(session_factory, client_factory=lambda: "c") is False
+    gen.assert_not_called()
+    assert signals_scheduler._last_failed_at is None

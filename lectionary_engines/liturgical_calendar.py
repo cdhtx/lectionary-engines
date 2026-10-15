@@ -1,7 +1,7 @@
 """
 Liturgical calendar utilities shared across the app: computing which
 Sunday is "this coming Sunday" (previously duplicated privately in both
-lectionary_widget_service.py and signals_service.py - consolidated here
+lectionary_widget_service.py and a former signals service, since replaced - consolidated here
 since Tier 4's reading_date/season capture needs the same calculation),
 and bucketing a date into one of eight liturgical seasons for Study/
 WorkshopPrep faceting.

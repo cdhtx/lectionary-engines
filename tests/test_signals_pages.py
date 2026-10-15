@@ -53,6 +53,7 @@ def test_signals_page_shows_three_newest_with_all_five_parts(study_client):
     assert "Book 4" in body
     assert "https://example.com/s" in body
     assert "/signals?n=6" in body  # explore more
+    assert 'id="signal-' in body
 
 
 def test_explore_more_reveals_next_three_and_hides_link_at_the_end(study_client):
@@ -101,6 +102,7 @@ def test_today_widget_shows_latest_three_and_links_to_all(mock_fetcher_class, st
     assert "Signal 4" in body and "Signal 2" in body
     assert "Signal 1" not in body
     assert 'href="/signals"' in body
+    assert "/signals#signal-" in body
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
@@ -118,8 +120,10 @@ def test_pages_never_call_claude(mock_fetcher_class, study_client):
     client, SessionLocal = study_client
     _seed(SessionLocal, 1)
     with patch("web.services.signal_generator.generate_signal") as gen, \
+         patch("web.services.signals_scheduler.generate_signal") as sched_gen, \
          patch("lectionary_engines.claude_client.anthropic.Anthropic") as anth:
         client.get("/signals")
         client.get("/")
     gen.assert_not_called()
+    sched_gen.assert_not_called()
     anth.assert_not_called()

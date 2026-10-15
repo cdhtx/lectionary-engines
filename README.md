@@ -46,6 +46,8 @@ cp .env.example .env
 # ANTHROPIC_API_KEY=your_key_here
 ```
 
+The web app also generates a Signals entry about every two days using the API key (roughly $3 to $5 a month). For local development, set `SIGNALS_ENABLED=false` in `.env`. See DEPLOYMENT.md for details.
+
 ### Usage
 
 ```bash

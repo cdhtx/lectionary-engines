@@ -148,3 +148,32 @@ def test_long_title_and_theme_are_truncated_to_200(db):
     row = db.query(Signal).one()
     assert row.title == "x" * 200
     assert row.theme == "t" * 200
+
+
+def test_non_http_source_urls_are_dropped(db):
+    results = [
+        NS(type="web_search_result", title="Bad", url="javascript:alert(1)"),
+        NS(type="web_search_result", title="Data", url="data:text/html,x"),
+        NS(type="web_search_result", title="Good", url="https://example.com/ok"),
+    ]
+    assert generate_signal(db, FakeClient(_response(_valid_json(), results=results))) is not None
+    assert db.query(Signal).one().sources_list == [{"title": "Good", "url": "https://example.com/ok"}]
+
+
+def test_only_javascript_source_counts_as_no_sources(db):
+    results = [NS(type="web_search_result", title="Bad", url="javascript:alert(1)")]
+    client = FakeClient(_response(_valid_json(), results=results), _response(_valid_json(), results=results))
+    assert generate_signal(db, client) is None
+    assert db.query(Signal).count() == 0
+
+
+def test_commit_failure_returns_none_and_session_stays_usable(db):
+    from unittest.mock import patch
+    from sqlalchemy.exc import SQLAlchemyError
+
+    real_rollback = db.rollback
+    with patch.object(db, "commit", side_effect=SQLAlchemyError("boom")), \
+         patch.object(db, "rollback", side_effect=real_rollback) as rb:
+        assert generate_signal(db, FakeClient(_response(_valid_json()))) is None
+    assert rb.call_count >= 2  # after building the prompt, and after the failed commit
+    assert db.query(Signal).count() == 0

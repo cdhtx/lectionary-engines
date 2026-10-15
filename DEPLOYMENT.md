@@ -209,6 +209,10 @@ Optional:
 | `WEB_HOST` | `0.0.0.0` | Server host |
 | `DEFAULT_TRANSLATION` | `NRSVue` | Default Bible translation |
 | `STUDIES_PER_PAGE` | `20` | Pagination limit |
+| `SIGNALS_ENABLED` | `true` | Set to `false` to turn signal generation off. Set it to `false` in local development: the first server start with an empty database would otherwise generate a real signal (about $0.30). |
+| `SIGNALS_MODEL` | `claude-sonnet-5-5` | Model used to generate signals |
+
+The Signals feed generates about one signal every two days, costing roughly $3 to $5 a month on Sonnet 5.5, billed to the Anthropic API key. Set a monthly spend limit in the Anthropic Console.
 
 ---
 
