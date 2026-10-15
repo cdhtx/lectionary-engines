@@ -152,6 +152,13 @@ def _migrate_missing_columns():
         print("  Migrated: verified Postgres columns and indexes are up to date")
 
 
+def redacted_database_url() -> str:
+    """The database URL with any password hidden, safe to print or log."""
+    from sqlalchemy.engine import make_url
+
+    return make_url(DATABASE_URL).render_as_string(hide_password=True)
+
+
 def init_db():
     """
     Initialize database - create all tables and add any missing columns.
@@ -160,7 +167,7 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     _migrate_missing_columns()
 
-    print(f"Database initialized at {DATABASE_URL}")
+    print(f"Database initialized at {redacted_database_url()}")
 
 
 def close_db():
