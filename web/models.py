@@ -2,6 +2,7 @@
 Database ORM models for Lectionary Engines web app
 """
 
+import json
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Index, Date, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
@@ -450,6 +451,52 @@ class LectionaryThemeCache(Base):
 
     def __repr__(self):
         return f"<LectionaryThemeCache(reading_date='{self.reading_date}', reading_type='{self.reading_type}')>"
+
+
+class Signal(Base):
+    """
+    A researched cross-canon signal: a theme that runs through Scripture,
+    where it shows up in the world now, and books to chase down. Generated
+    by web/services/signal_generator.py roughly every two days.
+    """
+
+    __tablename__ = "signals"
+
+    id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    title = Column(String(200), nullable=False)
+    theme = Column(String(200), nullable=False)  # short label, fed back to the model to avoid repeats
+    signal_detected = Column(Text, nullable=False)
+    connection = Column(Text, nullable=False)
+    nature_of_connection = Column(Text, nullable=False)
+    intratextual = Column(Text, nullable=False)
+    modern_illustration = Column(Text, nullable=False)
+    modern_illustration_category = Column(String(30), nullable=False)
+    dig_deeper = Column(Text, nullable=False, default="[]")  # JSON list of {title, author, kind, why}
+    sources = Column(Text, nullable=False, default="[]")  # JSON list of {title, url}
+    model = Column(String(80))
+    input_tokens = Column(Integer)
+    output_tokens = Column(Integer)
+    search_count = Column(Integer)
+
+    @staticmethod
+    def _load_list(raw):
+        try:
+            value = json.loads(raw or "[]")
+        except (TypeError, ValueError):
+            return []
+        return value if isinstance(value, list) else []
+
+    @property
+    def dig_deeper_list(self):
+        return self._load_list(self.dig_deeper)
+
+    @property
+    def sources_list(self):
+        return self._load_list(self.sources)
+
+    def __repr__(self):
+        return f"<Signal(id={self.id}, title='{self.title}')>"
 
 
 class ContentTheme(Base):
