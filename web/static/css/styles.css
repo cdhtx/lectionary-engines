@@ -2672,6 +2672,62 @@ a.engine-card {
     padding: var(--space-lg);
 }
 
+.signal-meta {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    margin-bottom: var(--space-xs);
+}
+
+.signal-title {
+    font-family: var(--font-editorial);
+    font-size: 1.4rem;
+    margin: 0 0 var(--space-md);
+}
+
+.signal-part {
+    margin-bottom: var(--space-md);
+}
+
+.signal-part h3 {
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    margin: 0 0 var(--space-xs);
+}
+
+.signal-part p {
+    margin: 0;
+}
+
+.signal-dig ul {
+    margin: 0;
+    padding-left: var(--space-lg);
+}
+
+.signal-kind {
+    color: var(--color-ink-muted);
+}
+
+.signal-sources {
+    font-size: 0.85rem;
+    color: var(--color-ink-muted);
+    margin: var(--space-md) 0 0;
+}
+
+.signals-more {
+    text-align: center;
+    margin: var(--space-lg) 0;
+}
+
+.signals-section .signal-title {
+    font-size: 1.1rem;
+    margin-bottom: var(--space-xs);
+}
+
 /* Today dashboard variant: flat divided rows inside the Signals panel,
    not individually boxed/shadowed (the base .signal-card styling above
    still applies as-is on the standalone /signals page). */
@@ -2695,26 +2751,6 @@ a.engine-card {
 
 .signals-section .signal-card:last-child {
     padding-bottom: 0;
-}
-
-.signal-pair {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    font-family: var(--font-editorial);
-    font-size: 1.1rem;
-    margin-bottom: var(--space-sm);
-    flex-wrap: wrap;
-}
-
-.signal-arrow {
-    color: var(--color-ink-muted);
-}
-
-.signal-themes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-xs);
 }
 
 .sources-used {

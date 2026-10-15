@@ -24,7 +24,7 @@ from pathlib import Path
 from .database import init_db, close_db, get_db
 from .routes import studies, profiles, workshop, resonance, currents, engines, signals
 from .routes import auth as auth_routes
-from .models import Base, Study, User
+from .models import Base, Signal, Study, User
 from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 from .services.pdf_service import render_pdf, slugify
@@ -255,9 +255,7 @@ def home(request: Request, db: Session = Depends(get_db)):
     quick actions, and recent studies
     """
     from datetime import date
-    from lectionary_engines.claude_client import ClaudeClient
     from .services.lectionary_widget_service import get_this_week_readings
-    from .services.signals_service import get_this_week_signals
     from .services.reading_progress_service import get_progress_map
 
     # Get recent studies (last 5)
@@ -265,8 +263,7 @@ def home(request: Request, db: Session = Depends(get_db)):
 
     this_week = get_this_week_readings(db)
 
-    claude = ClaudeClient(config.anthropic_api_key)
-    signals = get_this_week_signals(db, claude)[:3]  # top 3 for the compact widget; full list on /signals
+    signals = db.query(Signal).order_by(Signal.created_at.desc(), Signal.id.desc()).limit(3).all()
 
     progress_by_study_id = {}
     if request.state.user:

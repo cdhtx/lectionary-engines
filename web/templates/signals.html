@@ -6,30 +6,53 @@
 <div class="container">
     <div class="page-header">
         <h1>Signals</h1>
-        <p>Thematic connections detected among this week's four lectionary readings.</p>
+        <p>Patterns running through Scripture that you may not have noticed, and where they show up now.</p>
     </div>
 
-    {% if connections %}
+    {% if signals %}
     <div class="signals-list">
-        {% for connection in connections %}
-        <div class="signal-card">
-            <div class="signal-pair">
-                <span class="signal-reading">{{ connection.reading_a_label }}: {{ connection.reading_a_reference }}</span>
-                <span class="signal-arrow">↔</span>
-                <span class="signal-reading">{{ connection.reading_b_label }}: {{ connection.reading_b_reference }}</span>
+        {% for signal in signals %}
+        <article class="signal-card">
+            <p class="signal-meta">{{ signal.created_at.strftime("%B %-d, %Y") }} &middot; {{ signal.modern_illustration_category|title }}</p>
+            <h2 class="signal-title">{{ signal.title }}</h2>
+
+            <div class="signal-part"><h3>Signal detected</h3><p>{{ signal.signal_detected }}</p></div>
+            <div class="signal-part"><h3>Connection</h3><p>{{ signal.connection }}</p></div>
+            <div class="signal-part"><h3>Nature of the connection</h3><p>{{ signal.nature_of_connection }}</p></div>
+            <div class="signal-part"><h3>Intratextual</h3><p>{{ signal.intratextual }}</p></div>
+            <div class="signal-part"><h3>Modern illustration</h3><p>{{ signal.modern_illustration }}</p></div>
+
+            {% if signal.dig_deeper_list %}
+            <div class="signal-part signal-dig">
+                <h3>Dig deeper</h3>
+                <ul>
+                    {% for book in signal.dig_deeper_list %}
+                    <li><strong>{{ book.title }}</strong> by {{ book.author }} <span class="signal-kind">({{ book.kind }})</span>. {{ book.why }}</li>
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="signal-themes">
-                {% for theme in connection.shared_themes %}
-                <span class="theme-tag">{{ theme }}</span>
+            {% endif %}
+
+            {% if signal.sources_list %}
+            <p class="signal-sources">Sources:
+                {% for source in signal.sources_list %}
+                <a href="{{ source.url }}" target="_blank" rel="noopener noreferrer">{{ source.title }}</a>{% if not loop.last %}, {% endif %}
                 {% endfor %}
-            </div>
-        </div>
+            </p>
+            {% endif %}
+        </article>
         {% endfor %}
     </div>
+
+    {% if has_more %}
+    <div class="signals-more">
+        <a href="/signals?n={{ next_n }}" class="btn btn-secondary">Explore more signals</a>
+    </div>
+    {% endif %}
     {% else %}
     <div class="empty-state">
-        <h2>No connections detected this week</h2>
-        <p>Check back next week, or explore the readings directly in the <a href="/">Today dashboard</a>.</p>
+        <h2>The first signal is on its way</h2>
+        <p>A new signal is generated about every two days. Check back soon.</p>
     </div>
     {% endif %}
 </div>

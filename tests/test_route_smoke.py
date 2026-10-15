@@ -129,9 +129,7 @@ def test_library_page_type_filter(client):
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
-@patch("web.services.signals_service.TextFetcher")
-@patch("web.services.signals_service.extract_themes")
-def test_sidebar_links_to_engines(mock_extract_themes, mock_signals_fetcher_class, mock_fetcher_class, isolated_client):
+def test_sidebar_links_to_engines(mock_fetcher_class, isolated_client):
     mock_fetcher = mock_fetcher_class.return_value
     mock_fetcher.fetch_sunday_lectionary_readings.return_value = {
         "gospel": "Luke 14:1-14",
@@ -139,8 +137,6 @@ def test_sidebar_links_to_engines(mock_extract_themes, mock_signals_fetcher_clas
         "ot": "Jeremiah 2:4-13",
         "psalm": "Psalm 81:1, 10-16",
     }
-    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
-    mock_extract_themes.return_value = []
 
     response = isolated_client.get("/")
     assert response.status_code == 200
@@ -148,9 +144,7 @@ def test_sidebar_links_to_engines(mock_extract_themes, mock_signals_fetcher_clas
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
-@patch("web.services.signals_service.TextFetcher")
-@patch("web.services.signals_service.extract_themes")
-def test_today_homepage_shows_this_week_readings(mock_extract_themes, mock_signals_fetcher_class, mock_fetcher_class, isolated_client):
+def test_today_homepage_shows_this_week_readings(mock_fetcher_class, isolated_client):
     mock_fetcher = mock_fetcher_class.return_value
     mock_fetcher.fetch_sunday_lectionary_readings.return_value = {
         "gospel": "Luke 14:1-14",
@@ -158,8 +152,6 @@ def test_today_homepage_shows_this_week_readings(mock_extract_themes, mock_signa
         "ot": "Jeremiah 2:4-13",
         "psalm": "Psalm 81:1, 10-16",
     }
-    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
-    mock_extract_themes.return_value = []
 
     response = isolated_client.get("/")
 
@@ -200,48 +192,10 @@ def test_workbench_reflow_orders_sections_correctly(client):
     )
 
 
-@patch("web.services.lectionary_widget_service.TextFetcher")
-@patch("web.services.signals_service.TextFetcher")
-@patch("web.services.signals_service.extract_themes")
-def test_signals_page_renders(mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, isolated_client):
-    mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {
-        "gospel": "Luke 14:1-14",
-        "epistle": "Hebrews 13:1-8, 15-16",
-        "ot": "Jeremiah 2:4-13",
-        "psalm": "Psalm 81:1, 10-16",
-    }
-    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
-    mock_extract_themes.side_effect = lambda claude, reference, text: ["hospitality"]
-
-    response = isolated_client.get("/signals")
-
-    assert response.status_code == 200
-    assert "Signals" in response.text
-
-
 def test_sidebar_links_to_signals(isolated_client):
     response = isolated_client.get("/engines")
     assert response.status_code == 200
     assert 'href="/signals"' in response.text
-
-
-@patch("web.services.lectionary_widget_service.TextFetcher")
-@patch("web.services.signals_service.TextFetcher")
-@patch("web.services.signals_service.extract_themes")
-def test_today_homepage_shows_signals_widget(mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, isolated_client):
-    mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {
-        "gospel": "Luke 14:1-14",
-        "epistle": "Hebrews 13:1-8, 15-16",
-        "ot": "Jeremiah 2:4-13",
-        "psalm": "Psalm 81:1, 10-16",
-    }
-    mock_signals_fetcher_class.return_value.fetch.return_value = "full passage text"
-    mock_extract_themes.side_effect = lambda claude, reference, text: ["hospitality"]
-
-    response = isolated_client.get("/")
-
-    assert response.status_code == 200
-    assert "Signals" in response.text
 
 
 _PALIMPSEST_FIXTURE_CONTENT = """# Palimpsest Study: John 3:16-21
@@ -662,13 +616,10 @@ def test_sidebar_progress_widget_absent_when_no_progress(client):
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
-@patch("web.services.signals_service.TextFetcher")
-@patch("web.services.signals_service.extract_themes")
 def test_continue_your_studies_shows_progress_bar(
-    mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, study_client
+    mock_readings_fetcher_class, study_client
 ):
     mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {}
-    mock_extract_themes.return_value = []
 
     # study_client seeds a User(id=1) row automatically, matching the
     # session cookie set on it - see the fixture's docstring in
@@ -700,13 +651,10 @@ def test_continue_your_studies_shows_progress_bar(
 
 
 @patch("web.services.lectionary_widget_service.TextFetcher")
-@patch("web.services.signals_service.TextFetcher")
-@patch("web.services.signals_service.extract_themes")
 def test_today_page_shows_quote_banner(
-    mock_extract_themes, mock_signals_fetcher_class, mock_readings_fetcher_class, isolated_client
+    mock_readings_fetcher_class, isolated_client
 ):
     mock_readings_fetcher_class.return_value.fetch_sunday_lectionary_readings.return_value = {}
-    mock_extract_themes.return_value = []
 
     response = isolated_client.get("/")
     assert "today-quote" in response.text

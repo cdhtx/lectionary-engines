@@ -50,29 +50,22 @@
             <section class="signals-section dashboard-panel">
                 <h2><svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2l1.8 7.2L21 11l-7.2 1.8L12 20l-1.8-7.2L3 11l7.2-1.8L12 2z"/></svg>Signals</h2>
                 {% if signals %}
-                <p class="section-subtitle">{{ signals|length }} unexpected connection{{ "s" if signals|length != 1 else "" }} detected</p>
+                <p class="section-subtitle">Latest patterns running through Scripture</p>
                 <div class="signals-list">
-                    {% for connection in signals %}
+                    {% for signal in signals %}
                     <div class="signal-card">
-                        <div class="signal-pair">
-                            <span class="signal-reading">{{ connection.reading_a_label }}: {{ connection.reading_a_reference }}</span>
-                            <span class="signal-arrow">↔</span>
-                            <span class="signal-reading">{{ connection.reading_b_label }}: {{ connection.reading_b_reference }}</span>
-                        </div>
-                        <div class="signal-themes">
-                            {% for theme in connection.shared_themes %}
-                            <span class="theme-tag">{{ theme }}</span>
-                            {% endfor %}
-                        </div>
+                        <p class="signal-meta">{{ signal.modern_illustration_category|title }}</p>
+                        <h3 class="signal-title">{{ signal.title }}</h3>
+                        <p>{{ signal.signal_detected }}</p>
                     </div>
                     {% endfor %}
                 </div>
                 <div class="section-footer">
-                    <a href="/signals" class="btn btn-link">View all signals →</a>
+                    <a href="/signals" class="btn btn-link">Explore all signals →</a>
                 </div>
                 {% else %}
                 <div class="empty-state">
-                    <p>No connections detected this week.</p>
+                    <p>The first signal is on its way.</p>
                 </div>
                 {% endif %}
             </section>
