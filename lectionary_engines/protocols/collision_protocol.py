@@ -7,6 +7,9 @@ and contemporary realities through a randomized collision vector system.
 Maximum intensity. No retreat from complexity. Build to crescendo.
 """
 
+from lectionary_engines.protocols.format_protocol import STUDY_FORMAT_BLOCK
+
+
 # Collision Randomizer - Five categories of collision vectors
 # Expanded to 30+ per category to ensure variety across daily use
 COLLISION_VECTORS = {
@@ -486,7 +489,7 @@ ARCHIVE STATUS: Stored
 **Quality Threshold**: Each collision should produce at least ONE insight the reader has never encountered before, even in their own work. The randomizer ensures this by forcing unprecedented combinations.
 
 Begin immediately with title and collision vectors. Do not include any preamble.
-"""
+""" + STUDY_FORMAT_BLOCK
 
 INPUT_WRAPPER = lambda text, reference, vectors: f"""Biblical Reference: {reference}
 

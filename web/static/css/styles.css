@@ -3471,3 +3471,51 @@ a.engine-card {
     .sg-title { font-size: 1.4rem; }
     .sg-pull { font-size: 1.05rem; padding: var(--space-md); }
 }
+
+/* Study callouts (see web/services/study_callouts.py). Plain blockquotes
+   keep the base .study-content blockquote style. */
+.study-content blockquote.callout {
+    font-style: normal;
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    margin: var(--space-md) 0;
+}
+.study-content blockquote.callout p { margin: 0; }
+.study-content blockquote.callout > p > strong:first-child {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: var(--space-xs);
+}
+.study-content .callout-insight {
+    background: var(--ivory-100, #F6F2EA);
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--orange-500, #F36C12);
+}
+.study-content .callout-insight > p > strong:first-child { color: var(--orange-600, #E55300); }
+.study-content .callout-pull {
+    border: none;
+    border-top: 2px solid var(--blue-500, #1976D2);
+    border-bottom: 2px solid var(--blue-500, #1976D2);
+    border-radius: 0;
+    background: none;
+    font-family: var(--font-editorial);
+    font-size: 1.3rem;
+    line-height: 1.45;
+    text-align: center;
+}
+.study-content .callout-pull > p > strong:first-child { color: var(--blue-600, #1565C0); }
+.study-content .callout-practice {
+    background: var(--teal-600, #008797);
+    border: none;
+    color: #fff;
+}
+.study-content .callout-practice > p > strong:first-child { color: #fff; opacity: 0.85; }
+.study-content .callout-question {
+    background: var(--navy-900, #0A2342);
+    border: none;
+    color: var(--ivory-50, #FAF8F3);
+}
+.study-content .callout-question > p > strong:first-child { color: var(--orange-400, #FF8A35); }

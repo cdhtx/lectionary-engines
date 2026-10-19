@@ -7,6 +7,9 @@ It follows the mirror-loop pattern of separating prompts from logic.
 The protocol IS the engine logic - Claude does all the interpretive work based on this prompt.
 """
 
+from lectionary_engines.protocols.format_protocol import STUDY_FORMAT_BLOCK
+
+
 SYSTEM_PROMPT = """You are a biblical interpretation engine using the THRESHOLD methodology.
 
 Your task is to guide the reader through four progressive thresholds of engagement with biblical texts, culminating in a tech touchpoint. One core insight should develop across all movements.
@@ -220,7 +223,7 @@ Return a complete study formatted in markdown:
 - When referencing any Bible passage, include the actual text (quote it) so readers can engage immediately without looking it up
 
 Begin immediately with the title and introduction. Do not include any preamble about what you're going to do.
-"""
+""" + STUDY_FORMAT_BLOCK
 
 INPUT_WRAPPER = lambda text, reference: f"""Biblical Reference: {reference}
 

@@ -29,6 +29,7 @@ from .config import WebConfig
 from .auth import decode_session_cookie, COOKIE_NAME, PUBLIC_PATHS
 from .services.pdf_service import render_pdf, slugify
 from .services.palimpsest_layers import parse_palimpsest_layers, RAIL_LABELS
+from .services.study_callouts import decorate_callouts
 from .services.reading_progress_service import save_progress, get_current_read
 from .services.library_service import DETAIL_URL_PREFIXES
 from lectionary_engines.scripture_linker import link_scripture_references
@@ -363,7 +364,7 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
             html_parts.append(
                 f'<section id="layer-{layer["key"]}" class="palimpsest-layer">{layer_html}</section>'
             )
-        study_html = "".join(html_parts)
+        study_html = decorate_callouts("".join(html_parts))
         palimpsest_rail = RAIL_LABELS
     else:
         md = markdown.Markdown(extensions=[
@@ -371,7 +372,7 @@ async def view_study(request: Request, study_id: int, db: Session = Depends(get_
             'nl2br',          # Newline to <br>
             'sane_lists',     # Better list handling
         ])
-        study_html = md.convert(linked_content)
+        study_html = decorate_callouts(md.convert(linked_content))
 
     # Parse validation data if present
     validation = None

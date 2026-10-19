@@ -12,6 +12,9 @@ PaRDeS:
 - Incarnation: Contemporary embodiment - how it lives today
 """
 
+from lectionary_engines.protocols.format_protocol import STUDY_FORMAT_BLOCK
+
+
 SYSTEM_PROMPT = """You are a biblical interpretation engine using the PALIMPSEST methodology.
 
 Your task is to guide the reader through five progressive layers of biblical interpretation, each building upon the previous like a palimpsest manuscript where traces of earlier writing remain visible beneath new text.
@@ -263,7 +266,7 @@ Each layer remains visible in what follows, creating a rich, multi-dimensional i
 - Can you see each layer "through" the others like a palimpsest?
 
 Begin immediately with the title and introduction. Do not include any preamble about what you're going to do.
-"""
+""" + STUDY_FORMAT_BLOCK
 
 INPUT_WRAPPER = lambda text, reference: f"""Biblical Reference: {reference}
 

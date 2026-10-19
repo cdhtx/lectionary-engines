@@ -109,13 +109,17 @@ class ClaudeClient:
             Exception: If Claude API returns an error
         """
         try:
-            response = self.client.messages.create(
+            # Stream and collect the final message: a long single request
+            # (Collision at 12000 tokens) gets "Server disconnected without
+            # sending a response" when nothing flows for minutes.
+            with self.client.messages.stream(
                 model=self.model,
                 max_tokens=max_tokens,
                 system=self._build_system_param(system_prompt),
                 messages=[{"role": "user", "content": text}],
                 **_thinking_kwargs(self.model),
-            )
+            ) as stream:
+                response = stream.get_final_message()
 
             if response.stop_reason == "max_tokens":
                 logger.warning(
