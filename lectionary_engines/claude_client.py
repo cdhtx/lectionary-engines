@@ -30,6 +30,19 @@ def _thinking_kwargs(model: str) -> dict:
     return {}
 
 
+def _final_text(content) -> str:
+    """Text of a response that used server tools (web search).
+
+    The model narrates before and between searches ("Let me verify that
+    quote"). Only the text after the last tool block is the answer.
+    """
+    start = 0
+    for i, block in enumerate(content):
+        if block.type != "text":
+            start = i + 1
+    return "".join(b.text for b in content[start:] if b.type == "text")
+
+
 def _response_text(response) -> str:
     """Join the text blocks of a response.
 
@@ -89,6 +102,7 @@ class ClaudeClient:
         reference: str,
         system_prompt: str,
         max_tokens: int = 4000,
+        web_search_max_uses: int = 0,
     ) -> str:
         """
         Generate a biblical study using Claude
@@ -101,6 +115,8 @@ class ClaudeClient:
             reference: Biblical reference for logging/debugging
             system_prompt: Engine-specific protocol prompt
             max_tokens: Maximum response length (default 4000 for ~3000 word outputs)
+            web_search_max_uses: If > 0, let the model search the web (up to
+                this many searches) to verify quotations before writing
 
         Returns:
             str: Generated study content (markdown formatted)
@@ -112,14 +128,26 @@ class ClaudeClient:
             # Stream and collect the final message: a long single request
             # (Collision at 12000 tokens) gets "Server disconnected without
             # sending a response" when nothing flows for minutes.
-            with self.client.messages.stream(
-                model=self.model,
-                max_tokens=max_tokens,
-                system=self._build_system_param(system_prompt),
-                messages=[{"role": "user", "content": text}],
-                **_thinking_kwargs(self.model),
-            ) as stream:
-                response = stream.get_final_message()
+            extra = dict(_thinking_kwargs(self.model))
+            if web_search_max_uses:
+                extra["tools"] = [{
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": web_search_max_uses,
+                }]
+            messages = [{"role": "user", "content": text}]
+            for _ in range(4):  # a search-heavy turn can pause; resume it
+                with self.client.messages.stream(
+                    model=self.model,
+                    max_tokens=max_tokens,
+                    system=self._build_system_param(system_prompt),
+                    messages=messages,
+                    **extra,
+                ) as stream:
+                    response = stream.get_final_message()
+                if response.stop_reason != "pause_turn":
+                    break
+                messages = messages + [{"role": "assistant", "content": response.content}]
 
             if response.stop_reason == "max_tokens":
                 logger.warning(
@@ -128,6 +156,9 @@ class ClaudeClient:
                 )
 
             # Extract text content from response
+            if web_search_max_uses:
+                from lectionary_engines.protocols.signals_protocol import clean_text
+                return clean_text(_final_text(response.content))
             return _response_text(response)
 
         except anthropic.APIError as e:

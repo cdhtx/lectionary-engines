@@ -58,6 +58,7 @@ class PalimpsestEngine(BaseEngine):
             reference=reference,
             system_prompt=palimpsest_protocol.SYSTEM_PROMPT,
             max_tokens=9000,  # 3000-4000 words plus extended Sod layer and callouts
+            web_search_max_uses=palimpsest_protocol.SOD_SEARCH_MAX_USES,
         )
 
         # Package result

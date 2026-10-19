@@ -200,6 +200,7 @@ class StudyGeneratorService:
             modified_system_prompt += cultural_grounding_block
 
         # Build the user message using the engine's normal input wrapping
+        web_search_uses = 0
         if engine_name == "collision":
             vectors = engine.generate_collision_vectors()
             user_message = collision_protocol.INPUT_WRAPPER(text, reference, vectors)
@@ -213,6 +214,8 @@ class StudyGeneratorService:
             else:
                 user_message = f"Biblical Reference: {reference}\n\nBiblical Text:\n{text}"
             max_tokens = 9000 if engine_name == "palimpsest" else 7000  # injected context; Palimpsest also has the extended Sod layer
+            if engine_name == "palimpsest":
+                web_search_uses = palimpsest_protocol.SOD_SEARCH_MAX_USES  # verify Sod quotations
 
         # Call Claude directly with modified prompt
         content = self.claude.generate_study(
@@ -220,6 +223,7 @@ class StudyGeneratorService:
             reference=reference,
             system_prompt=modified_system_prompt,
             max_tokens=max_tokens,
+            web_search_max_uses=web_search_uses,
         )
 
         result = {
