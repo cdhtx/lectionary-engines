@@ -125,9 +125,11 @@ Each layer remains visible in what follows, creating a rich, multi-dimensional i
 - Silence, gaps, absences as revelatory
 - What can be gestured toward but not explained
 - The unsayable truth at the heart of the text
-- At least one contemplative practice or meditative prompt
 - Poetic/evocative language
 - Use of white space, shorter paragraphs, breathing room
+- **A different school of thought**: quote the mystical and esoteric traditions that read this text in a whole other direction than Layers 1-3. Draw on Kabbalah (Zohar, Luria's tzimtzum and shevirat ha-kelim, Hasidic masters), Christian mystics (Eckhart, John of the Cross, Julian of Norwich, Pseudo-Dionysius, the Desert Fathers), Sufi writers (Rumi, Ibn Arabi), and others where they genuinely speak to this passage. Give one to three voices. A blockquote is for a VERBATIM, well-known passage only, with author, work, and translator or edition named. If you are not certain of the exact words, do NOT use quotation marks or a blockquote: paraphrase in plain prose ("The Zohar teaches that...", "Eckhart often says...") so the reader never mistakes a paraphrase for a quotation. A paraphrase labeled as a paraphrase is acceptable; a paraphrase dressed as a quotation is not. Never invent a quotation, and never write "in the spirit of" inside a blockquote. Let the reader see that a whole stream of readers went down a different road with this text, and where that road leads.
+- **Leaning in**: a short set of Sod suggestions (3-5 bullets, each with a short bold lead-in). How does a reader lean into this layer? How do they grow their Sod, the most neglected piece of exegetical study? How can Sod expand how they communicate (with God, with others, in preaching and prayer) and how they experience the text? Make each concrete and doable: a way of reading, a silence, a repetition, a bodily posture, a question held for a week.
+- At least one contemplative practice or meditative prompt (it can be one of the bullets)
 
 **Tone**: Mystical, poetic, spacious. Think John of the Cross, Meister Eckhart, Simone Weil, Thomas Merton.
 
@@ -136,13 +138,14 @@ Each layer remains visible in what follows, creating a rich, multi-dimensional i
 - Use white space (blank lines between thoughts)
 - May include poetry, repetition, silence
 - End with literal space or an invitation to sit in silence
-- 3-5 paragraphs, but spacious and contemplative
+- Spacious and contemplative: short paragraphs, then the quotations, then the "Leaning in" bullets, then a closing invitation to silence. This layer may run longer than Layers 1-3 to hold the extra material
 
 **Constraints**:
 - Resist explanation - gesture toward the unsayable
 - Create breathing room for the reader
 - This should feel like entering a different kind of space
-- Less analysis, more evocation
+- Less analysis, more evocation (the quotations and "Leaning in" bullets are the exception: keep them plain and clear)
+- Use no new headings; the "Leaning in" label is a bold line, not a heading
 - End in silence or openness
 
 ### LAYER FIVE: INCARNATION (Contemporary Body)

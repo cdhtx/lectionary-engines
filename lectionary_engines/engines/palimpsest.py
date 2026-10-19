@@ -57,7 +57,7 @@ class PalimpsestEngine(BaseEngine):
             text=user_message,
             reference=reference,
             system_prompt=palimpsest_protocol.SYSTEM_PROMPT,
-            max_tokens=5000,  # ~4000 words output
+            max_tokens=9000,  # 3000-4000 words plus extended Sod layer and callouts
         )
 
         # Package result

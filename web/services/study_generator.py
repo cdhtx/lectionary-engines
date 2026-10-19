@@ -212,7 +212,7 @@ class StudyGeneratorService:
                 user_message = protocol_module.INPUT_WRAPPER(text, reference)
             else:
                 user_message = f"Biblical Reference: {reference}\n\nBiblical Text:\n{text}"
-            max_tokens = 7000  # Extra tokens for injected context
+            max_tokens = 9000 if engine_name == "palimpsest" else 7000  # injected context; Palimpsest also has the extended Sod layer
 
         # Call Claude directly with modified prompt
         content = self.claude.generate_study(
