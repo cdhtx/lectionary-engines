@@ -107,7 +107,7 @@ class CollisionEngine(BaseEngine):
             text=user_message,
             reference=reference,
             system_prompt=collision_protocol.SYSTEM_PROMPT,
-            max_tokens=6000,  # ~5000 words output
+            max_tokens=12000,  # 4000-5000 words is ~8000 tokens; leave headroom
         )
 
         # Package result

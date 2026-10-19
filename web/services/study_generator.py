@@ -203,7 +203,7 @@ class StudyGeneratorService:
         if engine_name == "collision":
             vectors = engine.generate_collision_vectors()
             user_message = collision_protocol.INPUT_WRAPPER(text, reference, vectors)
-            max_tokens = 8000  # Extra tokens for injected context
+            max_tokens = 12000  # 4000-5000 word target plus injected context
         else:
             # Threshold and Palimpsest use simpler input
             from lectionary_engines.protocols import threshold_protocol, palimpsest_protocol

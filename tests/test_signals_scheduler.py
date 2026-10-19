@@ -12,7 +12,7 @@ from web.models import Base, Signal
 from web.services import signals_scheduler
 from web.services.signals_scheduler import run_if_due, signal_is_due, signals_enabled, signals_loop
 
-NOW = datetime(2026, 10, 15, 12, 0, 0)
+NOW = datetime.utcnow()
 
 
 @pytest.fixture(autouse=True)
