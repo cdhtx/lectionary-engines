@@ -3361,3 +3361,113 @@ a.engine-card {
         border-left-color: #999;
     }
 }
+
+/* ==========================================================================
+   Signals page: skimmable card layout (.sg). Standalone /signals only; the
+   Today widget keeps the compact .signals-section variant above.
+   ========================================================================== */
+.sg { padding: var(--space-lg); }
+.sg h3 {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+    margin: 0 0 var(--space-xs);
+}
+.sg p { margin: 0; line-height: 1.6; }
+
+.sg-meta { display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-xs); }
+.sg-chip {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--teal-600, #008797);
+    color: #fff;
+}
+.sg-date { font-size: 0.8rem; color: var(--color-ink-muted); }
+.sg-title { font-size: 1.7rem; line-height: 1.2; margin: 0 0 var(--space-md); }
+
+.sg-pull {
+    margin: 0 0 var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-left: 4px solid var(--orange-500, #F36C12);
+    background: var(--ivory-100, #F6F2EA);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-family: var(--font-editorial);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    color: var(--ink-950, #10233F);
+}
+.sg-label {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--orange-600, #E55300);
+    margin-bottom: var(--space-xs);
+}
+
+.sg-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+.sg-box {
+    padding: var(--space-md);
+    border: 1px solid var(--border-light);
+    border-top: 3px solid var(--blue-500, #1976D2);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.7);
+}
+.sg-box-nature { border-top-color: var(--teal-600, #008797); }
+
+.sg-text { margin-bottom: var(--space-md); padding-left: var(--space-md); border-left: 2px solid var(--border-light); }
+
+.sg-now {
+    margin-bottom: var(--space-md);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--navy-900, #0A2342);
+    color: var(--ivory-50, #FAF8F3);
+}
+.sg-now-tag {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--orange-400, #FF8A35);
+    margin-bottom: var(--space-xs);
+}
+
+.sg-dig-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: var(--space-sm);
+}
+.sg-book {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.7);
+}
+.sg-book-kind { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal-700, #006C78); }
+.sg-book-title { font-family: var(--font-editorial); }
+.sg-book-author { font-size: 0.85rem; color: var(--color-ink-muted); }
+.sg-book-why { font-size: 0.85rem; margin-top: var(--space-xs); line-height: 1.5; }
+
+@media (max-width: 640px) {
+    .sg-pair { grid-template-columns: 1fr; }
+    .sg-title { font-size: 1.4rem; }
+    .sg-pull { font-size: 1.05rem; padding: var(--space-md); }
+}

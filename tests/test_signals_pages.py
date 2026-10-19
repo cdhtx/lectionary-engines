@@ -47,8 +47,8 @@ def test_signals_page_shows_three_newest_with_all_five_parts(study_client):
     assert "Signal 4" in body and "Signal 3" in body and "Signal 2" in body
     assert "Signal 1" not in body and "Signal 0" not in body
     assert body.index("Signal 4") < body.index("Signal 3") < body.index("Signal 2")
-    for label in ("Signal detected", "Connection", "Nature of the connection",
-                  "Intratextual", "Modern illustration", "Dig deeper"):
+    for label in ("Signal detected", "What it connects", "Why it's not obvious",
+                  "Where it recurs in the text", "Seen now", "Dig deeper"):
         assert label in body
     assert "Book 4" in body
     assert "https://example.com/s" in body

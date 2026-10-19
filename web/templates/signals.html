@@ -12,25 +12,53 @@
     {% if signals %}
     <div class="signals-list">
         {% for signal in signals %}
-        <article class="signal-card" id="signal-{{ signal.id }}">
-            <p class="signal-meta">{{ signal.created_at.strftime("%B %-d, %Y") }} &middot; {{ signal.modern_illustration_category|title }}</p>
-            <h2 class="signal-title">{{ signal.title|clean }}</h2>
+        <article class="signal-card sg" id="signal-{{ signal.id }}">
+            <div class="sg-meta">
+                <span class="sg-chip">{{ signal.modern_illustration_category|title }}</span>
+                <span class="sg-date">{{ signal.created_at.strftime("%B %-d, %Y") }}</span>
+            </div>
+            <h2 class="signal-title sg-title">{{ signal.title|clean }}</h2>
 
-            <div class="signal-part"><h3>Signal detected</h3><p>{{ signal.signal_detected|clean }}</p></div>
-            <div class="signal-part"><h3>Connection</h3><p>{{ signal.connection|clean }}</p></div>
-            <div class="signal-part"><h3>Nature of the connection</h3><p>{{ signal.nature_of_connection|clean }}</p></div>
-            <div class="signal-part"><h3>Intratextual</h3><p>{{ signal.intratextual|clean }}</p></div>
-            <div class="signal-part"><h3>Modern illustration</h3><p>{{ signal.modern_illustration|clean }}</p></div>
+            <blockquote class="sg-pull">
+                <span class="sg-label">Signal detected</span>
+                {{ signal.signal_detected|clean }}
+            </blockquote>
+
+            <div class="sg-pair">
+                <section class="sg-box sg-box-connection">
+                    <h3>What it connects</h3>
+                    <p>{{ signal.connection|clean }}</p>
+                </section>
+                <section class="sg-box sg-box-nature">
+                    <h3>Why it's not obvious</h3>
+                    <p>{{ signal.nature_of_connection|clean }}</p>
+                </section>
+            </div>
+
+            <section class="sg-text">
+                <h3>Where it recurs in the text</h3>
+                <p>{{ signal.intratextual|clean }}</p>
+            </section>
+
+            <aside class="sg-now">
+                <span class="sg-now-tag">Seen now &middot; {{ signal.modern_illustration_category|title }}</span>
+                <p>{{ signal.modern_illustration|clean }}</p>
+            </aside>
 
             {% if signal.dig_deeper_list %}
-            <div class="signal-part signal-dig">
+            <section class="sg-dig">
                 <h3>Dig deeper</h3>
-                <ul>
+                <ul class="sg-dig-grid">
                     {% for book in signal.dig_deeper_list %}
-                    <li><strong>{{ book.title|clean }}</strong> by {{ book.author|clean }} <span class="signal-kind">({{ book.kind }})</span>. {{ book.why|clean }}</li>
+                    <li class="sg-book">
+                        <span class="sg-book-kind">{{ book.kind }}</span>
+                        <strong class="sg-book-title">{{ book.title|clean }}</strong>
+                        <span class="sg-book-author">{{ book.author|clean }}</span>
+                        <span class="sg-book-why">{{ book.why|clean }}</span>
+                    </li>
                     {% endfor %}
                 </ul>
-            </div>
+            </section>
             {% endif %}
 
             {% set links = signal.source_links %}
